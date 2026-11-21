@@ -1,0 +1,12 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #f4f2e9; color: #293c33; font: 1rem/1.5 "DM Sans", system-ui, sans-serif; }
+header, .controls, #status { padding-inline: clamp(1rem, 2vw, 2rem); }
+header, .controls { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+header { justify-content: space-between; padding-block: .75rem; }
+h1 { font: 500 clamp(1.8rem, 4vw, 3rem)/1.1 Georgia, serif; margin: 0; }
+#seed { font: .875rem monospace; }
+canvas { display: block; width: 100%; aspect-ratio: 16 / 9; }
+.controls { margin-top: 1rem; }
+select, button { background: #fbfaf5; color: inherit; border: 1px solid #a5ada0; border-radius: .4rem; padding: .55rem .85rem; font: inherit; cursor: pointer; }
+select { margin-left: .35rem; }
+#save { background: #294e40; color: white; margin-left: auto; }

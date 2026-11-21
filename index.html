@@ -4,13 +4,23 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Voxel Scenes</title>
-    <style>
-      body { margin: 0; background: #e8e7db; }
-      canvas { display: block; width: 100%; height: 100dvh; }
-    </style>
+    <link rel="stylesheet" href="/src/style.css">
   </head>
   <body>
-    <canvas aria-label="Three-quarter view of a green cube" role="img"></canvas>
+    <main>
+      <header><h1>Voxel Scenes</h1><span id="seed"></span></header>
+      <canvas role="img" aria-label="A crescent bay with a wooded ridge and a cottage above the beach"></canvas>
+      <div class="controls">
+        <label>Style <select id="style">
+          <option value="miniature">Carved miniature</option>
+          <option value="vista">Clearwater vista</option>
+          <option value="graphic" selected>Graphic landscape</option>
+        </select></label>
+        <button id="generate">New island</button>
+        <button id="save">Save PNG</button>
+      </div>
+      <p id="status" role="status"></p>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
