@@ -114,15 +114,49 @@ export function buildIsland(seed: number, style: Style) {
   const dockLength = 1.7;
   box(cottageX, dockTop - 0.08, stairEnd + dockLength / 2, 0.72, 0.16, dockLength, 0x926a47);
   for (const side of [-0.29, 0.29]) {
-    box(cottageX + side, 0.14, stairEnd + dockLength - 0.16, 0.13, 0.68, 0.13, 0x624832);
+    const z = stairEnd + dockLength - 0.16;
+    const foot = Math.min(-0.25, naturalHeight(cottageX + side, z) - 0.3);
+    box(cottageX + side, (0.48 + foot) / 2, z, 0.13, 0.48 - foot, 0.13, 0x624832);
   }
 
-  // Low wave crests keep the open water readable at wallpaper scale.
-  for (let i = 0; i < 420; i++) {
-    const x = random() * 92 - 46;
-    const z = random() * 72 - 36;
-    if (height(x, z) < 0) box(x, 0.03, z, 0.6 + random() * 1.5, 0.04, 0.15, 0xb9d4c7);
+  // The floor mesh and the water's absorption map use the same soundings.
+  const resolution = 128;
+  const floorGeometry = new THREE.PlaneGeometry(64, 64, resolution - 1, resolution - 1);
+  floorGeometry.rotateX(-Math.PI / 2);
+  const positions = floorGeometry.getAttribute("position");
+  const samples = new Uint8Array(resolution * resolution);
+  const colors = new Float32Array(positions.count * 3);
+  const wetSand = new THREE.Color(p.beach);
+  const silt = new THREE.Color(0x506d60);
+  const floorColor = new THREE.Color();
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i);
+    const z = positions.getZ(i);
+    const y = THREE.MathUtils.clamp(naturalHeight(x, z), -7, -0.14);
+    samples[i] = Math.round(255 * Math.min(-y / 6, 1));
+    // Extend the outer ring under the whole view so the horizon has a bottom.
+    positions.setXYZ(i, Math.abs(x) === 32 ? x * 8 : x, y, Math.abs(z) === 32 ? z * 8 : z);
+    const patches = Math.sin(x * 0.8 + phase) * Math.sin(z * 0.64 + x * 0.24);
+    floorColor.copy(wetSand).lerp(silt, THREE.MathUtils.clamp(-y / 7 + patches * 0.13, 0, 1));
+    floorColor.toArray(colors, i * 3);
   }
+  floorGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  floorGeometry.computeVertexNormals();
+  const floor = new THREE.Mesh(floorGeometry, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  floor.receiveShadow = true;
+
+  // Submerged stones give the transparent shallows visible depth cues.
+  for (let i = 0; i < 550; i++) {
+    const x = random() * 44 - 22;
+    const z = random() * 32 - 16;
+    const y = naturalHeight(x, z);
+    if (y > -0.5 || y < -2.5) continue;
+    const size = 0.22 + random() * 0.52;
+    box(x, y, z, size, size * 0.7, size * 0.8, p.rock);
+  }
+  const depth = new THREE.DataTexture(samples, resolution, resolution, THREE.RedFormat);
+  depth.magFilter = depth.minFilter = THREE.LinearFilter;
+  depth.needsUpdate = true;
 
   const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshLambertMaterial(), blocks.length);
   blocks.forEach(({ matrix, color }, i) => {
@@ -130,5 +164,5 @@ export function buildIsland(seed: number, style: Style) {
     mesh.setColorAt(i, new THREE.Color(color));
   });
   mesh.castShadow = mesh.receiveShadow = true;
-  return mesh;
+  return { mesh, floor, depth };
 }

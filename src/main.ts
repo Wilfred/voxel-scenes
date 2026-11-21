@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createWater } from "./water";
 import { buildIsland, styles, type Style } from "./island";
 
 const canvas = document.querySelector("canvas")!;
@@ -17,10 +18,9 @@ if (!context) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   const scene = new THREE.Scene();
+  const cameraTarget = new THREE.Vector3(0, 2, 0);
   const camera = new THREE.OrthographicCamera(-24, 24, 14, -14, 0.1, 350);
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial());
-  sea.rotation.x = -Math.PI / 2;
-  sea.receiveShadow = true;
+  const { sea, surface } = createWater();
   scene.add(sea);
 
   const sun = new THREE.DirectionalLight(0xffeed5, 2.25);
@@ -41,20 +41,28 @@ if (!context) {
   }
   function update() {
     if (island) {
-      scene.remove(island);
-      island.dispose();
-      island.geometry.dispose();
-      island.material.dispose();
+      scene.remove(island.mesh, island.floor);
+      island.floor.geometry.dispose();
+      island.floor.material.dispose();
+      island.depth.dispose();
+      island.mesh.dispose();
+      island.mesh.geometry.dispose();
+      island.mesh.material.dispose();
     }
     island = buildIsland(seed, style);
-    scene.add(island);
+    scene.add(island.mesh, island.floor);
     const p = styles[style];
-    sea.material.color.setHex(p.sea);
+    surface.depth.value = island.depth;
+    surface.deep.value.setHex(p.sea);
+    surface.sky.value.setHex(p.sky);
+    surface.sun.value.fromArray(p.sun).normalize();
+    surface.eye.value.fromArray(p.eye).sub(cameraTarget).normalize();
+    surface.phase.value = (seed % 997) / 53;
     scene.background = new THREE.Color(p.sky);
     scene.fog = style === "vista" ? null : new THREE.FogExp2(p.sky, 0.005);
     sun.position.fromArray(p.sun);
     camera.position.fromArray(p.eye);
-    camera.lookAt(0, 2, 0);
+    camera.lookAt(cameraTarget);
     camera.top = p.span / 2;
     camera.bottom = -camera.top;
     camera.right = camera.top * 16 / 9;
