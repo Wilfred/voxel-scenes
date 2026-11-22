@@ -1,3 +1,4 @@
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { lightScene } from "./lighting";
 import { designGallery } from "./gallery";
 import { defaultDesigns } from "./designs";
@@ -22,6 +23,7 @@ if (!context) {
 } else {
   const renderer = new THREE.WebGLRenderer({ canvas, context });
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   const scene = new THREE.Scene();
   const cameraTarget = new THREE.Vector3(0, 2, 0);
@@ -51,6 +53,32 @@ if (!context) {
   let mesh: ReturnType<typeof buildHillside>["mesh"] | undefined;
   let hillsideWater: THREE.Mesh<THREE.BufferGeometry> | undefined;
   let foam: typeof mesh;
+  const home = new THREE.Spherical(0);
+  const orbit = new OrbitControls(camera, canvas);
+  orbit.enableZoom = orbit.enablePan = false;
+  orbit.minPolarAngle = 0.3;
+  orbit.maxPolarAngle = 1.02;
+  let frame = 0;
+  orbit.addEventListener("change", () => {
+    surface.eye.value.copy(camera.position).sub(orbit.target).normalize();
+    if (!frame) frame = requestAnimationFrame(() => {
+      frame = 0;
+      renderer.render(scene, camera);
+    });
+  });
+  canvas.ondblclick = () => orbit.reset();
+  canvas.onkeydown = event => {
+    switch (event.key) {
+      case "ArrowLeft": orbit.rotateLeft(0.12); break;
+      case "ArrowRight": orbit.rotateLeft(-0.12); break;
+      case "ArrowUp": orbit.rotateUp(0.08); break;
+      case "ArrowDown": orbit.rotateUp(-0.08); break;
+      case "Home": orbit.reset(); break;
+      default: return;
+    }
+    event.preventDefault();
+    orbit.update();
+  };
   function preview() {
     const width = Math.max(1, Math.round(canvas.clientWidth * Math.min(devicePixelRatio, 2)));
     renderer.setSize(width, Math.round(width * 9 / 16), false);
@@ -129,11 +157,20 @@ if (!context) {
       sea.position.set(waterBounds.x, 0.002, waterBounds.z);
       sea.scale.set(waterBounds.width / sea.geometry.parameters.width, waterBounds.depth / sea.geometry.parameters.height, 1);
     }
+    const yaw = home.radius > 0 ? orbit.getAzimuthalAngle() - home.theta : 0;
+    const tilt = home.radius > 0 ? orbit.getPolarAngle() - home.phi : 0;
     if (inland) camera.position.set(16, 30, 40);
     else camera.position.set(8, 27, 43);
     camera.top *= grid;
     camera.far = 350 * grid;
-    camera.position.multiplyScalar(grid).add(cameraTarget);
+    home.setFromVector3(camera.position.multiplyScalar(grid));
+    orbit.target.copy(cameraTarget);
+    camera.position.add(cameraTarget);
+    orbit.update();
+    orbit.saveState();
+    camera.position.setFromSpherical(new THREE.Spherical(home.radius, home.phi + tilt, home.theta + yaw)).add(cameraTarget);
+    orbit.update();
+    renderer.shadowMap.needsUpdate = true;
     scene.background = new THREE.Color(model ? palette.light.backdrop : sky);
     scene.fog = new THREE.FogExp2(sky, 0.005 / grid);
     sun.position.copy(sunOffset).multiplyScalar(grid);
@@ -144,7 +181,6 @@ if (!context) {
     surface.deep.value.setHex(inland ? palette.water.river : palette.water.sea);
     surface.sky.value.setHex(sky);
     surface.sun.value.copy(sun.position).normalize();
-    surface.eye.value.copy(camera.position).sub(cameraTarget).normalize();
     surface.phase.value = (seed % 997) / 53;
     scene.add(mesh);
     canvas.setAttribute("aria-label", hill ? "A hillside cottage overlooking a waterfall and its winding river" : woodland ? "A stream winding through woodland with a timber footbridge" : islandDescription);

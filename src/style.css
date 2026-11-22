@@ -55,3 +55,7 @@ body.idle .wallpaper header, body.idle .toolbox { opacity: 0; pointer-events: no
 @media (prefers-reduced-motion: reduce) {
   .wallpaper header, .toolbox { transition: none; }
 }
+
+.wallpaper > canvas { touch-action: none; cursor: grab; }
+.wallpaper > canvas:active { cursor: grabbing; }
+body.idle .wallpaper > canvas { cursor: none; }
