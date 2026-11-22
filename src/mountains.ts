@@ -1,21 +1,17 @@
+import { treePlanter } from "./trees";
+import { seededRandom, voxelBatch } from "./voxels";
 import { buildCottage } from "./cottage";
 import * as THREE from "three";
 
 export function buildMountains(seed: number) {
-  let state = seed;
-  function random() {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state / 4294967296;
-  }
+  const random = seededRandom(seed);
 
   const phase = random() * Math.PI * 2;
   const summitX = -14 + random() * 5;
   const summitZ = -35 - random() * 5;
   const summitHeight = 36 + random() * 4;
-  const blocks: { matrix: THREE.Matrix4; color: number }[] = [];
-  function box(x: number, y: number, z: number, w: number, h: number, d: number, color: number) {
-    blocks.push({ matrix: new THREE.Matrix4().makeScale(w, h, d).setPosition(x, y, z), color });
-  }
+  const { box, buildMesh } = voxelBatch();
+  const plantTree = treePlanter(box, 0.25);
   function elevation(x: number, z: number) {
     const dx = x - summitX;
     const dz = z - summitZ;
@@ -106,22 +102,14 @@ export function buildMountains(seed: number) {
       const distance = Math.hypot(x - cabinX, z - cabinZ);
       const density = (0.10 + 0.08 * grove) * (distance < 4 ? 0.75 : 1);
       if (stone || distance <= 2.25 || random() > density) continue;
-      const size = 0.62 + random() * 0.55;
-      box(x, h + size * 0.45, z, 0.25, size, 0.25, 0x5a4b40);
-      box(x, h + size, z, size, size, size, 0x31564c);
-      box(x, h + size * 1.8, z, size * 0.68, size * 0.85, size * 0.68, 0x48705b);
+      plantTree(x, h, z, "pine", random() < 0.25);
     }
   }
   buildCottage((x, y, z, w, h, d, color) => {
     box(cabinX + x, foundation + y - 0.4, cabinZ + z, w, h, d, color);
   }, 0x84776e);
 
-  const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshLambertMaterial(), blocks.length);
-  blocks.forEach(({ matrix, color }, i) => {
-    mesh.setMatrixAt(i, matrix);
-    mesh.setColorAt(i, new THREE.Color(color));
-  });
-  mesh.castShadow = mesh.receiveShadow = true;
+  const mesh = buildMesh();
   return {
     mesh,
     cabin: new THREE.Vector3(cabinX, foundation + 1, cabinZ),

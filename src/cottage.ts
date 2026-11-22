@@ -1,4 +1,5 @@
-type Box = (x: number, y: number, z: number, w: number, h: number, d: number, color: number) => void;
+import type { Box } from "./voxels";
+
 
 export function buildCottage(box: Box, stone: number) {
   // Build in quarter-unit bricks, with the doorstep as the vertical origin.

@@ -1,18 +1,16 @@
+import { treePlanter } from "./trees";
+import { seededRandom, voxelBatch } from "./voxels";
 import { buildCottage } from "./cottage";
 import * as THREE from "three";
 
 export const islandPalette = {
   sea: 0x397e92, sky: 0xffd1a4, beach: 0xffcd85, turf: 0xc1ac60, rock: 0xbd8468,
-  pine: 0x235a59, tip: 0x387773, sun: [-35, 16, 14], eye: [8, 29, 43], span: 25,
+  sun: [-35, 16, 14], eye: [8, 29, 43], span: 25,
 };
 
 export function buildIsland(seed: number) {
   const p = islandPalette;
-  let state = seed;
-  function random() {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state / 4294967296;
-  }
+  const random = seededRandom(seed);
 
   const phase = random() * Math.PI * 2;
   const bayX = 1 + random() * 2;
@@ -51,10 +49,8 @@ export function buildIsland(seed: number) {
     return naturalHeight(x, z);
   }
 
-  const blocks: { matrix: THREE.Matrix4; color: number }[] = [];
-  function box(x: number, y: number, z: number, w: number, h: number, d: number, color: number) {
-    blocks.push({ matrix: new THREE.Matrix4().makeScale(w, h, d).setPosition(x, y, z), color });
-  }
+  const { box, buildMesh } = voxelBatch();
+  const plantTree = treePlanter(box, 0.25);
 
   for (let z = -14; z <= 14; z += 0.5) {
     for (let x = -21; x <= 21; x += 0.5) {
@@ -75,12 +71,7 @@ export function buildIsland(seed: number) {
       const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
       const density = (x < -6 ? 0.26 : 0.14) * grove;
       if (Math.hypot(x - cottageX, z - cottageZ) < 2 || random() > density) continue;
-      const size = 0.32 + random() * 0.43;
-      box(x, top + 0.6 * size, z, size * 0.32, size, size * 0.32, 0x635345);
-      for (let tier = 0; tier < 3; tier++) {
-        const width = size * (1.65 - tier * 0.45);
-        box(x, top + (1.1 + tier * 0.66) * size, z, width, size, width, tier === 2 ? p.tip : p.pine);
-      }
+      plantTree(x, top + 0.06, z, "pine", random() < 0.25);
     }
   }
 
@@ -146,11 +137,6 @@ export function buildIsland(seed: number) {
   depth.magFilter = depth.minFilter = THREE.LinearFilter;
   depth.needsUpdate = true;
 
-  const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshLambertMaterial(), blocks.length);
-  blocks.forEach(({ matrix, color }, i) => {
-    mesh.setMatrixAt(i, matrix);
-    mesh.setColorAt(i, new THREE.Color(color));
-  });
-  mesh.castShadow = mesh.receiveShadow = true;
+  const mesh = buildMesh();
   return { mesh, floor, depth };
 }

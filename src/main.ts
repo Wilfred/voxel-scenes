@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { buildMountains } from "./mountains";
+import { buildWoods } from "./woods";
 import { createWater } from "./water";
 import { buildIsland, islandPalette } from "./island";
 
@@ -51,6 +52,7 @@ if (!context) {
   const generate = document.querySelector<HTMLButtonElement>("#generate")!;
   const islandDescription = canvas.getAttribute("aria-label")!;
   let island: ReturnType<typeof buildIsland> | undefined;
+  let woodlandDepth: THREE.Texture | undefined;
   let mesh: ReturnType<typeof buildMountains>["mesh"] | undefined;
   function preview() {
     const width = Math.max(1, Math.round(canvas.clientWidth * Math.min(devicePixelRatio, 2)));
@@ -58,6 +60,8 @@ if (!context) {
     renderer.render(scene, sceneSelect.value === "mountains" ? alpineCamera : camera);
   }
   function update() {
+    woodlandDepth?.dispose();
+    woodlandDepth = undefined;
     if (island) {
       scene.remove(island.floor);
       island.floor.geometry.dispose();
@@ -73,7 +77,7 @@ if (!context) {
     }
 
     const mountain = sceneSelect.value === "mountains";
-    const p = islandPalette;
+    const woodland = sceneSelect.value === "woods";
     sea.visible = !mountain;
     scene.backgroundRotation.y = mountain ? skyRotation : 0;
     renderer.toneMapping = mountain ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
@@ -101,11 +105,19 @@ if (!context) {
       sun.target.position.set(-6, 10, -15);
       sun.position.copy(sun.target.position).addScaledVector(alpineSun, 95);
     } else {
-      island = buildIsland(seed);
-      mesh = island.mesh;
-      scene.add(island.floor);
+      const p = woodland ? { sea: 0x528e89, sky: 0xffdfa8, sun: [-23, 30, 14], eye: [16, 32, 40], span: 30 } : islandPalette;
+      if (woodland) {
+        const woods = buildWoods(seed);
+        mesh = woods.mesh;
+        woodlandDepth = woods.depth;
+        surface.depth.value = woods.depth;
+      } else {
+        island = buildIsland(seed);
+        mesh = island.mesh;
+        scene.add(island.floor);
+        surface.depth.value = island.depth;
+      }
       cameraTarget.set(0, 2, 0);
-      surface.depth.value = island.depth;
       surface.deep.value.setHex(p.sea);
       surface.sky.value.setHex(p.sky);
       surface.sun.value.fromArray(p.sun).normalize();
@@ -119,14 +131,14 @@ if (!context) {
       camera.top = p.span / 2;
     }
     scene.add(mesh);
-    canvas.setAttribute("aria-label", mountain ? "A cabin on the wooded shoulder of a snowcapped mountain under a clouded sky" : islandDescription);
-    generate.textContent = mountain ? "New mountains" : "New island";
+    canvas.setAttribute("aria-label", mountain ? "A cabin on the wooded shoulder of a snowcapped mountain under a clouded sky" : woodland ? "A stream winding through woodland with a timber footbridge" : islandDescription);
+    generate.textContent = mountain ? "New mountains" : woodland ? "New woods" : "New island";
     camera.lookAt(cameraTarget);
     camera.bottom = -camera.top;
     camera.right = camera.top * 16 / 9;
     camera.left = -camera.right;
     camera.updateProjectionMatrix();
-    document.querySelector("#seed")!.textContent = (mountain ? "Mountains " : "Island ") + seed;
+    document.querySelector("#seed")!.textContent = (mountain ? "Mountains " : woodland ? "Woods " : "Island ") + seed;
     preview();
   }
 

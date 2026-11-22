@@ -6,7 +6,7 @@ wallpapers.
 ## Local development
 
 With Node.js 22.12 or newer installed, run `npm ci` and `npm run dev`,
-then open the local URL printed by Vite. Choose Crescent bay or Mountain vista,
+then open the local URL printed by Vite. Choose Crescent bay, Mountain vista, or Woodland stream,
 generate a new landscape, or save the view as a 2560 × 1440 PNG.
 
 Run `npm run build` to type-check the TypeScript and create the static site
