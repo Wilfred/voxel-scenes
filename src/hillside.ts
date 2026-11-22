@@ -1,3 +1,4 @@
+import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
 import { treeVoxel } from "./scale";
 import { defaultDesigns } from "./designs";
@@ -13,12 +14,13 @@ import { seededRandom, voxelBatch } from "./voxels";
 
 export function buildHillside(seed: number, model: boolean, grid = 1, designs = defaultDesigns) {
   const random = seededRandom(seed);
+  const relief = terrainField(seed);
   const phase = random() * Math.PI * 2;
   const drop = 3 + Math.floor(random() * 3) * 0.5;
   const lip = -2;
   const { box, terrainLayer, buildMesh } = voxelBatch();
   const base = terrainLayer(), ground = terrainLayer();
-  const plantTree = treePlanter(box, treeVoxel, designs);
+  const plantTree = treePlanter(box, treeVoxel, designs, seed);
 
   function channel(z: number) {
     return 3 + 3.5 * Math.sin(z * 0.11 + phase) + 1.5 * Math.sin(z * 0.23);
@@ -40,7 +42,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
     if (bank < 0) return level(x, z) - 0.5 - Math.floor(-bank * 1.5) / 2;
     // The rock sill cuts across the stream. On either side it eases into a hillside.
     const shoulder = Math.min(1, Math.max(0, 0.5 + (lip + 0.5 - z) / (1 + bank * 1.6)));
-    const hill = 5 + 2.5 * Math.sin(x * 0.11 + phase) + 2 * Math.cos(z * 0.12);
+    const hill = 8 + 10 * relief(x, z);
     return 0.5 + Math.round(2 * (drop * shoulder + hill * (1 - Math.exp(-bank / 10)))) / 2;
   }
 

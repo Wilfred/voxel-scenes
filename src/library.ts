@@ -1,13 +1,12 @@
 import { buildOutbuilding, buildingNames } from "./outbuildings";
-import { treeVoxel } from "./scale";
 import * as THREE from "three";
 import { buildCottage } from "./cottage";
-import { defaultDesigns, designNames } from "./designs";
+import { designNames } from "./designs";
 import { addBird } from "./ducks";
 import { lightScene } from "./lighting";
 import { palette } from "./palette";
 import { firewood, footbridge, pier, shoreStairs, waypost } from "./trail-details";
-import { treePlanter } from "./trees";
+import { treeStudy } from "./trees";
 import { voxelBatch, type Box } from "./voxels";
 
 type Asset = { name: string; draw: (box: Box) => void };
@@ -16,9 +15,7 @@ function trees(species: "pine" | "broadleaf"): Asset[] {
   return designNames[species].map((name, index) => ({
     name,
     draw(box) {
-      const plant = treePlanter(box, treeVoxel, { ...defaultDesigns, [species]: index });
-      plant(-0.75, 0, 0, species, false);
-      plant(1.5, 0, 0, species, true);
+      treeStudy(box, species, index);
     },
   }));
 }

@@ -1,10 +1,9 @@
-import { treeVoxel } from "./scale";
 import { lightScene } from "./lighting";
 import * as THREE from "three";
 import { buildCottage } from "./cottage";
 import { defaultDesigns, designNames, type Family } from "./designs";
 import { palette } from "./palette";
-import { treePlanter } from "./trees";
+import { treeStudy } from "./trees";
 import { voxelBatch } from "./voxels";
 
 export function designGallery(designs: typeof defaultDesigns, apply: () => void) {
@@ -29,9 +28,7 @@ export function designGallery(designs: typeof defaultDesigns, apply: () => void)
       const { box, buildMesh } = voxelBatch();
       if (family === "cottage") buildCottage(box, index);
       else {
-        const plant = treePlanter(box, treeVoxel, { ...designs, [family]: index });
-        plant(-0.8, 0, 0, family, false);
-        plant(1.4, 0, 0.5, family, true);
+        treeStudy(box, family, index);
       }
       box(0, -0.125, 0, 5.25, 0.25, 3, palette.green.grass);
       const mesh = buildMesh();

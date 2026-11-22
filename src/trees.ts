@@ -1,3 +1,4 @@
+import { treeVoxel } from "./scale";
 import { defaultDesigns } from "./designs";
 import { palette } from "./palette";
 import type { Box } from "./voxels";
@@ -34,7 +35,7 @@ const profiles: Record<Species, [Profile, Profile][]> = {
   ],
 };
 
-export function treePlanter(box: Box, voxel: number, designs = defaultDesigns) {
+export function treePlanter(box: Box, voxel: number, designs = defaultDesigns, seed = 0) {
   type CrownBox = { x: number; y: number; z: number; width: number; height: number; depth: number };
   const stands = new Map<string, CrownBox[]>();
   const adultRoots = new Set<string>();
@@ -63,13 +64,15 @@ export function treePlanter(box: Box, voxel: number, designs = defaultDesigns) {
       ? { trunk: palette.wood, leaf: palette.green.pine, tip: palette.green.pineTip }
       : { trunk: palette.wood, leaf: palette.green.leaf, tip: palette.green.leafTip };
 
+    const twist = Math.imul(gx ^ seed, 73856093) ^ Math.imul(gz, 19349663);
+    const quarterTurn = ((twist ^ (twist >>> 16)) & 1) === 1;
     let base = 0;
     const parts = model.map(([width, layers, depth], i) => {
       const part = i === 0 ? "trunk" : i === model.length - 1 ? "tip" : "leaf";
       const height = layers + (i === 0 && crowded ? 1 : 0);
       const bottom = base;
       base += height;
-      return { width, depth, height, bottom, color: foliage[part] };
+      return { width: quarterTurn ? depth : width, depth: quarterTurn ? width : depth, height, bottom, color: foliage[part] };
     });
     const boxes = parts.map(p => ({
       x: gx, y: gy + p.bottom + p.height / 2, z: gz, width: p.width, height: p.height, depth: p.depth,
@@ -103,4 +106,10 @@ export function treePlanter(box: Box, voxel: number, designs = defaultDesigns) {
       }
     }
   };
+}
+
+export function treeStudy(box: Box, species: Species, index: number) {
+  const plant = treePlanter(box, treeVoxel, { ...defaultDesigns, [species]: index });
+  plant(-0.75, 0, 0, species, false);
+  plant(1.5, 0, 0, species, true);
 }

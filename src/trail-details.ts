@@ -9,9 +9,9 @@ export function firewood(box: Box, x: number, h: number, z: number) {
   box(x - 0.125, h + 0.625, z, 1.5, 0.25, 0.5, palette.wood);
 }
 
-export function waypost(box: Box, x: number, h: number, z: number) {
-  box(x, h + 0.75, z, 0.25, 1.5, 0.25, palette.wood);
-  box(x, h + 1.5, z + 0.125, 1.5, 0.5, 0.25, palette.wood);
+export function waypost(box: Box, x: number, h: number, z: number, acrossBridge = false) {
+  box(x, h + 0.375, z, 0.125, 0.75, 0.125, palette.wood);
+  box(x, h + 0.8125, z, acrossBridge ? 0.125 : 0.75, 0.25, acrossBridge ? 0.75 : 0.125, palette.wood);
 }
 
 export function footbridge(box: Box, west: number, east: number, bridgeZ: number, elevation: Elevation) {

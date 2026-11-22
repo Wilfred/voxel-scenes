@@ -1,3 +1,4 @@
+import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
 import { treeVoxel } from "./scale";
 import { pier, shoreStairs } from "./trail-details";
@@ -13,6 +14,7 @@ import * as THREE from "three";
 export function buildIsland(seed: number, model: boolean, grid = 1, designs = defaultDesigns) {
   const bounds = { x: 0, z: 0, width: 38 * grid, depth: 28 * grid };
   const random = seededRandom(seed);
+  const relief = terrainField(seed);
 
   const phase = random() * Math.PI * 2;
   const bayX = 1 + random() * 2;
@@ -30,7 +32,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     const inner = (Math.hypot((x - bayX) / bayWidth, (z - bayZ) / 10) - 1) * 9;
     const inland = Math.min(outer, inner);
     const ridge = Math.exp(-((x - ridgeX) ** 2 / 36 + (z + 1) ** 2 / 68));
-    return Math.floor(inland * (0.7 + 1.55 * ridge) / unit) * unit;
+    return Math.floor(inland * (0.7 + 1.55 * ridge + 0.6 * relief(worldX, worldZ)) / unit) * unit;
   }
 
   // Survey water cells touching dry land. Ranking the nearest one for each
@@ -100,7 +102,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
 
   const { box, terrainLayer, buildMesh } = voxelBatch();
   const base = terrainLayer(), ground = terrainLayer();
-  const plantTree = treePlanter(box, treeVoxel, designs);
+  const plantTree = treePlanter(box, treeVoxel, designs, seed);
 
   // Follow a walkable contour inland from the shore stairs before looking
   // for a loft site. The selected approach becomes the path to its door.
