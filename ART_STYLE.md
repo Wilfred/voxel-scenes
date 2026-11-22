@@ -10,6 +10,11 @@ as a reference for how coarse the blocks in a woodland prop can be.
 For wildlife, aim for a few shapes that identify the animal from the wallpaper
 camera, as the rabbit's ears do in [Voxel Tiny Animals](https://vox-fox.itch.io/voxel-tiny-animals).
 
+For a sense of miniature scale, look at Four-Plate Fig Scale (1:120) and
+smaller in [ACT Museum's 12 Scales of LEGO](https://actmuseum.org/2025/01/28/12-scales-of-lego/).
+A walker can read from a head and coat, and a distant cottage from its roof,
+chimney, and doorway. Choose the few features still visible across the valley.
+
 ## Vistas and dioramas
 
 A vista looks out across a landscape that continues beyond the frame.
