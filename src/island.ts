@@ -1,14 +1,13 @@
+import { buildCottage } from "./cottage";
 import * as THREE from "three";
 
-export const styles = {
-  miniature: { sea: 0x79b7ae, sky: 0xffe9ca, beach: 0xe4c893, turf: 0x99aa61, rock: 0xa79c85, pine: 0x426d49, tip: 0x73924f, roof: 0xa95837, sun: [24, 38, 18], eye: [31, 28, 40], span: 30 },
-  vista: { sea: 0x418eac, sky: 0xb5dcf2, beach: 0xf1d593, turf: 0xa2c669, rock: 0xab9381, pine: 0x316c61, tip: 0x71a85c, roof: 0xc26040, sun: [-18, 30, 22], eye: [14, 14, 48], span: 23 },
-  graphic: { sea: 0x397e92, sky: 0xffd1a4, beach: 0xffcd85, turf: 0xc1ac60, rock: 0xbd8468, pine: 0x235a59, tip: 0x387773, roof: 0xe06d3f, sun: [-35, 16, 14], eye: [8, 29, 43], span: 25 },
+export const islandPalette = {
+  sea: 0x397e92, sky: 0xffd1a4, beach: 0xffcd85, turf: 0xc1ac60, rock: 0xbd8468,
+  pine: 0x235a59, tip: 0x387773, sun: [-35, 16, 14], eye: [8, 29, 43], span: 25,
 };
-export type Style = keyof typeof styles;
 
-export function buildIsland(seed: number, style: Style) {
-  const p = styles[style];
+export function buildIsland(seed: number) {
+  const p = islandPalette;
   let state = seed;
   function random() {
     state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
@@ -89,20 +88,9 @@ export function buildIsland(seed: number, style: Style) {
     box(cottageX + x * cottageScale, terrace + 0.16 + y * cottageScale, cottageZ + z * cottageScale,
       w * cottageScale, h * cottageScale, d * cottageScale, color);
   }
-  cottageBox(0, 0, 0, 2.5, 0.8, 1.9, p.rock);
-  cottageBox(0, 0.85, 0, 2.3, 1.4, 1.7, 0xf4dcab);
-  for (let i = 0; i < 4; i++) {
-    cottageBox(0, 1.58 + i * 0.19, 0, 2.65, 0.22, 2.16 - i * 0.48, p.roof);
-  }
-  cottageBox(0.7, 2.1, 0.25, 0.37, 1, 0.4, p.rock);
-  cottageBox(-0.4, 0.94, 0.87, 0.45, 0.5, 0.09, 0xedac59);
-  for (let i = 0; i < 3; i++) {
-    cottageBox(0.7 + i * 0.24, 2.94 + i * 0.45, 0.25, 0.27 + i * 0.06, 0.26, 0.3, 0xe4ddd0);
-  }
+  buildCottage(cottageBox, p.rock);
 
-  cottageBox(0, 0.86, 0.87, 0.46, 0.92, 0.10, 0x635345);
-
-  const doorZ = cottageZ + 0.85 * cottageScale;
+  const doorZ = cottageZ + cottageScale;
   box(cottageX, foundationTop - 0.06, (doorZ + stairStart) / 2,
     0.72, 0.12, stairStart - doorZ, 0xa7835b);
   for (let i = 0; i < risers; i++) {

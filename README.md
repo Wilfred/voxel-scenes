@@ -6,8 +6,11 @@ wallpapers.
 ## Local development
 
 With Node.js 22.12 or newer installed, run `npm ci` and `npm run dev`,
-then open the local URL printed by Vite. Switch styles to compare three views of the same wooded island,
-generate a new island, or save the current view as a 2560 × 1440 PNG.
+then open the local URL printed by Vite. Choose Crescent bay or Mountain vista,
+generate a new landscape, or save the view as a 2560 × 1440 PNG.
 
 Run `npm run build` to type-check the TypeScript and create the static site
 in `dist/`. Run `npm run preview` to serve that build locally.
+
+The mountain sky uses a tone-mapped copy of the CC0 panorama
+[Kloofendal 48d Partly Cloudy from Poly Haven](https://polyhaven.com/a/kloofendal_48d_partly_cloudy).
