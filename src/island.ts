@@ -7,6 +7,7 @@ import { defaultDesigns } from "./designs";
 import { findSite } from "./sites";
 import { waterfowl } from "./ducks";
 import { palette } from "./palette";
+import { depthTexture } from "./water";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import { buildCottage, cottageDoor } from "./cottage";
@@ -208,9 +209,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     box(x, y, z, size, size * 0.7, size * 0.8, palette.ground.stone);
   }
   waterfowl(box, bayX * grid - 0.5, bayZ * grid + 0.5, -0.45, (x, z) => -naturalHeight(x, z), true);
-  const depth = new THREE.DataTexture(samples, resolution, resolution, THREE.RedFormat);
-  depth.magFilter = depth.minFilter = THREE.LinearFilter;
-  depth.needsUpdate = true;
+  const depth = { texture: depthTexture(samples, resolution), extent: 64 * grid };
 
   if (model) {
     // Enclose the bounded seabed and water on the four exposed cut faces.

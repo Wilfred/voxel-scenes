@@ -2,19 +2,26 @@ import { rayUniforms, voxelTrace } from "./contact-rays";
 import { palette } from "./palette";
 import * as THREE from "three";
 
-// Water samples the terrain on a grid-scaled square centred at the origin.
-export function riverDepthMap(depthAt: (x: number, z: number) => number, grid = 1) {
-  const size = Math.max(128, Math.ceil(64 * grid));
+// Water depth sampled on a square of side `extent` centred at the origin.
+export type DepthMap = { texture: THREE.DataTexture; extent: number };
+
+export function depthTexture(samples: Uint8Array, size: number) {
+  const texture = new THREE.DataTexture(samples, size, size, THREE.RedFormat);
+  texture.magFilter = texture.minFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+// Sample at least once per terrain cell so the whole channel has a depth.
+export function riverDepthMap(depthAt: (x: number, z: number) => number, extent: number): DepthMap {
+  const size = THREE.MathUtils.clamp(Math.ceil(extent), 128, 2048);
   const samples = new Uint8Array(size * size);
   for (let i = 0; i < samples.length; i++) {
-    const x = Math.floor(((i % size + 0.5) * 64 / size - 32) * grid + 0.5);
-    const z = Math.floor(((Math.floor(i / size) + 0.5) * 64 / size - 32) * grid + 0.5);
+    const x = Math.floor(((i % size + 0.5) / size - 0.5) * extent + 0.5);
+    const z = Math.floor(((Math.floor(i / size) + 0.5) / size - 0.5) * extent + 0.5);
     samples[i] = Math.round(255 * THREE.MathUtils.clamp(depthAt(x, z) / 6, 0, 1));
   }
-  const depth = new THREE.DataTexture(samples, size, size, THREE.RedFormat);
-  depth.magFilter = depth.minFilter = THREE.LinearFilter;
-  depth.needsUpdate = true;
-  return depth;
+  return { texture: depthTexture(samples, size), extent };
 }
 
 // Retain Three's lighting and island shadows underneath the reflected sky.
@@ -22,6 +29,7 @@ export function createWater() {
   const rays = rayUniforms();
   const surface = {
     depth: { value: null as THREE.Texture | null },
+    depthExtent: { value: 64 },
     deep: { value: new THREE.Color() },
     sky: { value: new THREE.Color() },
     sun: { value: new THREE.Vector3() },
@@ -39,7 +47,7 @@ export function createWater() {
       horizonTint: surface.horizon,
       zenithTint: surface.zenith, ripple: surface.ripple, rain: surface.rain,
       glintTint: { value: new THREE.Color(palette.light.sunGlint) },
-      seabed: surface.depth, deepWater: surface.deep, skyTint: surface.sky,
+      seabed: surface.depth, depthExtent: surface.depthExtent, deepWater: surface.deep, skyTint: surface.sky,
       gridScale: surface.grid, sunlight: surface.sun, viewDirection: surface.eye, wavePhase: surface.phase,
     });
     shader.vertexShader = 'varying vec3 waterPoint, waterNormal;\n' + shader.vertexShader.replace(
@@ -53,7 +61,7 @@ export function createWater() {
       uniform sampler2D seabed;
       uniform vec3 horizonTint, zenithTint, glintTint;
       uniform vec3 deepWater, skyTint, sunlight, viewDirection;
-      uniform float wavePhase, gridScale, ripple, rain;
+      uniform float wavePhase, gridScale, ripple, rain, depthExtent;
       float hashWave(vec2 cell) {
         vec3 q = fract(vec3(cell.xyx) * 0.1031);
         q += dot(q, q.yzx + 33.33);
@@ -79,7 +87,7 @@ export function createWater() {
     ` + shader.fragmentShader.replace('#include <color_fragment>', `
       #include <color_fragment>
       vec2 p = waterPoint.xz;
-      float depthFraction = texture2D(seabed, p / (64.0 * gridScale) + 0.5).r;
+      float depthFraction = texture2D(seabed, p / depthExtent + 0.5).r;
       vec2 wind = vec2(0.92, 0.392);
       vec2 across = vec2(-wind.y, wind.x);
       vec2 uv = vec2(dot(p, wind), dot(p, across)) + wavePhase;

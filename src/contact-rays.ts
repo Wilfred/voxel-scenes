@@ -33,21 +33,34 @@ export const voxelTrace = `
       }
 `;
 
-// Use a bounded occupancy volume shared by all instance batches. Thin details
+function nearestSwatch(swatches: Uint8Array, rgb: number) {
+  let best = 1, distance = Infinity;
+  for (let id = 1; id < 256; id++) {
+    const d = (swatches[id * 4] - (rgb >> 16)) ** 2 + (swatches[id * 4 + 1] - ((rgb >> 8) & 255)) ** 2
+      + (swatches[id * 4 + 2] - (rgb & 255)) ** 2;
+    if (d < distance) { distance = d; best = id; }
+  }
+  return best;
+}
+
+// Cover every instance batch with one occupancy volume. Landscapes keep a
+// cell no finer than a quarter of their grid scale, coarsening further when
+// the landscape would exceed the largest volume the GPU accepts. Thin details
 // smaller than a cell keep their ordinary raster lighting.
 export function contactRays(
   mesh: THREE.InstancedMesh<THREE.BoxGeometry, THREE.MeshLambertMaterial>,
   grid?: number,
   uniforms = rayUniforms(),
+  maxCells = 256,
 ) {
-  const bounds = grid === undefined ? new THREE.Box3().setFromObject(mesh) : undefined;
-  const extent = bounds?.getSize(new THREE.Vector3());
-  const cell = extent ? Math.max(1 / 32, extent.length() / 48) : Math.max(0.25, grid! / 4);
-  const width = extent ? Math.ceil(extent.x / cell) + 4 : 256;
-  const height = extent ? Math.ceil(extent.y / cell) + 4 : Math.ceil(36 / cell);
-  const depth = extent ? Math.ceil(extent.z / cell) + 4 : width;
-  const origin = bounds ? bounds.min.clone().addScalar(-2 * cell)
-    : new THREE.Vector3((-width * cell) / 2, -5, (-depth * cell) / 2);
+  const bounds = new THREE.Box3().setFromObject(mesh);
+  const extent = bounds.getSize(new THREE.Vector3());
+  const cell = grid === undefined ? Math.max(1 / 32, extent.length() / 48)
+    : Math.max(0.25, grid / 4, (Math.max(extent.x, extent.y, extent.z) + 4) / (maxCells - 4));
+  const width = Math.ceil(extent.x / cell) + 4;
+  const height = Math.ceil(extent.y / cell) + 4;
+  const depth = Math.ceil(extent.z / cell) + 4;
+  const origin = bounds.min.clone().addScalar(-2 * cell);
   const mask = new Uint8Array(width * height * depth);
   const swatches = new Uint8Array(256 * 4);
   const colorIds = new Map<number, number>();
@@ -73,9 +86,10 @@ export function contactRays(
       const rgb = tint.getHex();
       let id = colorIds.get(rgb);
       if (id === undefined) {
-        id = colorIds.size + 1;
+        // Ids are stored in an 8-bit volume. Beyond 255 colours, reuse the nearest swatch.
+        id = colorIds.size < 255 ? colorIds.size + 1 : nearestSwatch(swatches, rgb);
+        if (colorIds.size < 255) swatches.set([rgb >> 16, (rgb >> 8) & 255, rgb & 255, 255], id * 4);
         colorIds.set(rgb, id);
-        swatches.set([rgb >> 16, (rgb >> 8) & 255, rgb & 255, 255], id * 4);
       }
       for (let row = Math.max(0, Math.ceil(y - Math.abs(m[5]) / (2 * cell) - 0.5)); row < top; row++) {
         for (let slice = back; slice < front; slice++) {

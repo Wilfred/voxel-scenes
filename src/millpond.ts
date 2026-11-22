@@ -157,7 +157,7 @@ export function buildMillpond(
     }
   return {
     mesh: buildMesh(),
-    depth: riverDepthMap((x, z) => -elevation(x, z), grid),
+    depth: riverDepthMap((x, z) => -elevation(x, z), 2 * Math.max(radiusX, radiusZ) + 1),
     bounds: { x: 0, z: 0, width: radiusX * 2 + 1, depth: radiusZ * 2 + 1 },
   };
 }

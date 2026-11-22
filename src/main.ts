@@ -10,7 +10,7 @@ import { palette } from "./palette";
 import * as THREE from "three";
 import { buildHillside } from "./hillside";
 import { buildWoods } from "./woods";
-import { createWater } from "./water";
+import { createWater, type DepthMap } from "./water";
 import { buildIsland } from "./island";
 
 const canvas = document.querySelector("canvas")!;
@@ -26,6 +26,7 @@ if (!context) {
   status.textContent = "This preview requires WebGL 2. Check that hardware acceleration is enabled in your browser.";
 } else {
   const renderer = new THREE.WebGLRenderer({ canvas, context });
+  const volumeLimit = Math.min(512, context.getParameter(context.MAX_3D_TEXTURE_SIZE));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -53,7 +54,7 @@ if (!context) {
   const generate = document.querySelector<HTMLButtonElement>("#generate")!;
   const islandDescription = canvas.getAttribute("aria-label")!;
   let island: ReturnType<typeof buildIsland> | undefined;
-  let riverDepth: THREE.Texture | undefined;
+  let riverDepth: DepthMap | undefined;
   let mesh: ReturnType<typeof buildHillside>["mesh"] | undefined;
   let hillsideWater: THREE.Mesh<THREE.BufferGeometry> | undefined;
   let foam: typeof mesh;
@@ -110,7 +111,7 @@ if (!context) {
     renderer.render(scene, camera);
   }
   function updateRays() {
-    if (tracing.checked && mesh && !clearRays) clearRays = contactRays(mesh, surface.grid.value, rays);
+    if (tracing.checked && mesh && !clearRays) clearRays = contactRays(mesh, surface.grid.value, rays, volumeLimit);
     rays.tracingEnabled.value = tracing.checked;
   }
   function applyWeather() {
@@ -147,13 +148,13 @@ if (!context) {
       foam.material.dispose();
       foam = undefined;
     }
-    riverDepth?.dispose();
+    riverDepth?.texture.dispose();
     riverDepth = undefined;
     if (island) {
       scene.remove(island.floor);
       island.floor.geometry.dispose();
       island.floor.material.dispose();
-      island.depth.dispose();
+      island.depth.texture.dispose();
       island = undefined;
     }
     clearRays?.();
@@ -236,7 +237,9 @@ if (!context) {
     Object.assign(sun.shadow.camera, { left: -28 * grid, right: 28 * grid, top: 24 * grid, bottom: -24 * grid, far: 100 * grid });
     sun.shadow.camera.updateProjectionMatrix();
     surface.grid.value = grid;
-    surface.depth.value = riverDepth ?? island?.depth ?? null;
+    const depthMap = riverDepth ?? island?.depth;
+    surface.depth.value = depthMap?.texture ?? null;
+    surface.depthExtent.value = depthMap?.extent ?? 64 * grid;
     surface.deep.value.setHex(inland ? palette.water.river : palette.water.sea);
     applyWeather();
     updateRays();
