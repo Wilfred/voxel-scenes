@@ -24,7 +24,7 @@ function trees(species: "pine" | "broadleaf"): Asset[] {
 function library(renderer: THREE.WebGLRenderer) {
   const collection = document.querySelector<HTMLElement>("#collection")!;
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(palette.light.backdrop);
+  scene.background = new THREE.Color(palette.light.forestSky);
   lightScene(scene);
   const camera = new THREE.OrthographicCamera();
   const draws = new Map<Element, () => void>();

@@ -29,6 +29,6 @@ header a, .library a { color: #294e40; text-underline-offset: .2em; }
 .library h2 { font: 500 1.65rem Georgia, serif; }
 .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr)); gap: 1rem; }
 .asset-grid figure { margin: 0; }
-.asset-grid canvas { aspect-ratio: 4 / 3; background: #39494f; border-radius: .4rem; cursor: grab; touch-action: none; }
+.asset-grid canvas { aspect-ratio: 4 / 3; background: #e4e9d9; border-radius: .4rem; cursor: grab; touch-action: none; }
 .asset-grid canvas:active { cursor: grabbing; }
 .asset-grid figcaption { padding-top: .35rem; }
