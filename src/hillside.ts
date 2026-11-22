@@ -1,3 +1,5 @@
+import { findSite } from "./sites";
+import { waterfowl } from "./ducks";
 import { riverDepthMap } from "./water";
 import * as THREE from "three";
 import { buildCottage } from "./cottage";
@@ -40,35 +42,41 @@ export function buildHillside(seed: number, model: boolean) {
   }
 
   // Find an existing shelf above the pool, with a level step at the door.
-  let cabinX = -8, cabinZ = -8, floor = 0, best = Infinity;
-  for (let z = -12; z <= -6; z++) {
-    for (let x = -14; x <= -4; x++) {
-      if (x > channel(z) - 6) continue;
-      const footprint = [];
-      for (let dz = -1; dz <= 1; dz++) {
-        for (let dx = -1; dx <= 1; dx++) footprint.push(elevation(x + dx, z + dz));
-      }
-      const high = Math.max(...footprint);
-      const score = (high - Math.min(...footprint)) * 8 + (high - elevation(x, z + 1)) * 5
-        + Math.hypot(x + 8, z + 8) * 0.35;
-      if (score < best) { best = score; cabinX = x; cabinZ = z; floor = high; }
+  const cabin = findSite(-14, -4, -12, -6, 1, (x, z) => {
+    if (x > channel(z) - 6) return Infinity;
+    const footprint = [];
+    for (let dz = -1; dz <= 1; dz++) {
+      for (let dx = -1; dx <= 1; dx++) footprint.push(elevation(x + dx, z + dz));
     }
-  }
+    const high = Math.max(...footprint);
+    return (high - Math.min(...footprint)) * 8 + (high - elevation(x, z + 1)) * 5
+      + Math.hypot(x + 8, z + 8) * 0.35;
+  })!;
+  const { x: cabinX, z: cabinZ } = cabin;
+  const floor = elevation(cabinX, cabinZ + 1);
   const landingZ = lip - 1;
   let landingX = Math.floor(channel(landingZ));
   while (bankDistance(landingX, landingZ) < 0) landingX--;
-  const trail = terrainTrail(elevation);
-  trail.route([[cabinX, cabinZ + 1], [cabinX + 1, cabinZ + 3], [landingX - 2, landingZ],
-    [landingX, landingZ]]);
+  const trail = terrainTrail(elevation, (x, z) => z >= cabinZ + 1 && bankDistance(x, z) >= 0);
+  trail.route([[cabinX, cabinZ + 1], [landingX, landingZ]]);
   buildCottage((x, y, z, w, h, d, color) => {
     box(cabinX + x, floor + y - 0.4, cabinZ + z, w, h, d, color);
   });
-  firewood(box, cabinX - 2, elevation(cabinX - 2, cabinZ), cabinZ);
-  const landing = trail.tiles.get(landingX + "," + landingZ)!;
-  // A bucket on the stone water step gives the cottage path a destination.
-  box(landingX, landing + 0.125, landingZ, 1, 0.25, 1, palette.ground.stone);
-  box(landingX - 0.25, landing + 0.375, landingZ, 0.375, 0.25, 0.375, palette.wood);
-  box(landingX - 0.25, landing + 0.505, landingZ, 0.25, 0.015, 0.25, palette.water.river);
+  // The stack spans exactly two cells. Both must support the cut ends,
+  // outside the cottage walls and away from the walked route.
+  const stack = findSite(cabinX - 3.5, cabinX + 3.5, cabinZ - 3, cabinZ + 3, 1, (x, z) => {
+    if (Math.abs(x - cabinX) < 2.5 && Math.abs(z - cabinZ) < 2) return Infinity;
+    for (const ox of [-0.5, 0.5]) {
+      if (trail.tiles.has((x + ox) + "," + z) || bankDistance(x + ox, z) < 0) return Infinity;
+    }
+    return elevation(x - 0.5, z) === elevation(x + 0.5, z)
+      ? Math.hypot(x - cabinX + 2.5, z - cabinZ) : Infinity;
+  });
+  if (stack) firewood(box, stack.x, elevation(stack.x - 0.5, stack.z), stack.z);
+  waterfowl(box, channel(lip + 6) - 0.75, lip + 6, -0.7, (x, z) => {
+    const cx = Math.round(x), cz = Math.round(z);
+    return level(cx, cz) === 0 ? -elevation(cx, cz) : 0;
+  });
 
   const radiusX = model ? 21 : 54, radiusZ = model ? 16 : 54;
   const vertices: number[] = [];
@@ -82,7 +90,8 @@ export function buildHillside(seed: number, model: boolean) {
       const ledge = bank >= 0 && bank < 2 && Math.abs(z - lip) <= 2;
       const grove = Math.sin(x * 0.3 + phase) + Math.cos(z * 0.23);
       const grass = grove > 0 ? palette.green.grass : palette.green.meadow;
-      const color = path !== undefined ? palette.ground.path : bank < 0 ? palette.ground.riverbed
+      const waterStep = x === landingX && z === landingZ;
+      const color = waterStep ? palette.ground.stone : path !== undefined ? palette.ground.path : bank < 0 ? palette.ground.riverbed
         : ledge ? palette.ground.stone : grass;
       box(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, ledge ? palette.ground.stone : palette.ground.soil);
       box(x, h - 0.25, z, 1, 0.5, 1, color);
@@ -111,7 +120,7 @@ export function buildHillside(seed: number, model: boolean) {
         continue;
       }
       if (Math.abs(x) >= radiusX - 1 || Math.abs(z) >= radiusZ - 1 || bank < 2 ||
-        Math.hypot(x - cabinX, z - cabinZ) < 3.5 || trail.near(x, z)) continue;
+        Math.hypot(x - cabinX, z - cabinZ) < 3.5 || (stack && Math.hypot(x - stack.x, z - stack.z) < 2) || trail.near(x, z)) continue;
       if (chance < 0.024 + 0.105 * Math.max(0, grove)) plantTree(x, h, z, grove > 1 ? "pine" : "broadleaf", sapling);
     }
   }

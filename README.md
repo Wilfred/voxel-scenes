@@ -11,6 +11,3 @@ Each scene supports Vista and Rectangular model framing and saves a 2560 × 1440
 
 Run `npm run build` to type-check the TypeScript and create the static site
 in `dist/`. Run `npm run preview` to serve that build locally.
-
-Toggle **Ducks** in Woodland stream to compare a pair of birds on the water
-with the same uninhabited view.

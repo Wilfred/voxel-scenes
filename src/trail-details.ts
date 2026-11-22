@@ -10,5 +10,5 @@ export function firewood(box: Box, x: number, h: number, z: number) {
 
 export function waypost(box: Box, x: number, h: number, z: number) {
   box(x, h + 0.75, z, 0.25, 1.5, 0.25, palette.wood);
-  box(x + 0.25, h + 1.25, z + 0.1875, 1, 0.25, 0.125, palette.wood);
+  box(x, h + 1.5, z + 0.125, 1.5, 0.5, 0.25, palette.wood);
 }

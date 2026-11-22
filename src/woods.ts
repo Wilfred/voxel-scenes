@@ -1,13 +1,14 @@
+import { findSite } from "./sites";
 import { riverDepthMap } from "./water";
 import { terrainTrail } from "./trails";
-import { firewood, waypost } from "./trail-details";
+import { waypost } from "./trail-details";
 import { palette } from "./palette";
-import { addDuck } from "./ducks";
+import { waterfowl } from "./ducks";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import * as THREE from "three";
 
-export function buildWoods(seed: number, model: boolean, showDucks: boolean) {
+export function buildWoods(seed: number, model: boolean) {
   const random = seededRandom(seed);
 
   const phase = random() * 2 * Math.PI;
@@ -22,11 +23,20 @@ export function buildWoods(seed: number, model: boolean, showDucks: boolean) {
   }
   const { box, buildMesh } = voxelBatch();
 
-  const bridgeZ = -3;
-  let west = Math.round(riverX(bridgeZ));
-  let east = west;
-  while (elevation(west, bridgeZ) < 0) west--;
-  while (elevation(east, bridgeZ) < 0) east++;
+  function banks(z: number) {
+    let west = Math.round(riverX(z)), east = west;
+    while (elevation(west, z) < 0) west--;
+    while (elevation(east, z) < 0) east++;
+    return { west, east };
+  }
+  const crossing = findSite(0, 0, -7, 0, 1, (_, z) => {
+    const { west, east } = banks(z);
+    const approach = Math.abs(elevation(west - 2, z) - elevation(west, z))
+      + Math.abs(elevation(east + 2, z) - elevation(east, z));
+    return east - west + approach + Math.abs(z + 3) * 0.22;
+  })!;
+  const bridgeZ = crossing.z;
+  const { west, east } = banks(bridgeZ);
 
   const centreX = (west + east) / 2;
   const centreZ = bridgeZ;
@@ -39,24 +49,21 @@ export function buildWoods(seed: number, model: boolean, showDucks: boolean) {
   const plantTree = treePlanter(box, 0.5);
   // Start on each bridge landing. Stay on the bank until the route has
   // climbed out of the channel, then turn towards the forest tracks.
-  const trail = terrainTrail(elevation);
+  const trail = terrainTrail(elevation, (x, z) => elevation(x, z) > 0 && Math.abs(x) <= 49);
   for (const [bank, side] of [[west, -1], [east, 1]]) {
     trail.route([[bank, bridgeZ], [bank + 4 * side, bridgeZ],
       [bank + 10 * side, bridgeZ - 3 * side], [bank + 18 * side, bridgeZ - 4 * side],
       [49 * side, bridgeZ - 15 * side]]);
   }
-  const logsX = west - 8, logsZ = bridgeZ + 4;
-  firewood(box, logsX, elevation(logsX, logsZ), logsZ);
-  waypost(box, east + 4, elevation(east + 4, bridgeZ + 1), bridgeZ + 1);
-
-  if (showDucks) {
-    // Follow the bend a few tiles beyond the bridge, leaving room around both birds.
-    const z = bridgeZ + 5;
-    const slope = (riverX(z + 1) - riverX(z - 1)) / 2;
-    const heading = Math.atan2(-1, slope);
-    addDuck(box, riverX(z) - 0.75, z, heading + 0.32, true);
-    addDuck(box, riverX(z + 1.75) + 0.5, z + 1.75, heading - 0.23, false);
-  }
+  // Stand the sign beside the eastern landing, clear of the walking surface.
+  const sign = findSite(east + 2, east + 5, bridgeZ - 3, bridgeZ + 3, 1, (x, z) =>
+    trail.near(x, z) && !trail.tiles.has(x + "," + z) && elevation(x, z) > 0
+      ? Math.hypot(x - east - 3, z - bridgeZ - 1) : Infinity);
+  if (sign) waypost(box, sign.x, elevation(sign.x, sign.z), sign.z);
+  const bendZ = bridgeZ + 5;
+  const slope = (riverX(bendZ + 1) - riverX(bendZ - 1)) / 2;
+  waterfowl(box, riverX(bendZ) - 0.75, bendZ, Math.atan2(-1, slope),
+    (x, z) => -elevation(Math.round(x), Math.round(z)));
 
   // Seed stands along each bank independently, with gaps between seed sources.
   const groves: { x: number; z: number; radius: number }[] = [];
@@ -86,7 +93,7 @@ export function buildWoods(seed: number, model: boolean, showDucks: boolean) {
           box(x, (h - 4) / 2, z, 1, h + 4, 1, tint);
         }
       }
-      if (trail.near(x, z) || Math.hypot(x - logsX, z - logsZ) < 2 || h < 0.5 || (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)) continue;
+      if (trail.near(x, z) || (sign && Math.hypot(x - sign.x, z - sign.z) < 2) || h < 0.5 || (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)) continue;
 
       const bankDistance = Math.abs(x - riverX(z));
       const slope = Math.hypot(elevation(x + 1, z) - h, elevation(x, z + 1) - h);

@@ -57,6 +57,9 @@ bays, and future floating islands should feel like places in the same game.
   faces where pieces meet. Give paths full coloured terrain voxels, stairs
   whole-voxel rises and runs, and bridges a usable approach on both banks.
   Trace the route from the cottage door to the pier to catch abrupt drops.
+  Select crossings and occupied sites from the terrain. Rank bridge sites by
+  span and bank access, and check the whole footprint of props such as stacked
+  firewood. Place them beside the activity that explains their presence.
 - Reuse `src/cottage.ts`, `src/trees.ts`, `src/water.ts`, and the seeded
   generation and instancing helpers in `src/voxels.ts`. Refine shared models
   across their scenes. Give the cottage a legible entrance, softly contrasting

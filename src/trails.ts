@@ -1,28 +1,72 @@
-// Full terrain tiles share faces around bends, with at most a half-tile rise.
-export function terrainTrail(elevation: (x: number, z: number) => number) {
+import type { Elevation } from "./sites";
+
+type Point = [number, number];
+type Step = { x: number; z: number; cost: number; previous?: Step };
+
+// Between destinations, prefer dry, gently sloping ground. A short search
+// corridor lets the trail skirt a ledge without taking it across the valley.
+function connect(from: Point, to: Point, elevation: Elevation, dry: (x: number, z: number) => boolean) {
+  const queue: Step[] = [{ x: from[0], z: from[1], cost: 0 }];
+  const costs = new Map<string, number>([[from.join(","), 0]]);
+  while (queue.length) {
+    queue.sort((a, b) => b.cost - a.cost);
+    const here = queue.pop()!;
+    if (here.cost !== costs.get(here.x + "," + here.z)) continue;
+    if (here.x === to[0] && here.z === to[1]) {
+      const segment: Point[] = [];
+      for (let p: Step | undefined = here; p?.previous; p = p.previous) segment.push([p.x, p.z]);
+      return segment.reverse();
+    }
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const x = here.x + dx, z = here.z + dz;
+      if (x < Math.min(from[0], to[0]) - 4 || x > Math.max(from[0], to[0]) + 4 ||
+          z < Math.min(from[1], to[1]) - 4 || z > Math.max(from[1], to[1]) + 4 || !dry(x, z)) continue;
+      const rise = Math.abs(elevation(x, z) - elevation(here.x, here.z));
+      const cost = here.cost + 1 + rise * rise * 5 + Math.hypot(x - to[0], z - to[1]) * 0.015;
+      const key = x + "," + z;
+      if (cost >= (costs.get(key) ?? Infinity)) continue;
+      costs.set(key, cost);
+      queue.push({ x, z, cost, previous: here });
+    }
+  }
+  throw new Error("No dry approach to trail destination");
+}
+
+export function terrainTrail(elevation: Elevation, dry: (x: number, z: number) => boolean) {
   const tiles = new Map<string, number>();
   return {
     tiles,
-    route(waypoints: [number, number][]) {
-      let [x, z] = waypoints[0];
-      let h = elevation(x, z);
-      tiles.set(x + "," + z, h);
-      for (const [toX, toZ] of waypoints.slice(1)) {
-        const dx = toX - x, dz = toZ - z;
-        const length = Math.max(Math.abs(dx), Math.abs(dz));
-        const fromX = x, fromZ = z;
-        function step(nextX: number, nextZ: number) {
-          x = nextX;
-          z = nextZ;
-          h = Math.max(h - 0.5, Math.min(h + 0.5, elevation(x, z)));
-          tiles.set(x + "," + z, h);
+    route(waypoints: Point[]) {
+      const route = [waypoints[0]];
+      for (let i = 1; i < waypoints.length; i++) {
+        route.push(...connect(waypoints[i - 1], waypoints[i], elevation, dry));
+      }
+      const points: Point[] = [];
+      const indices = new Map<string, number>();
+      for (const p of route) {
+        const key = p.join(",");
+        const previous = indices.get(key);
+        if (previous !== undefined) {
+          for (const loop of points.splice(previous + 1)) indices.delete(loop.join(","));
+        } else {
+          indices.set(key, points.length);
+          points.push(p);
         }
-        for (let i = 1; i <= length; i++) {
-          const nextX = fromX + Math.round(dx * i / length);
-          const nextZ = fromZ + Math.round(dz * i / length);
-          if (x !== nextX) step(nextX, z);
-          if (z !== nextZ) step(x, nextZ);
-        }
+      }
+      const heights = points.map(([x, z]) => elevation(x, z));
+      const tread = heights.map((h, i) => {
+        if (i === 0 || i === heights.length - 1) return h;
+        const average = (heights[i - 1] + 2 * h + heights[i + 1]) / 4;
+        return Math.min(h, Math.round((average - 0.25) * 4) / 4);
+      });
+      // Grade isolated high spots from both approaches. Endpoints meet the
+      // existing doorstep or bridge landing; wear is cut into the terrain.
+      for (let i = 1; i < tread.length - 1; i++) tread[i] = Math.min(tread[i], tread[i - 1] + 0.5);
+      for (let i = tread.length - 2; i > 0; i--) tread[i] = Math.min(tread[i], tread[i + 1] + 0.5);
+      const last = tread.length - 1;
+      for (let i = 0; i <= last; i++) {
+        const approach = Math.max(heights[0] - i * 0.5, heights[last] - (last - i) * 0.5);
+        tiles.set(points[i].join(","), Math.max(0.25, tread[i], approach));
       }
     },
     near(x: number, z: number) {

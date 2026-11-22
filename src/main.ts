@@ -39,7 +39,6 @@ if (!context) {
   let seed = 1846;
   const sceneSelect = document.querySelector<HTMLSelectElement>("#scene")!;
   const framing = document.querySelector<HTMLSelectElement>("#framing")!;
-  const ducks = document.querySelector<HTMLInputElement>("#ducks")!;
   const generate = document.querySelector<HTMLButtonElement>("#generate")!;
   const islandDescription = canvas.getAttribute("aria-label")!;
   let island: ReturnType<typeof buildIsland> | undefined;
@@ -78,7 +77,6 @@ if (!context) {
     const model = framing.value === "model";
     const inland = hill || woodland;
     const sky = inland ? palette.light.forestSky : palette.light.coastalSky;
-    ducks.parentElement!.hidden = !woodland;
     sea.visible = !hill;
     sea.position.set(0, 0, 0);
     sea.scale.setScalar(1);
@@ -94,7 +92,7 @@ if (!context) {
       cameraTarget.set(-1, model ? 3 : 5, model ? -2 : -5);
       camera.top = model ? 28 : 13;
     } else if (woodland) {
-      const woods = buildWoods(seed, model, ducks.checked);
+      const woods = buildWoods(seed, model);
       mesh = woods.mesh;
       riverDepth = woods.depth;
       waterBounds = woods.bounds;
@@ -136,13 +134,13 @@ if (!context) {
     preview();
   }
 
-  ducks.onchange = framing.onchange = sceneSelect.onchange = update;
+  framing.onchange = sceneSelect.onchange = update;
   generate.onclick = () => {
     seed = crypto.getRandomValues(new Uint32Array(1))[0];
     update();
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
-    const variant = `-${framing.value}${sceneSelect.value === "woods" && ducks.checked ? "-ducks" : ""}`;
+    const variant = `-${framing.value}`;
     const filename = `${sceneSelect.value}-${seed}-graphic${variant}.png`;
     renderer.setSize(2560, 1440, false);
     renderer.render(scene, camera);

@@ -1,3 +1,5 @@
+import { findSite } from "./sites";
+import { waterfowl } from "./ducks";
 import { palette } from "./palette";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
@@ -15,6 +17,7 @@ export function buildIsland(seed: number, model: boolean) {
   const bayWidth = 8 + random() * 2;
   const ridgeX = -10 - random() * 2;
 
+  const unit = 0.5;
   function naturalHeight(x: number, z: number) {
     // Offset the bay toward the eastern tip to leave a longer western arm.
     const angle = Math.atan2(z / 12, x / 17);
@@ -23,25 +26,40 @@ export function buildIsland(seed: number, model: boolean) {
     const inner = (Math.hypot((x - bayX) / bayWidth, (z - bayZ) / 10) - 1) * 9;
     const inland = Math.min(outer, inner);
     const ridge = Math.exp(-((x - ridgeX) ** 2 / 36 + (z + 1) ** 2 / 68));
-    return Math.floor(inland * (0.7 + 1.55 * ridge) * 4) / 4;
+    return Math.floor(inland * (0.7 + 1.55 * ridge) / unit) * unit;
   }
 
   // Follow the inner shoreline onto the wooded headland, then step inland.
-  const cottageX = Math.round(bayX - bayWidth * 0.84);
+  const headlandX = Math.round(bayX - bayWidth * 0.84) + unit / 2;
   let landingZ = Math.floor(bayZ);
-  while (naturalHeight(cottageX, landingZ) < 0) landingZ -= 0.5;
-  let cottageZ = landingZ - 1.5;
-  while (naturalHeight(cottageX, cottageZ) < 1.75) cottageZ -= 0.5;
+  while (naturalHeight(headlandX, landingZ) < 0) landingZ -= unit;
+  const cottage = findSite(headlandX - 1, headlandX + 1, landingZ - 8, landingZ - 2, unit, (x, z) => {
+    const h = naturalHeight(x, z);
+    if (h < 2) return Infinity;
+    const corners = [-1, 1].flatMap(dx => [-0.5, 0.5].map(dz => naturalHeight(x + dx, z + dz)));
+    return Math.max(...corners) - Math.min(...corners) + Math.abs(h - 2.5) +
+      Math.abs(x - headlandX) + Math.abs(z - landingZ + 4) * 0.25;
+  })!;
+  const { x: cottageX, z: cottageZ } = cottage;
   const terrace = naturalHeight(cottageX, cottageZ);
-  const unit = 0.25;
   const cottageScale = 0.75;
-  const foundationTop = terrace + 2 * unit;
+  const foundationTop = terrace + unit;
   const dockTop = unit;
-  const stairStart = cottageZ + 1;
+  // Terrain cells are centred on multiples of 0.5, so their faces are at ±0.25.
+  const stairStart = cottageZ + 1.25;
+  landingZ = stairStart;
+  while (naturalHeight(cottageX, landingZ) >= 0) landingZ += unit;
   const risers = (foundationTop - dockTop) / unit;
-  // Whole voxel runs reach the shoreline; every tread drops exactly one voxel.
-  const treadDepth = unit * Math.max(1, Math.ceil((landingZ + unit - stairStart) / (risers * unit)));
-  const stairEnd = stairStart + risers * treadDepth;
+  // Divide the distance to the water into whole-cell runs, keeping the
+  // last tread at the shoreline even when the run isn't divisible by the rise.
+  const runCells = Math.max(risers, Math.ceil((landingZ - stairStart) / unit));
+  const steps = Array.from({ length: risers }, (_, i) => ({
+    start: stairStart + unit * Math.floor(i * runCells / risers),
+    end: stairStart + unit * Math.floor((i + 1) * runCells / risers),
+    top: foundationTop - (i + 1) * unit,
+  }));
+  const stairEnd = steps[steps.length - 1].end;
+  const doorZ = cottageZ + cottageScale;
   function height(x: number, z: number) {
     if (Math.abs(x - cottageX) <= 1 && Math.abs(z - cottageZ) <= 0.5) return terrace;
     return naturalHeight(x, z);
@@ -52,21 +70,16 @@ export function buildIsland(seed: number, model: boolean) {
 
   for (let z = -14; z <= 14; z += 0.5) {
     for (let x = -21; x <= 21; x += 0.5) {
-      let h = height(x, z);
+      const h = height(x, z);
       if (h < 0) continue;
-      // Cut the bank below the lowest tread overlapping each voxel.
-      const stairCorridor = Math.abs(x - cottageX) <= 0.5
-        && z + 0.25 >= stairStart && z - 0.25 <= stairEnd;
-      if (stairCorridor) {
-        const step = Math.min(risers, Math.floor((z + 0.25 - stairStart) / treadDepth) + 1);
-        h = Math.min(h, foundationTop - (step + 2) * unit);
-      }
+      // The landing and stairs replace entire columns in the bank. Their
+      // supports fill those columns down to the same base as the terrain.
+      if (Math.abs(x - cottageX) < unit && z > doorZ && z < stairEnd) continue;
       const top = h + unit;
-      const soilTop = h >= 1 && !stairCorridor ? h : top;
-      box(x, (soilTop - unit) / 2, z, 0.5, soilTop + unit, 0.5, h < 1 ? palette.ground.sand : palette.ground.stone);
-      if (stairCorridor) continue;
+      const soilTop = h >= 1 ? h : top;
+      box(x, (soilTop - unit) / 2, z, unit, soilTop + unit, unit, h < 1 ? palette.ground.sand : palette.ground.stone);
       if (h < 1) continue;
-      box(x, top - unit / 2, z, 0.5, unit, 0.5, palette.green.meadow);
+      box(x, top - unit / 2, z, unit, unit, unit, palette.green.meadow);
       const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
       const density = (x < -6 ? 0.26 : 0.14) * grove;
       if (Math.hypot(x - cottageX, z - cottageZ) < 2 || random() > density) continue;
@@ -80,17 +93,13 @@ export function buildIsland(seed: number, model: boolean) {
   }
   buildCottage(cottageBox);
 
-  const doorZ = cottageZ + cottageScale;
-  box(cottageX, foundationTop - unit / 2, (doorZ + stairStart) / 2,
-    1, unit, stairStart - doorZ, palette.wood);
-  for (let i = 0; i < risers; i++) {
-    const z = stairStart + (i + 0.5) * treadDepth;
-    const top = foundationTop - (i + 1) * unit;
+  for (const { start, end, top } of [{ start: doorZ, end: stairStart, top: foundationTop }, ...steps]) {
+    const z = (start + end) / 2;
     const stoneTop = top - unit;
-    box(cottageX, (stoneTop - unit) / 2, z, 1, stoneTop + unit, treadDepth, palette.ground.stone);
-    box(cottageX, top - unit / 2, z, 1, unit, treadDepth, palette.wood);
+    box(cottageX, (stoneTop - unit) / 2, z, 1, stoneTop + unit, end - start, palette.ground.stone);
+    box(cottageX, top - unit / 2, z, 1, unit, end - start, palette.wood);
   }
-  const dockLength = 1.75;
+  const dockLength = 2;
   box(cottageX, dockTop - unit / 2, stairEnd + dockLength / 2, 1, unit, dockLength, palette.wood);
   for (const side of [-1, 1]) {
     const x = cottageX + side * (0.5 + unit / 2);
@@ -138,6 +147,7 @@ export function buildIsland(seed: number, model: boolean) {
     const size = 0.22 + random() * 0.52;
     box(x, y, z, size, size * 0.7, size * 0.8, palette.ground.stone);
   }
+  waterfowl(box, bayX - 0.5, bayZ + 0.5, -0.45, (x, z) => -naturalHeight(x, z));
   const depth = new THREE.DataTexture(samples, resolution, resolution, THREE.RedFormat);
   depth.magFilter = depth.minFilter = THREE.LinearFilter;
   depth.needsUpdate = true;
