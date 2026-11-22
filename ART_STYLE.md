@@ -5,6 +5,11 @@ Unrailed, Tiny Glade, Woodo, and DeCube are visual references. Aim for
 chunky voxel shapes, tactile surfaces, and terrain with a silhouette that
 reads at thumbnail size. Leave some quieter space for desktop icons.
 
+Use the [Tiny Voxel Nature Pack](https://www.gamedevmarket.net/asset/tiny-voxel-nature-pack)
+as a reference for how coarse the blocks in a woodland prop can be.
+For wildlife, aim for a few shapes that identify the animal from the wallpaper
+camera, as the rabbit's ears do in [Voxel Tiny Animals](https://vox-fox.itch.io/voxel-tiny-animals).
+
 ## Vistas and dioramas
 
 A vista looks out across a landscape that continues beyond the frame.

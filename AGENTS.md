@@ -15,6 +15,7 @@ review it at full browser width, and save a 2560 × 1440 PNG. A Linux laptop is
 the first target. Keep that browser workflow portable to Windows and macOS.
 Daily automatic wallpaper changes are a longer-term goal.
 
+- Commit completed, coherent changes regularly as local checkpoints.
 - Work in small visual iterations and pause for feedback between experiments.
   Compare alternatives in one setting with the same seed and camera. When the
   camera itself is the experiment, keep the terrain and assets fixed.
@@ -64,6 +65,9 @@ bays, and future floating islands should feel like places in the same game.
   trunk and foliage. Place trees in stands with irregular gaps and room for
   their crowns. Use restrained greens for ordinary woodland and reserve yellow
   foliage for a seasonal scene.
+- Choose simple, low-poly wildlife built from a few chunky shapes. Look for a
+  silhouette that identifies the animal at wallpaper scale, such as a rabbit's
+  long ears. Inspect the preview art for voxel density before recommending a pack.
 - Judge third-party assets at the intended camera distance, beside a familiar
   object. Compare a tree to the cottage door, an animal to the path width,
   or a bench seat to a stair riser. Check both physical proportions and visible
