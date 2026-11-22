@@ -5,13 +5,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check": "node scripts/check-scenes.ts"
   },
   "dependencies": {
-    "three": "^0.187.0"
+    "three": "0.187.0"
   },
   "devDependencies": {
-    "@types/three": "^0.187.0",
+    "@types/three": "0.187.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"
   }

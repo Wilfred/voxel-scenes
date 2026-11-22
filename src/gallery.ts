@@ -11,13 +11,12 @@ export function designGallery(designs: typeof defaultDesigns, apply: () => void)
   const panel = document.querySelector<HTMLDetailsElement>("#design-gallery")!;
   const selector = document.querySelector<HTMLSelectElement>("#family")!;
   const studies = document.querySelector<HTMLElement>("#studies")!;
-  let renderer: THREE.WebGLRenderer | undefined;
   const images = new Map<Family, string[]>();
 
   function thumbnails(family: Family) {
     const existing = images.get(family);
     if (existing) return existing;
-    renderer ??= new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(288, 216);
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(palette.light.backdrop);
@@ -35,13 +34,16 @@ export function designGallery(designs: typeof defaultDesigns, apply: () => void)
       const mesh = buildMesh();
       const disposeRays = contactRays(mesh);
       scene.add(mesh);
-      renderer!.render(scene, camera);
-      const url = renderer!.domElement.toDataURL();
+      renderer.render(scene, camera);
+      const url = renderer.domElement.toDataURL();
       scene.remove(mesh);
       disposeRays();
       mesh.dispose(); mesh.geometry.dispose(); mesh.material.dispose();
       return url;
     });
+    // Release the offscreen context; browsers limit how many stay alive.
+    renderer.dispose();
+    renderer.forceContextLoss();
     images.set(family, previews);
     return previews;
   }

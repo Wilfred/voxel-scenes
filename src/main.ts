@@ -15,14 +15,14 @@ import { buildIsland } from "./island";
 
 const canvas = document.querySelector("canvas")!;
 const status = document.querySelector<HTMLElement>("#status")!;
-const controls = document.querySelector<HTMLElement>(".controls")!;
+const toolbox = document.querySelector<HTMLElement>(".toolbox")!;
 const context = canvas.getContext("webgl2", { antialias: true });
 
 if (!context) {
   canvas.hidden = true;
   canvas.style.display = "none";
-  controls.hidden = true;
-  controls.style.display = "none";
+  toolbox.hidden = true;
+  toolbox.style.display = "none";
   status.textContent = "This preview requires WebGL 2. Check that hardware acceleration is enabled in your browser.";
 } else {
   const renderer = new THREE.WebGLRenderer({ canvas, context });
