@@ -264,7 +264,7 @@ if (!context) {
     if (surface.grid.value !== Number(resolution.value) * 2) update();
     const variant = `-${framing.value}-${resolution.value}x-p${designs.pine + 1}-b${designs.broadleaf + 1}-c${designs.cottage + 1}-${weatherSelect.value}${tracing.checked ? "-rays" : ""}`;
     const zoomSuffix = camera.zoom === 1 ? "" : `-zoom${Math.round(camera.zoom * 100)}`;
-    const filename = `${sceneSelect.value}-${seed}-graphic${variant}${zoomSuffix}.png`;
+    const filename = `${sceneSelect.value}-${seed}${variant}${zoomSuffix}.png`;
     renderer.setSize(2560, 1440, false);
     renderer.render(scene, camera);
     canvas.toBlob(blob => {

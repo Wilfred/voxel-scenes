@@ -15,65 +15,59 @@ review it at full browser width, and save a 2560 × 1440 PNG. A Linux laptop is
 the first target. Keep that browser workflow portable to Windows and macOS.
 Daily automatic wallpaper changes are a longer-term goal.
 
+[ART_STYLE.md](ART_STYLE.md) describes what the scenes should look like. This
+file describes how to work on them.
+
 - Commit completed, coherent changes regularly as local checkpoints.
 - Work in small visual iterations and pause for feedback between experiments.
   Compare alternatives in one setting with the same seed and camera. When the
   camera itself is the experiment, keep the terrain and assets fixed.
 - Use one localhost preview for discussion. Reuse the running server for this
   checkout. To start it on the usual port, run
-  `npm run dev -- --port 5173 --strictPort`. Share the URL, scene, framing,
-  and seed so the user can see the same composition.
-- Run `npm run build` for code changes. For visual changes, inspect the actual
-  render at wallpaper size and as a thumbnail. Try a few seeds to catch clipped
-  peaks, overlapping crowns, or paths that miss their destinations. Check the
-  saved PNG when changing framing or rendering.
+  `npm run dev -- --port 5173 --strictPort`. Share a URL with the scene,
+  framing, weather and seed, such as
+  `http://localhost:5173/?scene=woods&framing=vista&weather=clear&seed=123`,
+  so the user sees the same composition.
+- Run `npm run build` for code changes and `npm run check` for generator
+  changes. The check builds every scene across a sweep of seeds and fails on
+  generation errors and routes that climb more than one terrain layer per
+  tread. `npm run check -- --hash` fingerprints each landscape, so a refactor
+  can show it changes nothing.
+- For visual changes, inspect the actual render at wallpaper size and as a
+  320-pixel-wide thumbnail. At thumbnail size you should still be able to name
+  the scene and find its building. Try a few seeds to catch clipped peaks,
+  overlapping crowns, or paths that miss their destinations. Check the saved
+  PNG when changing framing or rendering.
 
-## Composition and materials
+## Building scenes
 
-Read [ART_STYLE.md](ART_STYLE.md) for the visual references and overall art
-direction. Use the **Graphic landscape** style across scenes. Woodland streams, hillsides,
-bays, and future floating islands should feel like places in the same game.
+Woodland streams, hillsides, bays, and future floating islands should feel
+like places in the same game.
 
-- Compose pulled-back vistas and dioramas. Show the roof and two faces of a
-  cottage from an elevated angle. Try a focal point near a third of the frame,
-  with a path, shore, or stream leading the eye toward it. Leave breathing room
-  above a summit and around the silhouette of a rectangular model on its plain
-  background.
-- Give the land a coherent shape. Connect cottage paths to visible destinations, such as a water landing.
-  Generate terrain first, choose an existing
-  relatively flat site, and thin just enough trees for the building and access.
-- Draw scene colours from the shared material families in `src/palette.ts`.
-  Use one wood colour for living trunks and built timber. Give skies and
-  water more natural depth. Keep skybox clouds clear of the ground, align cast
-  shadows with the depicted sun, and let shallow water show the bed through
-  actual transparency. Keep silhouettes clear through changes in weather.
-- Keep habitation sparse. Chimney smoke, one animal at the treeline, or a few
-  walkers can give a landscape scale. Vary weather and use occasional seasonal
-  cues, such as Christmas snow or longer Halloween shadows.
-
-## Terrain and assets
-
+- Generate terrain first, choose an existing relatively flat site, and thin
+  just enough trees for the building and access. Connect cottage paths to
+  visible destinations, such as a water landing.
 - Choose a voxel unit and align adjoining geometry to its grid. Check the
   faces where pieces meet. Give paths full coloured terrain voxels, stairs
   whole-voxel rises and runs, and bridges a usable approach on both banks.
   Smooth a path by choosing a gentler route and cutting whole terrain layers
   from high spots. Keep its surface on the surrounding voxel grid.
-  Trace the route from the cottage door to the pier to catch abrupt drops.
-  Select crossings and occupied sites from the terrain. Rank bridge sites by
+- Select crossings and occupied sites from the terrain. Rank bridge sites by
   span and bank access, and check the whole footprint of props such as stacked
   firewood. Place them beside the activity that explains their presence.
 - Reuse `src/cottage.ts`, `src/trees.ts`, `src/water.ts`, and the seeded
-  generation and instancing helpers in `src/voxels.ts`. Refine shared models
-  across their scenes. Give the cottage a legible entrance, softly contrasting
-  windows, and its familiar chimney smoke.
-- Give woodland trees short visible trunks and simple, full upper crowns.
-  Model saplings and adults separately. Use the same voxel resolution for
-  trunk and foliage. Place trees in stands with irregular gaps and room for
-  their crowns. Use restrained greens for ordinary woodland and reserve yellow
-  foliage for a seasonal scene.
-- Choose simple, low-poly wildlife built from a few chunky shapes. Look for a
-  silhouette that identifies the animal at wallpaper scale, such as a rabbit's
-  long ears. Inspect the preview art for voxel density before recommending a pack.
+  generation and instancing helpers in `src/voxels.ts`. Describe a new scene's
+  framing and focus in `src/scenes.ts`. Refine shared models across their
+  scenes.
+- Draw scene colours from the shared material families in `src/palette.ts`,
+  naming new families for what they colour.
+- Draw per-cell variation that should not disturb the rest of a landscape,
+  such as foam, from a positional hash rather than the seeded sequence.
+
+## Choosing assets
+
+- Choose simple, low-poly wildlife built from a few chunky shapes. Inspect
+  the preview art for voxel density before recommending a pack.
 - Judge third-party assets at the intended camera distance, beside a familiar
   object. Compare a tree to the cottage door, an animal to the path width,
   or a bench seat to a stair riser. Check both physical proportions and visible

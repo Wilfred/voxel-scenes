@@ -7,10 +7,14 @@ wallpapers.
 
 With Node.js 22.12 or newer installed, run `npm ci` and `npm run dev`,
 then open the local URL printed by Vite. Choose a scene and generate a landscape.
-Each scene supports Vista and Rectangular model framing and saves a 2560 × 1440 PNG.
+Vista framing looks across the land in perspective toward a hazy horizon.
+Rectangular model framing shows the whole place as a miniature block. Either
+saves a 2560 × 1440 PNG.
 
 Run `npm run build` to type-check the TypeScript and create the static site
-in `dist/`. Run `npm run preview` to serve that build locally.
+in `dist/`. Run `npm run preview` to serve that build locally. Run
+`npm run check` to generate every scene across a sweep of seeds and check
+that each builds and that its paths climb at most one terrain layer per step.
 
 Grid resolution controls how many terrain cells fit across the wallpaper.
 The range is 0.75× to 5× in quarter steps. At 5×, five times as many cells fit
@@ -22,7 +26,9 @@ the current landscape at 50% to 300%. Double-click the canvas or press Home
 while it has focus to restore the opening camera angle and zoom.
 
 The opening seed comes from the local calendar date. Reload to revisit today's
-landscape, or use the New button for a random seed. In Orchard millpond, follow
+landscape, or use the New button beside Save PNG for a random seed. The `scene`,
+`framing`, `weather` and `seed` URL parameters open a particular composition,
+for example `?scene=woods&framing=model&weather=overcast&seed=123`. In Orchard millpond, follow
 the headrace past the waterwheel to the duck pond and the cart track to the
 orchard stall. The orchard blossoms in April and May, and a small wreath hangs
 on the mill door in December. Weather changes the lighting and water while preserving the view.
