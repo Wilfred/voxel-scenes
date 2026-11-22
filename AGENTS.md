@@ -28,6 +28,7 @@ file describes how to work on them.
   framing, weather and seed, such as
   `http://localhost:5173/?scene=woods&framing=vista&weather=clear&seed=123`,
   so the user sees the same composition.
+- Run `npm run format` before committing; CI rejects unformatted files.
 - Run `npm run build` for code changes and `npm run check` for generator
   changes. The check builds every scene across a sweep of seeds and fails on
   generation errors and routes that climb more than one terrain layer per
