@@ -72,8 +72,11 @@ function connect(from: Point, to: Point, elevation: Elevation, dry: (x: number, 
 export function terrainTrail(elevation: Elevation, dry: (x: number, z: number) => boolean) {
   const verge = new Set<string>();
   const tiles = new Map<string, number>();
+  // Each walked route as surface points, for checking rises between treads.
+  const routes: { x: number; z: number; y: number }[][] = [];
   return {
     tiles,
+    routes,
     route(waypoints: Point[]) {
       const route = [waypoints[0]];
       for (let i = 1; i < waypoints.length; i++) {
@@ -117,6 +120,7 @@ export function terrainTrail(elevation: Elevation, dry: (x: number, z: number) =
         }
         tiles.set(points[i].join(","), Math.max(tread[i], approach[i]));
       }
+      routes.push(points.map(([x, z]) => ({ x, z, y: tiles.get(x + "," + z)! })));
     },
     near(x: number, z: number) {
       return verge.has(x + "," + z);

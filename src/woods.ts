@@ -183,5 +183,5 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
 
   const depthMap = riverDepthMap((x, z) => -elevation(x, z), 2 * radius + 1);
   const mesh = buildMesh();
-  return { mesh, depth: depthMap, bounds: { x: left + width / 2, z: back + depth / 2, width, depth }, bridge: new THREE.Vector3(middle, deck, bridgeZ) };
+  return { mesh, routes: trail.routes, depth: depthMap, bounds: { x: left + width / 2, z: back + depth / 2, width, depth }, bridge: new THREE.Vector3(middle, deck, bridgeZ) };
 }

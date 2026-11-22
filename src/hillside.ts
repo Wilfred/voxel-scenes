@@ -196,5 +196,5 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
   foam.material.depthWrite = false;
   foam.castShadow = false;
   foam.renderOrder = 2;
-  return { mesh: buildMesh(), water, foam, depth: riverDepthMap((x, z) => shelf(x, z) - elevation(x, z), 2 * radius + 1) };
+  return { mesh: buildMesh(), routes: trail.routes, water, foam, depth: riverDepthMap((x, z) => shelf(x, z) - elevation(x, z), 2 * radius + 1) };
 }

@@ -221,5 +221,6 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     }
   }
   const mesh = buildMesh();
-  return { mesh, floor, depth, bounds, facadeAngle: Math.atan2(forwardX, forwardZ) };
+  const steps = route.map((p, i) => ({ ...p, y: foundationTop - unit * Math.floor(i * risers / (route.length - 1)) }));
+  return { mesh, routes: [steps], floor, depth, bounds, facadeAngle: Math.atan2(forwardX, forwardZ) };
 }
