@@ -105,12 +105,14 @@ export function createWater() {
         tilt += 0.035 * normalize(offset + 0.00001) * sin(ring * 95.0) *
           exp(-ring * ring * 620.0) * (1.0 - age);
       }
-      vec3 n = faceforward(normalize(waterNormal), -viewDirection, normalize(waterNormal));
+      // Perspective views see the surface along a different ray at every point.
+      vec3 eye = isOrthographic ? viewDirection : normalize(cameraPosition - waterPoint);
+      vec3 n = faceforward(normalize(waterNormal), -eye, normalize(waterNormal));
       vec3 waveNormal = normalize(n + vec3(tilt.x, 0.0, tilt.y) * ripple);
       diffuseColor.rgb = deepWater;
     `).replace('#include <opaque_fragment>', `
-      vec3 reflected = reflect(-viewDirection, waveNormal);
-      float facing = clamp(dot(viewDirection, waveNormal), 0.0, 1.0);
+      vec3 reflected = reflect(-eye, waveNormal);
+      float facing = clamp(dot(eye, waveNormal), 0.0, 1.0);
       float fresnel = 0.035 + 0.965 * pow(1.0 - facing, 4.0);
       vec3 skyLight = mix(mix(skyTint, horizonTint, 0.65), zenithTint, smoothstep(0.05, 0.70, reflected.y));
       float sparkle = pow(max(dot(reflected, sunlight), 0.0), 90.0);

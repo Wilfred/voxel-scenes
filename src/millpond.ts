@@ -11,6 +11,7 @@ import { treePlanter } from "./trees";
 import { appleTree, at, cart, chicken, crate, hive, mill, rabbit, sheep, stall, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
+import * as THREE from "three";
 
 export function buildMillpond(
   seed: number,
@@ -158,6 +159,7 @@ export function buildMillpond(
   return {
     mesh: buildMesh(),
     routes: trail.routes,
+    focus: new THREE.Vector3(millX, 1, wheelZ),
     depth: riverDepthMap((x, z) => -elevation(x, z), 2 * Math.max(radiusX, radiusZ) + 1),
     bounds: { x: 0, z: 0, width: radiusX * 2 + 1, depth: radiusZ * 2 + 1 },
   };

@@ -1,5 +1,4 @@
 import { dailySeed, orchardSeason } from "./day";
-import { buildMillpond } from "./millpond";
 import { weather } from "./weather";
 import { contactRays } from "./contact-rays";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -8,15 +7,21 @@ import { designGallery } from "./gallery";
 import { defaultDesigns } from "./designs";
 import { palette } from "./palette";
 import * as THREE from "three";
-import { buildHillside } from "./hillside";
-import { buildWoods } from "./woods";
-import { createWater, type DepthMap } from "./water";
-import { buildIsland } from "./island";
+import { createWater } from "./water";
+import { createSky } from "./sky";
+import { disposeLandscape, scenes, type Landscape } from "./scenes";
 
 const canvas = document.querySelector("canvas")!;
 const status = document.querySelector<HTMLElement>("#status")!;
 const toolbox = document.querySelector<HTMLElement>(".toolbox")!;
 const context = canvas.getContext("webgl2", { antialias: true });
+
+// The vista camera stands back from its focus in proportion to the scene's
+// model frame and the grid, so a larger grid shows more land at the same
+// apparent size. It looks down at this pitch through a narrow lens.
+const vistaDistance = 3.1;
+const vistaPitch = THREE.MathUtils.degToRad(20);
+const vistaFov = 30;
 
 if (!context) {
   canvas.hidden = true;
@@ -31,10 +36,15 @@ if (!context) {
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   const scene = new THREE.Scene();
-  const cameraTarget = new THREE.Vector3(0, 2, 0);
-  const camera = new THREE.OrthographicCamera(-24, 24, 14, -14, 0.1, 350);
+  const target = new THREE.Vector3();
+  // A rectangular model reads as a miniature in parallel projection. A vista
+  // needs perspective so the land can recede into haze under an open sky.
+  const modelCamera = new THREE.OrthographicCamera();
+  const vistaCamera = new THREE.PerspectiveCamera(vistaFov, 16 / 9);
+  let camera: THREE.OrthographicCamera | THREE.PerspectiveCamera = vistaCamera;
   const { sea, surface, rays } = createWater();
-  scene.add(sea);
+  const sky = createSky();
+  scene.add(sea, sky.dome);
 
   const sun = lightScene(scene);
   const skyLight = scene.children.find(light => light instanceof THREE.HemisphereLight)!;
@@ -42,7 +52,6 @@ if (!context) {
   const tracing = document.querySelector<HTMLInputElement>("#ray-trace")!;
   let clearRays: (() => void) | undefined;
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.normalBias = 0.035;
   const today = new Date();
   let seed = dailySeed(today);
@@ -52,17 +61,10 @@ if (!context) {
   const gridValue = document.querySelector<HTMLOutputElement>("#grid-value")!;
   const framing = document.querySelector<HTMLSelectElement>("#framing")!;
   const generate = document.querySelector<HTMLButtonElement>("#generate")!;
-  const islandDescription = canvas.getAttribute("aria-label")!;
-  let island: ReturnType<typeof buildIsland> | undefined;
-  let riverDepth: DepthMap | undefined;
-  let mesh: ReturnType<typeof buildHillside>["mesh"] | undefined;
-  let hillsideWater: THREE.Mesh<THREE.BufferGeometry> | undefined;
-  let foam: typeof mesh;
+  let landscape: Landscape | undefined;
   const home = new THREE.Spherical(0);
-  const orbit = new OrbitControls(camera, canvas);
+  const orbit = new OrbitControls<THREE.Camera>(camera, canvas);
   orbit.enableZoom = orbit.enablePan = false;
-  orbit.minPolarAngle = 0.3;
-  orbit.maxPolarAngle = 1.02;
   let frame = 0;
   orbit.addEventListener("change", () => {
     surface.eye.value.copy(camera.position).sub(orbit.target).normalize();
@@ -111,148 +113,136 @@ if (!context) {
     renderer.render(scene, camera);
   }
   function updateRays() {
-    if (tracing.checked && mesh && !clearRays) clearRays = contactRays(mesh, surface.grid.value, rays, volumeLimit);
+    if (tracing.checked && landscape && !clearRays) clearRays = contactRays(landscape.mesh, surface.grid.value, rays, volumeLimit);
     rays.tracingEnabled.value = tracing.checked;
+  }
+  function distance() {
+    return vistaDistance * (landscape?.modelHeight ?? 13) * surface.grid.value;
   }
   function applyWeather() {
     const preset = weather[weatherSelect.value as keyof typeof weather];
     const coastal = sceneSelect.value === "island";
-    const sky = coastal && weatherSelect.value === "clear" ? palette.light.coastalSky : preset.sky;
+    const horizon = coastal && weatherSelect.value === "clear" ? palette.light.coastalSky : preset.sky;
     const grid = surface.grid.value;
-    scene.background = new THREE.Color(framing.value === "model" ? palette.light.backdrop : sky);
-    scene.fog = new THREE.FogExp2(sky, preset.haze / grid);
+    const model = camera === modelCamera;
+    scene.background = new THREE.Color(model ? palette.light.backdrop : horizon);
+    // Keep the focus crisp and let the haze close in on the far terrain.
+    const reach = distance();
+    scene.fog = model ? new THREE.FogExp2(horizon, preset.haze / grid)
+      : new THREE.Fog(horizon, reach * 0.9, reach * (1 + 0.006 / preset.haze));
     sun.color.setHex(preset.sunlight);
     sun.intensity = preset.sun;
     skyLight.intensity = preset.ambient;
     skyLight.color.setHex(weatherSelect.value === "clear" ? palette.light.skyLight : preset.horizon);
-    sun.position.set(preset.position[0],preset.position[1],preset.position[2]).multiplyScalar(grid);
-    surface.sun.value.copy(sun.position).normalize();
-    surface.sky.value.setHex(sky);
+    const light = new THREE.Vector3(...preset.position);
+    sun.position.copy(light).multiplyScalar(grid).add(target);
+    sun.target.position.copy(target);
+    sun.target.updateMatrixWorld();
+    surface.sun.value.copy(light).normalize();
+    surface.sky.value.setHex(horizon);
     surface.horizon.value.setHex(preset.horizon);
     surface.zenith.value.setHex(preset.zenith);
     surface.ripple.value = preset.ripple;
     surface.rain.value = weatherSelect.value === "clearing" ? 1 : 0;
+    sky.uniforms.horizon.value.setHex(horizon);
+    sky.uniforms.zenith.value.setHex(preset.zenith);
+    sky.uniforms.glow.value.setHex(preset.sunlight);
+    sky.uniforms.sun.value.copy(surface.sun.value);
+    fitShadow(light.length() * grid);
     renderer.shadowMap.needsUpdate = true;
+  }
+  // Cover the land the camera sees clearly, at about ten shadow texels per
+  // metre-sized crown block where the GPU allows.
+  function fitShadow(sunDistance: number) {
+    const grid = surface.grid.value;
+    const radius = camera === modelCamera ? 28 * grid : 0.9 * distance();
+    const size = THREE.MathUtils.clamp(THREE.MathUtils.ceilPowerOfTwo(2 * radius / 0.1), 2048,
+      Math.min(4096, renderer.capabilities.maxTextureSize));
+    if (sun.shadow.mapSize.x !== size) {
+      sun.shadow.mapSize.set(size, size);
+      sun.shadow.map?.dispose();
+      sun.shadow.map = null;
+    }
+    Object.assign(sun.shadow.camera, { left: -radius, right: radius, top: radius, bottom: -radius, far: sunDistance + 2 * radius });
+    sun.shadow.camera.updateProjectionMatrix();
   }
   function update() {
     window.clearTimeout(pendingGrid);
-    if (hillsideWater) {
-      scene.remove(hillsideWater);
-      hillsideWater.geometry.dispose();
-      hillsideWater = undefined;
-    }
-    if (foam) {
-      scene.remove(foam);
-      foam.dispose();
-      foam.geometry.dispose();
-      foam.material.dispose();
-      foam = undefined;
-    }
-    riverDepth?.texture.dispose();
-    riverDepth = undefined;
-    if (island) {
-      scene.remove(island.floor);
-      island.floor.geometry.dispose();
-      island.floor.material.dispose();
-      island.depth.texture.dispose();
-      island = undefined;
-    }
     clearRays?.();
     clearRays = undefined;
-    if (mesh) {
-      scene.remove(mesh);
-      mesh.dispose();
-      mesh.geometry.dispose();
-      mesh.material.dispose();
-    }
+    if (landscape) disposeLandscape(landscape, sea.material);
 
     const grid = Number(resolution.value) * 2;
     gridValue.value = resolution.value + "×";
-    const hill = sceneSelect.value === "hillside";
-    const woodland = sceneSelect.value === "woods";
     const model = framing.value === "model";
-    const pond = sceneSelect.value === "millpond";
-    const inland = hill || woodland || pond;
-    sea.visible = !hill;
-    sea.position.set(0, 0, 0);
-    sea.scale.set(grid, grid, 1);
-    cameraTarget.set(0, 2, 0);
-    let waterBounds;
-    if (hill) {
-      const hillside = buildHillside(seed, model, grid, designs);
-      mesh = hillside.mesh;
-      riverDepth = hillside.depth;
-      hillsideWater = new THREE.Mesh(hillside.water, sea.material);
-      hillsideWater.renderOrder = 1;
-      hillsideWater.receiveShadow = true;
-      scene.add(hillsideWater);
-      foam = hillside.foam;
-      scene.add(foam);
-      cameraTarget.set(-1, model ? 3 : 5, model ? -2 : -5);
-      camera.top = 13;
-    } else if (pond) {
-      const millpond = buildMillpond(seed, model, grid, designs, orchardSeason(today));
-      mesh = millpond.mesh;
-      riverDepth = millpond.depth;
-      waterBounds = millpond.bounds;
-      cameraTarget.set(0, 1, 0);
-      camera.top = 13;
-    } else if (woodland) {
-      const woods = buildWoods(seed, model, grid, designs);
-      mesh = woods.mesh;
-      riverDepth = woods.depth;
-      waterBounds = woods.bounds;
-      cameraTarget.copy(woods.bridge).add(new THREE.Vector3(4, 1, 2));
-      if (model) cameraTarget.set(waterBounds.x, 2, waterBounds.z);
-      camera.top = 19;
-    } else {
-      island = buildIsland(seed, model, grid, designs);
-      mesh = island.mesh;
-      waterBounds = island.bounds;
-      scene.add(island.floor);
-      if (model) cameraTarget.y = -3;
-      camera.top = 12.5;
-    }
-    if (model && waterBounds) {
-      sea.position.set(waterBounds.x, 0.002, waterBounds.z);
-      sea.scale.set(waterBounds.width / sea.geometry.parameters.width, waterBounds.depth / sea.geometry.parameters.height, 1);
-    }
+    const entry = scenes[sceneSelect.value];
+    // Keep any orbit the viewer made relative to the opening angle.
     const yaw = home.radius > 0 ? orbit.getAzimuthalAngle() - home.theta : 0;
     const tilt = home.radius > 0 ? orbit.getPolarAngle() - home.phi : 0;
-    const facade = island?.facadeAngle ?? 0;
-    camera.position.set(16, inland ? 30 : 27, 40).applyAxisAngle(new THREE.Vector3(0, 1, 0), facade);
+    landscape = entry.build({ seed, model, grid, designs, season: orchardSeason(today), water: sea.material });
+    scene.add(landscape.mesh, ...landscape.extras);
+    sea.visible = landscape.sea;
+    sea.position.set(0, 0, 0);
+    sea.scale.set(grid, grid, 1);
+    const bounds = landscape.waterBounds;
+    if (model && bounds) {
+      sea.position.set(bounds.x, 0.002, bounds.z);
+      sea.scale.set(bounds.width / sea.geometry.parameters.width, bounds.depth / sea.geometry.parameters.height, 1);
+    }
+
+    camera = model ? modelCamera : vistaCamera;
+    orbit.object = camera;
+    sky.dome.visible = !model;
+    const facade = landscape.facade;
     // Orbit the front and both front corners while keeping the door joined to its path.
-    orbit.minAzimuthAngle = woodland ? -Infinity : facade - Math.PI * 0.38;
-    orbit.maxAzimuthAngle = woodland ? Infinity : facade + Math.PI * 0.38;
-    camera.top *= grid;
-    camera.far = 350 * grid;
-    home.setFromVector3(camera.position.multiplyScalar(grid));
-    orbit.target.copy(cameraTarget);
-    camera.position.add(cameraTarget);
+    orbit.minAzimuthAngle = landscape.frontOnly ? facade - Math.PI * 0.38 : -Infinity;
+    orbit.maxAzimuthAngle = landscape.frontOnly ? facade + Math.PI * 0.38 : Infinity;
+    const offset = new THREE.Vector3(16, model ? landscape.modelRise ?? 30 : 0, 40).applyAxisAngle(new THREE.Vector3(0, 1, 0), facade);
+    if (model) {
+      target.copy(landscape.modelTarget);
+      orbit.minPolarAngle = 0.3;
+      orbit.maxPolarAngle = 1.02;
+      const top = landscape.modelHeight * grid;
+      Object.assign(modelCamera, { top, bottom: -top, right: top * 16 / 9, left: -top * 16 / 9, near: 0.1, far: 350 * grid });
+      offset.multiplyScalar(grid);
+    } else {
+      const distance = vistaDistance * landscape.modelHeight * grid;
+      const azimuth = Math.atan2(offset.x, offset.z);
+      offset.setFromSphericalCoords(distance, Math.PI / 2 - vistaPitch, azimuth);
+      orbit.minPolarAngle = Math.PI / 2 - THREE.MathUtils.degToRad(34);
+      orbit.maxPolarAngle = Math.PI / 2 - THREE.MathUtils.degToRad(12);
+      target.copy(landscape.focus);
+      if (landscape.thirds) {
+        // Set the focus on a third, facing into the larger part of the frame.
+        const right = new THREE.Vector3(Math.cos(azimuth), 0, -Math.sin(azimuth));
+        const facing = new THREE.Vector3(Math.sin(facade), 0, Math.cos(facade)).dot(right);
+        const halfWidth = distance * Math.tan(THREE.MathUtils.degToRad(vistaFov / 2)) * 16 / 9;
+        target.addScaledVector(right, (facing < 0 ? -1 : 1) * halfWidth / 3);
+      }
+      vistaCamera.near = 0.5;
+      vistaCamera.far = distance * 8;
+    }
+    home.setFromVector3(offset);
+    orbit.target.copy(target);
+    camera.position.copy(offset).add(target);
     orbit.update();
     orbit.saveState();
-    camera.position.setFromSpherical(new THREE.Spherical(home.radius, home.phi + tilt, home.theta + yaw)).add(cameraTarget);
+    camera.position.setFromSpherical(new THREE.Spherical(home.radius, home.phi + tilt, home.theta + yaw)).add(target);
     orbit.update();
-    renderer.shadowMap.needsUpdate = true;
-    Object.assign(sun.shadow.camera, { left: -28 * grid, right: 28 * grid, top: 24 * grid, bottom: -24 * grid, far: 100 * grid });
-    sun.shadow.camera.updateProjectionMatrix();
+    camera.zoom = zoomLevels[zoomIndex];
+    camera.updateProjectionMatrix();
+    surface.eye.value.copy(camera.position).sub(target).normalize();
+
     surface.grid.value = grid;
-    const depthMap = riverDepth ?? island?.depth;
-    surface.depth.value = depthMap?.texture ?? null;
-    surface.depthExtent.value = depthMap?.extent ?? 64 * grid;
-    surface.deep.value.setHex(inland ? palette.water.river : palette.water.sea);
+    surface.depth.value = landscape.depth.texture;
+    surface.depthExtent.value = landscape.depth.extent;
+    surface.deep.value.setHex(landscape.deepWater);
     applyWeather();
     updateRays();
     surface.phase.value = (seed % 997) / 53;
-    scene.add(mesh);
-    canvas.setAttribute("aria-label", pond ? "An orchard track leading to a watermill beside a duck pond" : hill ? "A hillside cottage overlooking a waterfall and its winding river" : woodland ? "A stream winding through woodland with a timber footbridge" : islandDescription);
-    generate.textContent = pond ? "New millpond" : hill ? "New hillside" : woodland ? "New woods" : "New island";
-    camera.lookAt(cameraTarget);
-    camera.bottom = -camera.top;
-    camera.right = camera.top * 16 / 9;
-    camera.left = -camera.right;
-    camera.updateProjectionMatrix();
-    document.querySelector("#seed")!.textContent = (pond ? "Millpond " : hill ? "Hillside " : woodland ? "Woods " : "Island ") + seed;
+    canvas.setAttribute("aria-label", entry.description);
+    generate.textContent = "New " + entry.name.toLowerCase();
+    document.querySelector("#seed")!.textContent = entry.name + " " + seed;
     preview();
   }
 
@@ -290,9 +280,15 @@ if (!context) {
     }, "image/png");
     preview();
   };
-  const requested = new URLSearchParams(location.search).get("scene");
-  if (requested === "millpond" || requested === "woods" || requested === "hillside") sceneSelect.value = requested;
-  if (requested === "mountains") sceneSelect.value = "hillside";
+  // Reproduce a shared composition from ?scene=, &framing=, &weather= and &seed=.
+  const params = new URLSearchParams(location.search);
+  for (const [select, key] of [[sceneSelect, "scene"], [framing, "framing"], [weatherSelect, "weather"]] as const) {
+    const value = params.get(key);
+    if (value && [...select.options].some(option => option.value === value)) select.value = value;
+  }
+  if (params.get("scene") === "mountains") sceneSelect.value = "hillside";
+  const requestedSeed = Number(params.get("seed") ?? NaN);
+  if (Number.isInteger(requestedSeed) && requestedSeed >= 0) seed = requestedSeed >>> 0;
   update();
   let idleTimer = 0;
   function wakeControls() {
