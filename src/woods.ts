@@ -1,9 +1,9 @@
-import { addNatureProp, type NatureProp } from "./tiny-nature";
+import { addStump } from "./tiny-nature";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import * as THREE from "three";
 
-export function buildWoods(seed: number, model: boolean, importedProps: boolean) {
+export function buildWoods(seed: number, model: boolean, showStump: boolean) {
   const random = seededRandom(seed);
 
   const phase = random() * 2 * Math.PI;
@@ -70,34 +70,22 @@ export function buildWoods(seed: number, model: boolean, importedProps: boolean)
   approach(west, -1);
   approach(east, 1);
 
-  const propSites: { x: number; z: number }[] = [];
-  if (importedProps) {
-    // Two canopy heights frame the stream, with a cut stump beside the crossing.
-    const landmarks: [NatureProp, number, number][] = [
-      ["tree01", west - 5, bridgeZ - 5],
-      ["tree02", east + 4, bridgeZ + 4],
-      ["treeStump", west - 2, bridgeZ + 2],
-    ];
-    for (const [prop, targetX, targetZ] of landmarks) {
-      let site: { x: number; z: number } | undefined;
-      let nearest = Infinity;
-      for (let z = targetZ - 4; z <= targetZ + 4; z++) {
-        for (let x = targetX - 4; x <= targetX + 4; x++) {
-          if (!inside(x - 1, z - 1) || !inside(x + 1, z + 1)) continue;
-          if (elevation(x, z) < 0.5 || trail.has(x + "," + z)) continue;
-          if (propSites.some(p => Math.hypot(p.x - x, p.z - z) < 3)) continue;
-          const distance = Math.hypot(x - targetX, z - targetZ);
-          if (distance < nearest) {
-            nearest = distance;
-            site = { x, z };
-          }
+  let stump: { x: number; z: number } | undefined;
+  if (showStump) {
+    const targetX = west - 2;
+    const targetZ = bridgeZ + 2;
+    let nearest = Infinity;
+    for (let z = targetZ - 4; z <= targetZ + 4; z++) {
+      for (let x = targetX - 4; x <= targetX + 4; x++) {
+        if (!inside(x, z) || elevation(x, z) < 0.5 || trail.has(x + "," + z)) continue;
+        const distance = Math.hypot(x - targetX, z - targetZ);
+        if (distance < nearest) {
+          nearest = distance;
+          stump = { x, z };
         }
       }
-      if (site) {
-        propSites.push(site);
-        addNatureProp(box, prop, site.x, elevation(site.x, site.z), site.z);
-      }
     }
+    if (stump) addStump(box, stump.x, elevation(stump.x, stump.z), stump.z);
   }
 
   // Seed stands along each bank independently, with gaps between seed sources.
@@ -150,7 +138,7 @@ export function buildWoods(seed: number, model: boolean, importedProps: boolean)
     const sapling = random() < 0.27;
     const pine = leafPatch < 0.45;
     if (model && (!inside(x - 1.25, z - 1.25) || !inside(x + 1.25, z + 1.25))) continue;
-    if (propSites.some(p => Math.abs(x - p.x) <= 2 && Math.abs(z - p.z) <= 2)) continue;
+    if (stump && Math.abs(x - stump.x) <= 1 && Math.abs(z - stump.z) <= 1) continue;
     plantTree(x, elevation(x, z), z, pine ? "pine" : "broadleaf", sapling);
   }
 
