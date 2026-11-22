@@ -7,7 +7,7 @@ import { grassShade, palette } from "./palette";
 import { treeVoxel } from "./scale";
 import { terrainField } from "./terrain";
 import { terrainTrail } from "./trails";
-import { treePlanter } from "./trees";
+import { standDensity, treePlanter } from "./trees";
 import { appleTree, at, cart, chicken, crate, hive, mill, rabbit, sheep, stall, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
@@ -153,7 +153,7 @@ export function buildMillpond(
       )
         continue;
       const cover = relief(x + 41, z - 67);
-      if (random() < 0.012 + 0.14 * Math.max(0, cover))
+      if (random() < standDensity(cover))
         plant(x, h, z, cover > 0.4 ? "pine" : "broadleaf", random() < 0.23);
     }
   return {

@@ -36,6 +36,14 @@ const profiles: Record<Species, [Profile, Profile][]> = {
   ],
 };
 
+// Woodland grows in stands separated by open meadows, with the odd lone
+// tree between them. `cover` is a smooth field, roughly -1 to 1, and the
+// result is the chance of planting in one terrain cell.
+export function standDensity(cover: number) {
+  const edge = 0.08;
+  return cover < edge ? 0.003 : Math.min(0.5, 0.05 + 0.9 * (cover - edge));
+}
+
 export function treePlanter(box: Box, voxel: number, designs = defaultDesigns, seed = 0) {
   type CrownBox = { x: number; y: number; z: number; width: number; height: number; depth: number };
   const stands = new Map<string, CrownBox[]>();

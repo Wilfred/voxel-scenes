@@ -12,7 +12,7 @@ import { buildCottage, cottageDoor } from "./cottage";
 import { grassShade, palette } from "./palette";
 import { firewood } from "./trail-details";
 import { terrainTrail } from "./trails";
-import { treePlanter } from "./trees";
+import { standDensity, treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 
 export function buildHillside(seed: number, model: boolean, grid = 1, designs = defaultDesigns) {
@@ -142,7 +142,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       const rock = bedrockHeight(x, z, land);
       const h = path ?? elevation(x, z, land, rock);
       const exposed = rock >= h;
-      const grove = Math.sin(x * 0.3 + phase) + Math.cos(z * 0.23);
+      const cover = relief(x + 41, z - 67);
       const onPath = path !== undefined || yards.paths.has(x + "," + z);
       const color = onPath ? palette.ground.path : exposed ? palette.ground.stone
         : bank < 0 ? palette.ground.riverbed : grassShade(h / 16 + 0.25 * relief(x - 29, z + 47));
@@ -184,7 +184,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       }
       if (exposed || yard.near(x,z,1.5) || yards.near(x, z) || yards.paths.has(x + "," + z) || Math.abs(x) >= radiusX - 1 || Math.abs(z) >= radiusZ - 1 || bank < 2 ||
         Math.hypot(x - cabinX, z - cabinZ) < 3.5 || (stack && Math.hypot(x - stack.x, z - stack.z) < 2) || trail.near(x, z)) continue;
-      if (chance < 0.024 + 0.105 * Math.max(0, grove)) plantTree(x, h, z, grove > 1 ? "pine" : "broadleaf", sapling);
+      if (chance < standDensity(cover)) plantTree(x, h, z, cover > 0.35 ? "pine" : "broadleaf", sapling);
     }
   }
   const water = new THREE.BufferGeometry();
