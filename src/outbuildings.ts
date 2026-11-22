@@ -1,5 +1,5 @@
 import { palette } from "./palette";
-import { masonryCourses, pitchedRoof } from "./building";
+import { casement, masonryCourses, pitchedRoof } from "./building";
 import type { Elevation } from "./sites";
 import type { Box } from "./voxels";
 
@@ -24,7 +24,9 @@ export function buildOutbuilding(box: Box, kind: Kind) {
     course(-5, 0, 2, 3, 5, 1, wall);
     if (kind === "store") course(-2, 0, 2, 3, 4, 1, wood);
     course(-2, 4, 2, 3, 1, 1, wall);
-    course(1, 0, 2, 4, 5, 1, wall);
+    course(1, 0, 2, 4, 2, 1, wall);
+    casement(course, 1, 2, 2, 3, 3, wall);
+    course(4, 2, 2, 1, 3, 1, wall);
     pitchedRoof(course, kind === "store" ? "hip" : "gable", 6, 4, 5, 4, wall);
   }
 }

@@ -164,7 +164,8 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   const incoming = [Math.sign(end.x - previous.x), Math.sign(end.z - previous.z)];
   const headings = [incoming, [incoming[1], -incoming[0]], [-incoming[1], incoming[0]]];
   const [pierX, pierZ] = headings.find(([dx, dz]) =>
-    [1, 2, 3].every(i => naturalHeight(end.x + dx * unit * i, end.z + dz * unit * i) < 0)) ?? incoming;
+    [1, 2, 3].every(i => [-0.375, 0.375].every(side =>
+      naturalHeight(end.x + dx * unit * i + dz * side, end.z + dz * unit * i - dx * side) < 0))) ?? incoming;
   pier(box, end, pierX, pierZ, naturalHeight);
 
   // The floor mesh and the water's absorption map use the same soundings.

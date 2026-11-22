@@ -73,3 +73,16 @@ Let open-sided working buildings reveal the space where their work happens.
 Around waterfalls, establish the grassy valley, bedrock and soil cover before
 carving the channel. Exposed stone should continue naturally from an outcrop
 into the bank or streambed.
+
+## When to subdivide a voxel
+
+Terrain, paths and stair rises follow their terrain lattice. For built structures,
+lay out the load-bearing silhouette on a local 0.25-world-unit construction grid
+(half a metre in the landscape). Decks, piles, rails and walls use multiples of
+that unit across scenes. Adapt a structure’s span and width to its job while
+keeping the same thickness for comparable members.
+
+Use a half-course for a small functional detail such as a signboard or sill.
+Small animals can use their own finer grid so their legs and heads read at
+the established body size. Keep a single detail scale within each model.
+Water, foam and smoke can depart from the solid grid for surface and air effects.

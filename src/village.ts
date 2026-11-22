@@ -1,4 +1,4 @@
-import { masonryCourses, pitchedRoof } from "./building";
+import { casement, masonryCourses, pitchedRoof } from "./building";
 import { palette as p } from "./palette";
 import { findSite, type Elevation } from "./sites";
 import type { Box } from "./voxels";
@@ -91,12 +91,12 @@ export const mill: Model = (box) => {
   course(-8, -4, -5, 16, 4, 10, p.ground.stone);
   course(-8, 0, -5, 16, 8, 9, p.cottage.plaster);
   for (let x = -8; x < 8; x++) {
-    const door = x >= -5 && x <= -3,
-      window = x === 2 || x === 3;
+    const door = x >= -5 && x <= -3;
     course(x, 0, 4, 1, 2, 1, door ? p.wood : p.ground.stone);
-    course(x, 2, 4, 1, 3, 1, door ? p.wood : window ? p.cottage.glass : p.cottage.plaster);
+    if (x < 1 || x > 5) course(x, 2, 4, 1, 3, 1, door ? p.wood : p.cottage.plaster);
     course(x, 5, 4, 1, 3, 1, p.cottage.plaster);
   }
+  casement(course, 1, 2, 4, 5, 3, p.cottage.plaster);
   pitchedRoof(course, "gable", 9, 6, 8, 6, p.cottage.plaster);
   // Two timber rims joined by paddles on the stream side of the mill.
   for (let y = -4; y <= 4; y++)

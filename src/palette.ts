@@ -19,7 +19,7 @@ export const palette = {
   cottage: {
     plaster: 0xb9ab92,
     tile: 0x906f58,
-    glass: 0x97a298,
+    glass: 0x778e89,
     smoke: 0xe4ddd0,
   },
   water: {

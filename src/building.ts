@@ -9,6 +9,20 @@ export function masonryCourses(box: Box) {
   };
 }
 
+// The opening replaces the outer wall course. A half-course reveal catches
+// light under the head and along the jambs, even in a small facade.
+export function casement(course: ReturnType<typeof masonryCourses>, x: number, y: number,
+  z: number, width: number, height: number, surround: number) {
+  const trim = 0.5;
+  course(x, y, z, width, trim, 1, surround);
+  course(x, y + height - trim, z, width, trim, 1, surround);
+  const bottom = y + trim, clear = height - 2 * trim;
+  course(x, bottom, z, trim, clear, 1, surround);
+  course(x + width - trim, bottom, z, trim, clear, 1, surround);
+  course(x + trim, bottom, z, width - 2 * trim, clear, trim, palette.cottage.glass);
+  if (width >= 4) course(x + Math.floor(width - trim) / 2, bottom, z + trim, trim, clear, trim, surround);
+}
+
 export type Roof = "gable" | "hip" | "saltbox";
 
 export function pitchedRoof(course: ReturnType<typeof masonryCourses>, shape: Roof,
