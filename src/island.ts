@@ -1,15 +1,12 @@
+import { palette } from "./palette";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import { buildCottage } from "./cottage";
 import * as THREE from "three";
 
-export const islandPalette = {
-  sea: 0x397e92, sky: 0xffd1a4, beach: 0xffcd85, turf: 0xc1ac60, rock: 0xbd8468,
-  sun: [-35, 16, 14], eye: [8, 29, 43], span: 25,
-};
+export const bayBounds = { x: 0, z: 0, width: 44, depth: 34 };
 
-export function buildIsland(seed: number) {
-  const p = islandPalette;
+export function buildIsland(seed: number, model: boolean) {
   const random = seededRandom(seed);
 
   const phase = random() * Math.PI * 2;
@@ -66,10 +63,10 @@ export function buildIsland(seed: number) {
       }
       const top = h + unit;
       const soilTop = h >= 1 && !stairCorridor ? h : top;
-      box(x, (soilTop - unit) / 2, z, 0.5, soilTop + unit, 0.5, h < 1 ? p.beach : p.rock);
+      box(x, (soilTop - unit) / 2, z, 0.5, soilTop + unit, 0.5, h < 1 ? palette.ground.sand : palette.ground.stone);
       if (stairCorridor) continue;
       if (h < 1) continue;
-      box(x, top - unit / 2, z, 0.5, unit, 0.5, p.turf);
+      box(x, top - unit / 2, z, 0.5, unit, 0.5, palette.green.meadow);
       const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
       const density = (x < -6 ? 0.26 : 0.14) * grove;
       if (Math.hypot(x - cottageX, z - cottageZ) < 2 || random() > density) continue;
@@ -81,43 +78,46 @@ export function buildIsland(seed: number) {
     box(cottageX + x * cottageScale, foundationTop + (y - 0.4) * cottageScale, cottageZ + z * cottageScale,
       w * cottageScale, h * cottageScale, d * cottageScale, color);
   }
-  buildCottage(cottageBox, p.rock);
+  buildCottage(cottageBox);
 
   const doorZ = cottageZ + cottageScale;
   box(cottageX, foundationTop - unit / 2, (doorZ + stairStart) / 2,
-    1, unit, stairStart - doorZ, 0xa7835b);
+    1, unit, stairStart - doorZ, palette.wood.plank);
   for (let i = 0; i < risers; i++) {
     const z = stairStart + (i + 0.5) * treadDepth;
     const top = foundationTop - (i + 1) * unit;
     const stoneTop = top - unit;
-    box(cottageX, (stoneTop - unit) / 2, z, 1, stoneTop + unit, treadDepth, p.rock);
-    box(cottageX, top - unit / 2, z, 1, unit, treadDepth, 0xad865a);
+    box(cottageX, (stoneTop - unit) / 2, z, 1, stoneTop + unit, treadDepth, palette.ground.stone);
+    box(cottageX, top - unit / 2, z, 1, unit, treadDepth, palette.wood.plank);
   }
   const dockLength = 1.75;
-  box(cottageX, dockTop - unit / 2, stairEnd + dockLength / 2, 1, unit, dockLength, 0x926a47);
+  box(cottageX, dockTop - unit / 2, stairEnd + dockLength / 2, 1, unit, dockLength, palette.wood.plank);
   for (const side of [-1, 1]) {
     const x = cottageX + side * (0.5 + unit / 2);
     const z = stairEnd + dockLength - unit / 2;
     const foot = Math.min(-unit, naturalHeight(x, z) - unit);
     const postTop = dockTop + unit;
-    box(x, (postTop + foot) / 2, z, unit, postTop - foot, unit, 0x624832);
+    box(x, (postTop + foot) / 2, z, unit, postTop - foot, unit, palette.wood.bark);
   }
 
   // The floor mesh and the water's absorption map use the same soundings.
   const resolution = 128;
-  const floorGeometry = new THREE.PlaneGeometry(64, 64, resolution - 1, resolution - 1);
+  const floorGeometry = new THREE.PlaneGeometry(model ? bayBounds.width : 64, model ? bayBounds.depth : 64, resolution - 1, resolution - 1);
   floorGeometry.rotateX(-Math.PI / 2);
   const positions = floorGeometry.getAttribute("position");
   const samples = new Uint8Array(resolution * resolution);
   const colors = new Float32Array(positions.count * 3);
-  const wetSand = new THREE.Color(p.beach);
-  const silt = new THREE.Color(0x506d60);
+  const wetSand = new THREE.Color(palette.ground.sand);
+  const silt = new THREE.Color(palette.ground.silt);
   const floorColor = new THREE.Color();
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i);
     const z = positions.getZ(i);
     const y = THREE.MathUtils.clamp(naturalHeight(x, z), -7, -0.14);
-    samples[i] = Math.round(255 * Math.min(-y / 6, 1));
+    // The shader samples a fixed 64-unit footprint in both framings.
+    const sampleX = ((i % resolution) / (resolution - 1) - 0.5) * 64;
+    const sampleZ = (Math.floor(i / resolution) / (resolution - 1) - 0.5) * 64;
+    samples[i] = Math.round(255 * THREE.MathUtils.clamp(-naturalHeight(sampleX, sampleZ) / 6, 0.14 / 6, 1));
     // Extend the outer ring under the whole view so the horizon has a bottom.
     positions.setXYZ(i, Math.abs(x) === 32 ? x * 8 : x, y, Math.abs(z) === 32 ? z * 8 : z);
     const patches = Math.sin(x * 0.8 + phase) * Math.sin(z * 0.64 + x * 0.24);
@@ -136,12 +136,21 @@ export function buildIsland(seed: number) {
     const y = naturalHeight(x, z);
     if (y > -0.5 || y < -2.5) continue;
     const size = 0.22 + random() * 0.52;
-    box(x, y, z, size, size * 0.7, size * 0.8, p.rock);
+    box(x, y, z, size, size * 0.7, size * 0.8, palette.ground.stone);
   }
   const depth = new THREE.DataTexture(samples, resolution, resolution, THREE.RedFormat);
   depth.magFilter = depth.minFilter = THREE.LinearFilter;
   depth.needsUpdate = true;
 
+  if (model) {
+    // Enclose the bounded seabed and water on the four exposed cut faces.
+    const { width, depth } = bayBounds;
+    box(0, -7.5, 0, width, 1, depth, palette.ground.soil);
+    for (const side of [-1, 1]) {
+      box(side * (width / 2 - 0.01), -3.5, 0, 0.02, 7, depth, palette.water.cutFace);
+      box(0, -3.5, side * (depth / 2 - 0.01), width, 7, 0.02, palette.water.cutFace);
+    }
+  }
   const mesh = buildMesh();
   return { mesh, floor, depth };
 }

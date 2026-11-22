@@ -1,3 +1,4 @@
+import { palette } from "./palette";
 import { addDuck } from "./ducks";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
@@ -94,14 +95,14 @@ export function buildWoods(seed: number, model: boolean, showDucks: boolean) {
       const leafPatch = Math.sin(x * 0.20 + phase) + Math.sin(z * 0.16);
       const onTrail = trail.has(x + "," + z);
       if (!model || inside(x, z)) {
-        const ground = h < 0 ? 0x8e967b : h < 1 ? 0xabaa7b : leafPatch > 0 ? 0x91945b : 0x7e8c5d;
-        const tint = onTrail ? 0xad906a : ground;
+        const ground = h < 0 ? palette.ground.riverbed : h < 1 ? palette.ground.sand : leafPatch > 0 ? palette.green.meadow : palette.green.grass;
+        const tint = onTrail ? palette.ground.path : ground;
         const edge = model && (x - 0.5 === left || x + 0.5 === left + width ||
           z - 0.5 === back || z + 0.5 === back + depth);
         if (edge) {
-          box(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, 0x886f58);
+          box(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, palette.ground.soil);
           box(x, h - 0.25, z, 1, 0.5, 1, tint);
-          if (h < 0) box(x, h / 2, z, 1, -h, 1, 0x508782);
+          if (h < 0) box(x, h / 2, z, 1, -h, 1, palette.water.cutFace);
         } else {
           box(x, (h - 4) / 2, z, 1, h + 4, 1, tint);
         }
@@ -137,15 +138,15 @@ export function buildWoods(seed: number, model: boolean, showDucks: boolean) {
   const deck = Math.max(elevation(east, bridgeZ), elevation(west, bridgeZ));
   const span = east - west - 1;
   const middle = (west + east) / 2;
-  box(middle, deck - 0.25, bridgeZ, span, 0.5, 1.5, 0x947457);
+  box(middle, deck - 0.25, bridgeZ, span, 0.5, 1.5, palette.wood.plank);
   for (const side of [-0.75, 0.5]) {
     const z = bridgeZ + side + 0.125;
-    box(middle, deck + 0.875, z, span, 0.25, 0.25, 0x806447);
+    box(middle, deck + 0.875, z, span, 0.25, 0.25, palette.wood.timber);
     const bays = Math.ceil(span / 3);
     for (let i = 0; i <= bays; i++) {
       const left = west + 0.5 + Math.round((span - 0.25) * i / bays * 4) / 4;
       const bottom = elevation(Math.round(left + 0.125), Math.round(z)) - 0.5;
-      box(left + 0.125, (bottom + deck + 0.75) / 2, z, 0.25, deck + 0.75 - bottom, 0.25, 0x776047);
+      box(left + 0.125, (bottom + deck + 0.75) / 2, z, 0.25, deck + 0.75 - bottom, 0.25, palette.wood.bark);
     }
   }
 

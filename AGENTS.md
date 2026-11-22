@@ -42,7 +42,9 @@ bays, and future floating islands should feel like places in the same game.
 - Give the land a coherent shape. A cottage on the shoulder of one substantial
   mountain conveys its scale. Generate terrain first, choose an existing
   relatively flat site, and thin just enough trees for the building and access.
-- Use chunky geometry, flat colours, and an earthy palette. Give skies and
+- Draw scene colours from the shared material families in `src/palette.ts`.
+  Use the plank tone for bridge decks, stairs, and docks, and bark for trunks
+  and rough posts. Give skies and
   water more natural depth. Keep skybox clouds clear of the ground, align cast
   shadows with the depicted sun, and let shallow water show the bed through
   actual transparency. Keep silhouettes clear through changes in weather.

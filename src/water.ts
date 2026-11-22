@@ -1,3 +1,4 @@
+import { palette } from "./palette";
 import * as THREE from "three";
 
 // Retain Three's lighting and island shadows underneath the reflected sky.
@@ -13,6 +14,9 @@ export function createWater() {
   const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false });
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, {
+      horizonTint: { value: new THREE.Color(palette.light.horizon) },
+      zenithTint: { value: new THREE.Color(palette.light.zenith) },
+      glintTint: { value: new THREE.Color(palette.light.sunGlint) },
       seabed: surface.depth, deepWater: surface.deep, skyTint: surface.sky,
       sunlight: surface.sun, viewDirection: surface.eye, wavePhase: surface.phase,
     });
@@ -23,6 +27,7 @@ export function createWater() {
     shader.fragmentShader = `
       varying vec2 oceanXZ;
       uniform sampler2D seabed;
+      uniform vec3 horizonTint, zenithTint, glintTint;
       uniform vec3 deepWater, skyTint, sunlight, viewDirection;
       uniform float wavePhase;
       float hashWave(vec2 cell) {
@@ -60,9 +65,9 @@ export function createWater() {
       vec3 reflected = reflect(-viewDirection, waveNormal);
       float facing = clamp(dot(viewDirection, waveNormal), 0.0, 1.0);
       float fresnel = 0.035 + 0.965 * pow(1.0 - facing, 4.0);
-      vec3 skyLight = mix(mix(skyTint, vec3(0.72, 0.82, 0.89), 0.65), vec3(0.25, 0.52, 0.75), smoothstep(0.05, 0.70, reflected.y));
+      vec3 skyLight = mix(mix(skyTint, horizonTint, 0.65), zenithTint, smoothstep(0.05, 0.70, reflected.y));
       float sparkle = pow(max(dot(reflected, sunlight), 0.0), 90.0);
-      outgoingLight = mix(outgoingLight, skyLight, fresnel) + vec3(1.0, 0.89, 0.68) * sparkle;
+      outgoingLight = mix(outgoingLight, skyLight, fresnel) + glintTint * sparkle;
       float pathLength = 6.0 * depthFraction / max(facing, 0.22);
       float transmission = exp(-0.30 * pathLength) * (1.0 - fresnel);
       diffuseColor.a = 1.0 - transmission;

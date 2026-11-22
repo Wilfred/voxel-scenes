@@ -1,9 +1,10 @@
+import { palette } from "./palette";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import { buildCottage } from "./cottage";
 import * as THREE from "three";
 
-export function buildMountains(seed: number) {
+export function buildMountains(seed: number, model: boolean) {
   const random = seededRandom(seed);
 
   const phase = random() * Math.PI * 2;
@@ -95,19 +96,29 @@ export function buildMountains(seed: number) {
       const slope = Math.hypot(heights[index + 1] - h, heights[index + width] - h);
       const stone = h + slope * 2 + exposure > 13.5;
       const snow = h - slope * 1.6 + exposure > 17.2;
-      const color = snow ? 0xf4e6ce : stone ? 0x867d80 : h + exposure > 9 ? 0xa29b76 : 0x808959;
-      box(x, h / 2 - 1, z, 1, h + 2, 1, trail.has(index) ? 0xbc9870 : color);
+      const color = snow ? palette.ground.snow : stone ? palette.ground.stone : h + exposure > 9 ? palette.green.dryGrass : palette.green.grass;
+      // The cutaway includes the whole summit and its inhabited southern shoulder.
+      const inTile = x >= -44 && x <= 23 && z >= -62 && z <= 25;
+      const surface = trail.has(index) ? palette.ground.path : color;
+      const edge = x === -44 || x === 23 || z === -62 || z === 25;
+      if (model && inTile && edge) {
+        box(x, h / 2 - 1.25, z, 1, h + 1.5, 1, palette.ground.soil);
+        box(x, h - 0.25, z, 1, 0.5, 1, surface);
+      } else if (!model || inTile) {
+        box(x, h / 2 - 1, z, 1, h + 2, 1, surface);
+      }
       if (trail.has(index)) continue;
       const grove = Math.sin(x * 0.29 + phase) + Math.cos(z * 0.33);
       const distance = Math.hypot(x - cabinX, z - cabinZ);
       const density = (0.10 + 0.08 * grove) * (distance < 4 ? 0.75 : 1);
       if (stone || distance <= 2.25 || random() > density) continue;
-      plantTree(x, h, z, "pine", random() < 0.25);
+      const sapling = random() < 0.25;
+      if (!model || (x > -44 && x < 23 && z > -62 && z < 25)) plantTree(x, h, z, "pine", sapling);
     }
   }
   buildCottage((x, y, z, w, h, d, color) => {
     box(cabinX + x, foundation + y - 0.4, cabinZ + z, w, h, d, color);
-  }, 0x84776e);
+  });
 
   const mesh = buildMesh();
   return {

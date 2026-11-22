@@ -1,3 +1,4 @@
+import { palette } from "./palette";
 import type { Box } from "./voxels";
 
 type TreeBox = {
@@ -61,9 +62,9 @@ export function treePlanter(box: Box, voxel: number) {
         }
       }
     }
-    const palette = species === "pine"
-      ? { trunk: 0x635440, leaf: 0x416950, tip: 0x547b5b }
-      : { trunk: 0x635440, leaf: 0x52774f, tip: 0x658861 };
+    const foliage = species === "pine"
+      ? { trunk: palette.wood.bark, leaf: palette.green.pine, tip: palette.green.pineTip }
+      : { trunk: palette.wood.bark, leaf: palette.green.leaf, tip: palette.green.leafTip };
     const keys: string[] = [];
     let base = 0;
     const parts = model.map(part => {
@@ -90,7 +91,7 @@ export function treePlanter(box: Box, voxel: number) {
     for (const part of parts) {
       const y = ground + (part.bottom + part.height / 2) * voxel;
       box(x, y, z,
-        part.width * voxel, part.height * voxel, part.depth * voxel, palette[part.part]);
+        part.width * voxel, part.height * voxel, part.depth * voxel, foliage[part.part]);
     }
   };
 }
