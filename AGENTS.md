@@ -31,7 +31,7 @@ Daily automatic wallpaper changes are a longer-term goal.
 ## Composition and materials
 
 Read [ART_STYLE.md](ART_STYLE.md) for the visual references and overall art
-direction. Use the **Graphic landscape** style across scenes. Woods, mountains,
+direction. Use the **Graphic landscape** style across scenes. Woodland streams, hillsides,
 bays, and future floating islands should feel like places in the same game.
 
 - Compose pulled-back vistas and dioramas. Show the roof and two faces of a
@@ -39,12 +39,11 @@ bays, and future floating islands should feel like places in the same game.
   with a path, shore, or stream leading the eye toward it. Leave breathing room
   above a summit and around the silhouette of a rectangular model on its plain
   background.
-- Give the land a coherent shape. A cottage on the shoulder of one substantial
-  mountain conveys its scale. Generate terrain first, choose an existing
+- Give the land a coherent shape. Connect cottage paths to visible destinations, such as a water landing.
+  Generate terrain first, choose an existing
   relatively flat site, and thin just enough trees for the building and access.
 - Draw scene colours from the shared material families in `src/palette.ts`.
-  Use the plank tone for bridge decks, stairs, and docks, and bark for trunks
-  and rough posts. Give skies and
+  Use one wood colour for living trunks and built timber. Give skies and
   water more natural depth. Keep skybox clouds clear of the ground, align cast
   shadows with the depicted sun, and let shallow water show the bed through
   actual transparency. Keep silhouettes clear through changes in weather.

@@ -12,8 +12,5 @@ Each scene supports Vista and Rectangular model framing and saves a 2560 × 1440
 Run `npm run build` to type-check the TypeScript and create the static site
 in `dist/`. Run `npm run preview` to serve that build locally.
 
-The mountain sky uses a tone-mapped copy of the CC0 panorama
-[Kloofendal 48d Partly Cloudy from Poly Haven](https://polyhaven.com/a/kloofendal_48d_partly_cloudy).
-
 Toggle **Ducks** in Woodland stream to compare a pair of birds on the water
 with the same uninhabited view.

@@ -1,6 +1,20 @@
 import { palette } from "./palette";
 import * as THREE from "three";
 
+// Water samples the terrain on a 64-unit square centred at the origin.
+export function riverDepthMap(depthAt: (x: number, z: number) => number) {
+  const samples = new Uint8Array(128 * 128);
+  for (let i = 0; i < samples.length; i++) {
+    const x = Math.floor((i % 128 + 0.5) / 2 - 31.5);
+    const z = Math.floor((Math.floor(i / 128) + 0.5) / 2 - 31.5);
+    samples[i] = Math.round(255 * THREE.MathUtils.clamp(depthAt(x, z) / 6, 0, 1));
+  }
+  const depth = new THREE.DataTexture(samples, 128, 128, THREE.RedFormat);
+  depth.magFilter = depth.minFilter = THREE.LinearFilter;
+  depth.needsUpdate = true;
+  return depth;
+}
+
 // Retain Three's lighting and island shadows underneath the reflected sky.
 export function createWater() {
   const surface = {

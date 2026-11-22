@@ -9,7 +9,7 @@ export function buildCottage(box: Box) {
   const plaster = palette.cottage.plaster;
   const roof = palette.cottage.tile;
   const glass = palette.cottage.glass;
-  const timber = palette.wood.weathered;
+  const timber = palette.wood;
   bricks(-5, -3, -4, 10, 3, 8, palette.ground.stone);
   bricks(-5, 0, -4, 10, 5, 7, plaster);
 

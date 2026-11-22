@@ -82,22 +82,22 @@ export function buildIsland(seed: number, model: boolean) {
 
   const doorZ = cottageZ + cottageScale;
   box(cottageX, foundationTop - unit / 2, (doorZ + stairStart) / 2,
-    1, unit, stairStart - doorZ, palette.wood.plank);
+    1, unit, stairStart - doorZ, palette.wood);
   for (let i = 0; i < risers; i++) {
     const z = stairStart + (i + 0.5) * treadDepth;
     const top = foundationTop - (i + 1) * unit;
     const stoneTop = top - unit;
     box(cottageX, (stoneTop - unit) / 2, z, 1, stoneTop + unit, treadDepth, palette.ground.stone);
-    box(cottageX, top - unit / 2, z, 1, unit, treadDepth, palette.wood.plank);
+    box(cottageX, top - unit / 2, z, 1, unit, treadDepth, palette.wood);
   }
   const dockLength = 1.75;
-  box(cottageX, dockTop - unit / 2, stairEnd + dockLength / 2, 1, unit, dockLength, palette.wood.plank);
+  box(cottageX, dockTop - unit / 2, stairEnd + dockLength / 2, 1, unit, dockLength, palette.wood);
   for (const side of [-1, 1]) {
     const x = cottageX + side * (0.5 + unit / 2);
     const z = stairEnd + dockLength - unit / 2;
     const foot = Math.min(-unit, naturalHeight(x, z) - unit);
     const postTop = dockTop + unit;
-    box(x, (postTop + foot) / 2, z, unit, postTop - foot, unit, palette.wood.bark);
+    box(x, (postTop + foot) / 2, z, unit, postTop - foot, unit, palette.wood);
   }
 
   // The floor mesh and the water's absorption map use the same soundings.

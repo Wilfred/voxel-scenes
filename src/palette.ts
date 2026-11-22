@@ -1,10 +1,5 @@
 export const palette = {
-  wood: {
-    bark: 0x635440,
-    timber: 0x806447,
-    plank: 0x947457,
-    weathered: 0x948574,
-  },
+  wood: 0x766048,
   green: {
     pine: 0x416950,
     pineTip: 0x547b5b,
@@ -32,6 +27,9 @@ export const palette = {
   water: {
     sea: 0x397e92,
     river: 0x477f82,
+    froth: 0xa6c3be,
+    cascade: 0x78a5a1,
+    foam: 0xc4d5c7,
     cutFace: 0x508782,
   },
   light: {
@@ -42,9 +40,7 @@ export const palette = {
     forestSky: 0xe4e9d9,
     backdrop: 0x39494f,
     sun: 0xffeed5,
-    forestSun: 0xffe1b6,
     skyLight: 0xfff7e9,
-    forestLight: 0xe2eff1,
     groundLight: 0xadb9bb,
   },
   duck: {

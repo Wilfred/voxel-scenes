@@ -63,8 +63,8 @@ export function treePlanter(box: Box, voxel: number) {
       }
     }
     const foliage = species === "pine"
-      ? { trunk: palette.wood.bark, leaf: palette.green.pine, tip: palette.green.pineTip }
-      : { trunk: palette.wood.bark, leaf: palette.green.leaf, tip: palette.green.leafTip };
+      ? { trunk: palette.wood, leaf: palette.green.pine, tip: palette.green.pineTip }
+      : { trunk: palette.wood, leaf: palette.green.leaf, tip: palette.green.leafTip };
     const keys: string[] = [];
     let base = 0;
     const parts = model.map(part => {
