@@ -7,7 +7,7 @@ import { findSite } from "./sites";
 import { riverDepthMap } from "./water";
 import { terrainTrail } from "./trails";
 import { footbridge, waypost } from "./trail-details";
-import { palette } from "./palette";
+import { grassShade, palette } from "./palette";
 import { waterfowl } from "./ducks";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
@@ -140,7 +140,7 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
       const leafPatch = 2 * relief(x + 93, z - 71);
       const onTrail = yards.paths.has(x + "," + z) || pathHeight !== undefined;
       if (!model || inside(x, z)) {
-        const groundColor = h < 0 ? palette.ground.riverbed : h < 1 ? palette.ground.sand : palette.green.grass;
+        const groundColor = h < 0 ? palette.ground.riverbed : h < 1 ? palette.ground.sand : grassShade(h / 24 + 0.25 * relief(x - 29, z + 47));
         const tint = onTrail ? palette.ground.path : groundColor;
         const edge = model && (x - 0.5 === left || x + 0.5 === left + width ||
           z - 0.5 === back || z + 0.5 === back + depth);

@@ -3,7 +3,7 @@ import { fenceBuilder } from "./fences";
 import type { orchardSeason } from "./day";
 import { defaultDesigns } from "./designs";
 import { waterfowl } from "./ducks";
-import { palette } from "./palette";
+import { grassShade, palette } from "./palette";
 import { treeVoxel } from "./scale";
 import { terrainField } from "./terrain";
 import { terrainTrail } from "./trails";
@@ -137,7 +137,7 @@ export function buildMillpond(
     for (let x = -radiusX; x <= radiusX; x++) {
       const path = trail.tiles.get(x + "," + z),
         h = path ?? elevation(x, z);
-      const bank = h < 0 ? palette.ground.riverbed : palette.green.grass;
+      const bank = h < 0 ? palette.ground.riverbed : grassShade(h / 12 + 0.25 * relief(x - 29, z + 47));
       soil(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, palette.ground.soil);
       ground(x, h - 0.25, z, 1, 0.5, 1, path === undefined ? bank : palette.ground.path);
       if (model && h < 0 && (Math.abs(x) === radiusX || Math.abs(z) === radiusZ))

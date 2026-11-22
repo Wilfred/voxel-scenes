@@ -6,7 +6,7 @@ import { pier, shoreStairs } from "./trail-details";
 import { defaultDesigns } from "./designs";
 import { findSite } from "./sites";
 import { waterfowl } from "./ducks";
-import { palette } from "./palette";
+import { grassShade, palette } from "./palette";
 import { depthTexture } from "./water";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
@@ -144,7 +144,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
       const soilTop = h >= 1 ? h : top;
       base(x, (soilTop - unit) / 2, z, unit, soilTop + unit, unit, h < 1 ? (yards.paths.has(x + "," + z) ? palette.ground.path : palette.ground.sand) : palette.ground.stone);
       if (h < 1) continue;
-      ground(x, top - unit / 2, z, unit, unit, unit, yards.paths.has(x + "," + z) ? palette.ground.path : palette.green.grass);
+      ground(x, top - unit / 2, z, unit, unit, unit, yards.paths.has(x + "," + z) ? palette.ground.path : grassShade(h / 8 + 0.25 * relief(x - 29, z + 47)));
       const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
       const density = (x < -6 ? 0.10 : 0.055) * grove;
       if (yard.near(x,z,1.25) || yards.near(x, z) || yards.paths.has(x + "," + z) || Math.hypot(x - centreX, z - centreZ) < 3.5 || random() > density) continue;

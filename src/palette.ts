@@ -1,15 +1,17 @@
 export const palette = {
   wood: 0x766048,
   green: {
-    pine: 0x416950,
-    pineTip: 0x547b5b,
-    leaf: 0x52774f,
-    leafTip: 0x658861,
+    pine: 0x3b6454,
+    pineTip: 0x4c7762,
+    leaf: 0x5a7f4e,
+    leafTip: 0x6f9157,
     grass: 0x7e8c5d,
+    // One grass hue, cooler and darker in hollows and warmer on crests.
+    grassShades: [0x6c7f56, 0x76875a, 0x7e8c5d, 0x89935f, 0x959b63],
   },
   ground: {
     sand: 0xd9bc8b,
-    stone: 0x918479,
+    stone: 0x8a8880,
     snow: 0xf4e6ce,
     soil: 0x886f58,
     path: 0xad906a,
@@ -18,7 +20,7 @@ export const palette = {
   },
   cottage: {
     plaster: 0xb9ab92,
-    tile: 0x906f58,
+    tile: 0x9a6a50,
     glass: 0x778e89,
     smoke: 0xe4ddd0,
   },
@@ -33,8 +35,9 @@ export const palette = {
     horizon: 0xddeaf2,
     zenith: 0x89bfe1,
     sunGlint: 0xfff2d7,
-    coastalSky: 0xffd1a4,
+    coastalSky: 0xd5e4ea,
     forestSky: 0xe4e9d9,
+    clearSky: 0xdde8e6,
     backdrop: 0x39494f,
     sun: 0xffeed5,
     skyLight: 0xfff7e9,
@@ -52,3 +55,9 @@ export const palette = {
     bill: 0xb89052,
   },
 } as const;
+
+// Pick a grass shade from 0 (low, sheltered) to 1 (high, exposed).
+export function grassShade(t: number) {
+  const shades = palette.green.grassShades;
+  return shades[Math.max(0, Math.min(shades.length - 1, Math.round(t * (shades.length - 1))))];
+}

@@ -9,7 +9,7 @@ import { findSite } from "./sites";
 import { waterfowl } from "./ducks";
 import * as THREE from "three";
 import { buildCottage, cottageDoor } from "./cottage";
-import { palette } from "./palette";
+import { grassShade, palette } from "./palette";
 import { firewood } from "./trail-details";
 import { terrainTrail } from "./trails";
 import { treePlanter } from "./trees";
@@ -145,7 +145,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       const grove = Math.sin(x * 0.3 + phase) + Math.cos(z * 0.23);
       const onPath = path !== undefined || yards.paths.has(x + "," + z);
       const color = onPath ? palette.ground.path : exposed ? palette.ground.stone
-        : bank < 0 ? palette.ground.riverbed : palette.green.grass;
+        : bank < 0 ? palette.ground.riverbed : grassShade(h / 16 + 0.25 * relief(x - 29, z + 47));
       const top = h - 0.5, boundary = Math.max(-4, Math.min(top, rock));
       if (boundary > -4) base(x, (boundary - 4) / 2, z, 1, boundary + 4, 1, palette.ground.stone);
       if (top > boundary) soil(x, (boundary + top) / 2, z, 1, top - boundary, 1, palette.ground.soil);
