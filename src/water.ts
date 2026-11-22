@@ -72,6 +72,10 @@ export function createWater() {
         return frequency * 6.0 * f * (1.0 - f) *
           vec2(mix(b - a, d - c, u.y), mix(c - a, d - b, u.x));
       }
+      vec2 waveOctave(vec2 pos, vec2 frequency, vec2 footprint) {
+        vec2 cycles = footprint * frequency;
+        return waveSlope(pos, frequency) * (1.0 - smoothstep(0.15, 0.4, max(cycles.x, cycles.y)));
+      }
     ` + shader.fragmentShader.replace('#include <color_fragment>', `
       #include <color_fragment>
       vec2 p = waterPoint.xz;
@@ -79,10 +83,12 @@ export function createWater() {
       vec2 wind = vec2(0.92, 0.392);
       vec2 across = vec2(-wind.y, wind.x);
       vec2 uv = vec2(dot(p, wind), dot(p, across)) + wavePhase;
-      vec2 slope = 0.16 * waveSlope(uv, vec2(0.55, 1.3))
-                 + 0.049 * waveSlope(uv + 12.1, vec2(1.4, 3.8))
-                 + 0.014 * waveSlope(uv - 7.2, vec2(3.7, 8.8));
-      vec2 tilt = (slope.x * wind + slope.y * across) * mix(0.20, 0.58, depthFraction);
+      // Fade each octave before its wavelength approaches two pixels.
+      vec2 footprint = fwidth(uv);
+      vec2 slope = 0.16 * waveOctave(uv, vec2(0.35, 0.6), footprint)
+                 + 0.049 * waveOctave(uv + 12.1, vec2(1.1, 2.0), footprint)
+                 + 0.014 * waveOctave(uv - 7.2, vec2(3.7, 8.8), footprint);
+      vec2 tilt = (slope.x * wind + slope.y * across) * mix(0.10, 0.30, depthFraction);
       if (rain > 0.0) {
         vec2 rainCell = p * 0.65;
         float age = hashWave(floor(rainCell) + wavePhase);
