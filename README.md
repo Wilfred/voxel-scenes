@@ -11,3 +11,9 @@ Each scene supports Vista and Rectangular model framing and saves a 2560 × 1440
 
 Run `npm run build` to type-check the TypeScript and create the static site
 in `dist/`. Run `npm run preview` to serve that build locally.
+
+Grid resolution controls how many terrain cells fit across the wallpaper.
+At 2×, the scene spans twice the width in cells and the export remains 2560 × 1440.
+Open **Design studies** to compare ten cottages, ten pines, or ten broadleaf trees.
+Selecting a card applies that model wherever it occurs in the landscape.
+Each tree card includes its adult and sapling.

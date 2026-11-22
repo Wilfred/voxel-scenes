@@ -1,12 +1,12 @@
 import { palette } from "./palette";
 import * as THREE from "three";
 
-// Water samples the terrain on a 64-unit square centred at the origin.
-export function riverDepthMap(depthAt: (x: number, z: number) => number) {
+// Water samples the terrain on a grid-scaled square centred at the origin.
+export function riverDepthMap(depthAt: (x: number, z: number) => number, grid = 1) {
   const samples = new Uint8Array(128 * 128);
   for (let i = 0; i < samples.length; i++) {
-    const x = Math.floor((i % 128 + 0.5) / 2 - 31.5);
-    const z = Math.floor((Math.floor(i / 128) + 0.5) / 2 - 31.5);
+    const x = Math.floor(((i % 128 + 0.5) / 2 - 32) * grid + 0.5);
+    const z = Math.floor(((Math.floor(i / 128) + 0.5) / 2 - 32) * grid + 0.5);
     samples[i] = Math.round(255 * THREE.MathUtils.clamp(depthAt(x, z) / 6, 0, 1));
   }
   const depth = new THREE.DataTexture(samples, 128, 128, THREE.RedFormat);
@@ -23,27 +23,28 @@ export function createWater() {
     sky: { value: new THREE.Color() },
     sun: { value: new THREE.Vector3() },
     eye: { value: new THREE.Vector3() },
+    grid: { value: 1 },
     phase: { value: 0 },
   };
-  const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false });
+  const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, {
       horizonTint: { value: new THREE.Color(palette.light.horizon) },
       zenithTint: { value: new THREE.Color(palette.light.zenith) },
       glintTint: { value: new THREE.Color(palette.light.sunGlint) },
       seabed: surface.depth, deepWater: surface.deep, skyTint: surface.sky,
-      sunlight: surface.sun, viewDirection: surface.eye, wavePhase: surface.phase,
+      gridScale: surface.grid, sunlight: surface.sun, viewDirection: surface.eye, wavePhase: surface.phase,
     });
-    shader.vertexShader = 'varying vec2 oceanXZ;\n' + shader.vertexShader.replace(
+    shader.vertexShader = 'varying vec2 oceanXZ; varying float curtain;\n' + shader.vertexShader.replace(
       '#include <begin_vertex>',
-      '#include <begin_vertex>\noceanXZ = (modelMatrix * vec4(position, 1.0)).xz;',
+      '#include <begin_vertex>\ncurtain = 1.0 - abs(normalize(mat3(modelMatrix) * normal).y);\noceanXZ = (modelMatrix * vec4(position, 1.0)).xz;',
     );
     shader.fragmentShader = `
-      varying vec2 oceanXZ;
+      varying vec2 oceanXZ; varying float curtain;
       uniform sampler2D seabed;
       uniform vec3 horizonTint, zenithTint, glintTint;
       uniform vec3 deepWater, skyTint, sunlight, viewDirection;
-      uniform float wavePhase;
+      uniform float wavePhase, gridScale;
       float hashWave(vec2 cell) {
         vec3 q = fract(vec3(cell.xyx) * 0.1031);
         q += dot(q, q.yzx + 33.33);
@@ -65,7 +66,7 @@ export function createWater() {
     ` + shader.fragmentShader.replace('#include <color_fragment>', `
       #include <color_fragment>
       vec2 p = oceanXZ;
-      float depthFraction = texture2D(seabed, p / 64.0 + 0.5).r;
+      float depthFraction = texture2D(seabed, p / (64.0 * gridScale) + 0.5).r;
       vec2 wind = vec2(0.92, 0.392);
       vec2 across = vec2(-wind.y, wind.x);
       vec2 uv = vec2(dot(p, wind), dot(p, across)) + wavePhase;
@@ -84,7 +85,7 @@ export function createWater() {
       outgoingLight = mix(outgoingLight, skyLight, fresnel) + glintTint * sparkle;
       float pathLength = 6.0 * depthFraction / max(facing, 0.22);
       float transmission = exp(-0.30 * pathLength) * (1.0 - fresnel);
-      diffuseColor.a = 1.0 - transmission;
+      diffuseColor.a = mix(1.0 - transmission, 0.46, curtain);
       #include <opaque_fragment>
     `);
   };

@@ -1,21 +1,22 @@
+import { defaultDesigns } from "./designs";
 import { findSite } from "./sites";
 import { waterfowl } from "./ducks";
 import { riverDepthMap } from "./water";
 import * as THREE from "three";
-import { buildCottage } from "./cottage";
+import { buildCottage, cottageDoor } from "./cottage";
 import { palette } from "./palette";
 import { firewood } from "./trail-details";
 import { terrainTrail } from "./trails";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 
-export function buildHillside(seed: number, model: boolean) {
+export function buildHillside(seed: number, model: boolean, grid = 1, designs = defaultDesigns) {
   const random = seededRandom(seed);
   const phase = random() * Math.PI * 2;
   const drop = 3 + Math.floor(random() * 3) * 0.5;
   const lip = -2;
   const { box, buildMesh } = voxelBatch();
-  const plantTree = treePlanter(box, 0.5);
+  const plantTree = treePlanter(box, 0.5, designs);
 
   function channel(z: number) {
     return 3 + 3.5 * Math.sin(z * 0.11 + phase) + 1.5 * Math.sin(z * 0.23);
@@ -53,15 +54,17 @@ export function buildHillside(seed: number, model: boolean) {
       + Math.hypot(x + 8, z + 8) * 0.35;
   })!;
   const { x: cabinX, z: cabinZ } = cabin;
-  const floor = elevation(cabinX, cabinZ + 1);
+  const doorX = cabinX + cottageDoor(designs.cottage);
+  const pathX = Math.round(doorX);
+  const floor = elevation(pathX, cabinZ + 1);
   const landingZ = lip - 1;
   let landingX = Math.floor(channel(landingZ));
   while (bankDistance(landingX, landingZ) < 0) landingX--;
   const trail = terrainTrail(elevation, (x, z) => z >= cabinZ + 1 && bankDistance(x, z) >= 0);
-  trail.route([[cabinX, cabinZ + 1], [landingX, landingZ]]);
+  trail.route([[pathX, cabinZ + 1], [landingX, landingZ]]);
   buildCottage((x, y, z, w, h, d, color) => {
     box(cabinX + x, floor + y - 0.4, cabinZ + z, w, h, d, color);
-  });
+  }, designs.cottage);
   // The stack spans exactly two cells. Both must support the cut ends,
   // outside the cottage walls and away from the walked route.
   const stack = findSite(cabinX - 3.5, cabinX + 3.5, cabinZ - 3, cabinZ + 3, 1, (x, z) => {
@@ -78,10 +81,11 @@ export function buildHillside(seed: number, model: boolean) {
     return level(cx, cz) === 0 ? -elevation(cx, cz) : 0;
   });
 
-  const radiusX = model ? 21 : 54, radiusZ = model ? 16 : 54;
+  const radius = Math.ceil(54 * grid);
+  const radiusX = model ? Math.round(21 * grid) : radius, radiusZ = model ? Math.round(16 * grid) : radius;
   const vertices: number[] = [];
-  for (let z = -54; z <= 54; z++) {
-    for (let x = -54; x <= 54; x++) {
+  for (let z = -radius; z <= radius; z++) {
+    for (let x = -radius; x <= radius; x++) {
       const chance = random(), sapling = random() < 0.25;
       if (Math.abs(x) > radiusX || Math.abs(z) > radiusZ) continue;
       const bank = bankDistance(x, z);
@@ -104,8 +108,11 @@ export function buildHillside(seed: number, model: boolean) {
           const low = level(x + dx, z + dz);
           if (low >= y || bankDistance(x + dx, z + dz) >= 0) continue;
           const faceX = x + dx * 0.5, faceZ = z + dz * 0.5;
-          box(faceX, (y + low) / 2, faceZ, dz ? 1 : 0.25, y - low,
-            dz ? 0.25 : 1, palette.water.cascade);
+          // A vertical sheet shares the translucent river material. Wind the
+          // face towards the lower pool, including the two sides of the notch.
+          const ax = faceX - dz * 0.5, az = faceZ + dx * 0.5;
+          const bx = faceX + dz * 0.5, bz = faceZ - dx * 0.5;
+          vertices.push(ax,low,az, bx,low,bz, ax,y,az, bx,low,bz, bx,y,bz, ax,y,az);
           if (dz) {
             const ripple = Math.sin(x * 4.1 + z + phase);
             const spread = ripple > 0 ? 0.75 : 0.5;
@@ -127,6 +134,6 @@ export function buildHillside(seed: number, model: boolean) {
   const water = new THREE.BufferGeometry();
   water.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
   water.computeVertexNormals();
-  const depth = riverDepthMap((x, z) => level(x, z) - elevation(x, z));
+  const depth = riverDepthMap((x, z) => level(x, z) - elevation(x, z), grid);
   return { mesh: buildMesh(), water, depth };
 }

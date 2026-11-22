@@ -1,9 +1,12 @@
+import { lightScene } from "./lighting";
+import { designGallery } from "./gallery";
+import { defaultDesigns } from "./designs";
 import { palette } from "./palette";
 import * as THREE from "three";
 import { buildHillside } from "./hillside";
 import { buildWoods } from "./woods";
 import { createWater } from "./water";
-import { buildIsland, bayBounds } from "./island";
+import { buildIsland } from "./island";
 
 const canvas = document.querySelector("canvas")!;
 const status = document.querySelector<HTMLElement>("#status")!;
@@ -26,18 +29,16 @@ if (!context) {
   const { sea, surface } = createWater();
   scene.add(sea);
 
-  const sun = new THREE.DirectionalLight(palette.light.sun, 1.9);
-  sun.position.set(-26, 21, 18);
+  const sun = lightScene(scene);
+  const sunOffset = sun.position.clone();
   sun.castShadow = true;
-  Object.assign(sun.shadow.camera, { left: -28, right: 28, top: 24, bottom: -24, far: 100 });
-  sun.shadow.camera.updateProjectionMatrix();
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.normalBias = 0.035;
-  const skylight = new THREE.HemisphereLight(palette.light.skyLight, palette.light.groundLight, 1.8);
-  scene.add(sun, sun.target, skylight);
-
   let seed = 1846;
   const sceneSelect = document.querySelector<HTMLSelectElement>("#scene")!;
+  const designs = { ...defaultDesigns };
+  const resolution = document.querySelector<HTMLInputElement>("#resolution")!;
+  const gridValue = document.querySelector<HTMLOutputElement>("#grid-value")!;
   const framing = document.querySelector<HTMLSelectElement>("#framing")!;
   const generate = document.querySelector<HTMLButtonElement>("#generate")!;
   const islandDescription = canvas.getAttribute("aria-label")!;
@@ -72,6 +73,8 @@ if (!context) {
       mesh.material.dispose();
     }
 
+    const grid = Number(resolution.value);
+    gridValue.value = grid + "×";
     const hill = sceneSelect.value === "hillside";
     const woodland = sceneSelect.value === "woods";
     const model = framing.value === "model";
@@ -81,9 +84,9 @@ if (!context) {
     sea.position.set(0, 0, 0);
     sea.scale.setScalar(1);
     cameraTarget.set(0, 2, 0);
-    let waterBounds = bayBounds;
+    let waterBounds;
     if (hill) {
-      const hillside = buildHillside(seed, model);
+      const hillside = buildHillside(seed, model, grid, designs);
       mesh = hillside.mesh;
       hillsideWater = new THREE.Mesh(hillside.water, sea.material);
       hillsideWater.receiveShadow = true;
@@ -92,7 +95,7 @@ if (!context) {
       cameraTarget.set(-1, model ? 3 : 5, model ? -2 : -5);
       camera.top = model ? 28 : 13;
     } else if (woodland) {
-      const woods = buildWoods(seed, model);
+      const woods = buildWoods(seed, model, grid, designs);
       mesh = woods.mesh;
       riverDepth = woods.depth;
       waterBounds = woods.bounds;
@@ -100,22 +103,28 @@ if (!context) {
       if (model) cameraTarget.set(waterBounds.x, 2, waterBounds.z);
       camera.top = model ? 23 : 19;
     } else {
-      island = buildIsland(seed, model);
+      island = buildIsland(seed, model, grid, designs);
       mesh = island.mesh;
+      waterBounds = island.bounds;
       scene.add(island.floor);
       if (model) cameraTarget.y = -2;
       camera.top = model ? 28 : 12.5;
     }
-    if (model && !hill) {
+    if (model && waterBounds) {
       sea.position.set(waterBounds.x, 0.002, waterBounds.z);
       sea.scale.set(waterBounds.width / sea.geometry.parameters.width, waterBounds.depth / sea.geometry.parameters.height, 1);
     }
     if (model) camera.position.set(26, 30, 42);
     else if (inland) camera.position.set(16, 30, 40);
     else camera.position.set(8, 27, 43);
-    camera.position.add(cameraTarget);
+    camera.top *= grid;
+    camera.position.multiplyScalar(grid).add(cameraTarget);
     scene.background = new THREE.Color(model ? palette.light.backdrop : sky);
-    scene.fog = new THREE.FogExp2(sky, 0.005);
+    scene.fog = new THREE.FogExp2(sky, 0.005 / grid);
+    sun.position.copy(sunOffset).multiplyScalar(grid);
+    Object.assign(sun.shadow.camera, { left: -28 * grid, right: 28 * grid, top: 24 * grid, bottom: -24 * grid, far: 100 * grid });
+    sun.shadow.camera.updateProjectionMatrix();
+    surface.grid.value = grid;
     surface.depth.value = riverDepth ?? island?.depth ?? null;
     surface.deep.value.setHex(inland ? palette.water.river : palette.water.sea);
     surface.sky.value.setHex(sky);
@@ -134,13 +143,20 @@ if (!context) {
     preview();
   }
 
+  designGallery(designs, update);
+  let pendingGrid = 0;
+  resolution.oninput = () => {
+    gridValue.value = resolution.value + "×";
+    cancelAnimationFrame(pendingGrid);
+    pendingGrid = requestAnimationFrame(update);
+  };
   framing.onchange = sceneSelect.onchange = update;
   generate.onclick = () => {
     seed = crypto.getRandomValues(new Uint32Array(1))[0];
     update();
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
-    const variant = `-${framing.value}`;
+    const variant = `-${framing.value}-${resolution.value}x-p${designs.pine + 1}-b${designs.broadleaf + 1}-c${designs.cottage + 1}`;
     const filename = `${sceneSelect.value}-${seed}-graphic${variant}.png`;
     renderer.setSize(2560, 1440, false);
     renderer.render(scene, camera);

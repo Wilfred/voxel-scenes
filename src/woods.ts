@@ -1,3 +1,4 @@
+import { defaultDesigns } from "./designs";
 import { findSite } from "./sites";
 import { riverDepthMap } from "./water";
 import { terrainTrail } from "./trails";
@@ -8,7 +9,7 @@ import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import * as THREE from "three";
 
-export function buildWoods(seed: number, model: boolean) {
+export function buildWoods(seed: number, model: boolean, grid = 1, designs = defaultDesigns) {
   const random = seededRandom(seed);
 
   const phase = random() * 2 * Math.PI;
@@ -40,20 +41,21 @@ export function buildWoods(seed: number, model: boolean) {
 
   const centreX = (west + east) / 2;
   const centreZ = bridgeZ;
-  const width = 35;
-  const depth = 25;
+  const radius = Math.round(49 * grid);
+  const width = 2 * Math.round(17 * grid) + 1;
+  const depth = 2 * Math.round(12 * grid) + 1;
   // Snap the sides to terrain cell boundaries.
-  const left = Math.floor(centreX) - 17.5;
-  const back = centreZ - 12.5;
+  const left = Math.floor(centreX) - width / 2;
+  const back = centreZ - depth / 2;
   const inside = (x: number, z: number) => x > left && x < left + width && z > back && z < back + depth;
-  const plantTree = treePlanter(box, 0.5);
+  const plantTree = treePlanter(box, 0.5, designs);
   // Start on each bridge landing. Stay on the bank until the route has
   // climbed out of the channel, then turn towards the forest tracks.
-  const trail = terrainTrail(elevation, (x, z) => elevation(x, z) > 0 && Math.abs(x) <= 49);
+  const trail = terrainTrail(elevation, (x, z) => elevation(x, z) > 0 && Math.abs(x) <= radius);
   for (const [bank, side] of [[west, -1], [east, 1]]) {
     trail.route([[bank, bridgeZ], [bank + 4 * side, bridgeZ],
       [bank + 10 * side, bridgeZ - 3 * side], [bank + 18 * side, bridgeZ - 4 * side],
-      [49 * side, bridgeZ - 15 * side]]);
+      [radius * side, bridgeZ - 15 * side]]);
   }
   // Stand the sign beside the eastern landing, clear of the walking surface.
   const sign = findSite(east + 2, east + 5, bridgeZ - 3, bridgeZ + 3, 1, (x, z) =>
@@ -68,14 +70,14 @@ export function buildWoods(seed: number, model: boolean) {
   // Seed stands along each bank independently, with gaps between seed sources.
   const groves: { x: number; z: number; radius: number }[] = [];
   for (const side of [-1, 1]) {
-    for (let z = -49; z < 50; z += 9 + random() * 13) {
+    for (let z = -radius; z <= radius; z += 9 + random() * 13) {
       groves.push({ x: riverX(z) + side * (7 + random() * 10), z, radius: 4 + random() * 6 });
       groves.push({ x: riverX(z) + side * (19 + random() * 22), z: z + 5, radius: 5 + random() * 6 });
     }
   }
   const candidates: { x: number; z: number; leafPatch: number }[] = [];
-  for (let z = -49; z <= 49; z++) {
-    for (let x = -49; x <= 49; x++) {
+  for (let z = -radius; z <= radius; z++) {
+    for (let x = -radius; x <= radius; x++) {
       const pathHeight = trail.tiles.get(x + "," + z);
       const h = pathHeight ?? elevation(x, z);
       const leafPatch = Math.sin(x * 0.20 + phase) + Math.sin(z * 0.16);
@@ -136,7 +138,7 @@ export function buildWoods(seed: number, model: boolean) {
     }
   }
 
-  const depthMap = riverDepthMap((x, z) => -elevation(x, z));
+  const depthMap = riverDepthMap((x, z) => -elevation(x, z), grid);
   const mesh = buildMesh();
   return { mesh, depth: depthMap, bounds: { x: left + width / 2, z: back + depth / 2, width, depth }, bridge: new THREE.Vector3(middle, deck, bridgeZ) };
 }

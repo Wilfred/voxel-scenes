@@ -28,7 +28,6 @@ export const palette = {
     sea: 0x397e92,
     river: 0x477f82,
     froth: 0xa6c3be,
-    cascade: 0x78a5a1,
     foam: 0xc4d5c7,
     cutFace: 0x508782,
   },
@@ -43,6 +42,7 @@ export const palette = {
     skyLight: 0xfff7e9,
     groundLight: 0xadb9bb,
   },
+  gull: { white: 0xf1efe3, wing: 0xabb6b8, tip: 0x4d5657 },
   duck: {
     breast: 0xb6ac90,
     hen: 0x957452,

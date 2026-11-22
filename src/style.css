@@ -10,3 +10,13 @@ canvas { display: block; width: 100%; aspect-ratio: 16 / 9; }
 select, button { background: #fbfaf5; color: inherit; border: 1px solid #a5ada0; border-radius: .4rem; padding: .55rem .85rem; font: inherit; cursor: pointer; }
 select { margin-left: .35rem; }
 #save { background: #294e40; color: white; margin-left: auto; }
+#resolution { width: 7rem; vertical-align: middle; accent-color: #294e40; }
+#grid-value { display: inline-block; min-width: 3em; font-variant-numeric: tabular-nums; }
+#design-gallery { margin: 1rem clamp(1rem, 2vw, 2rem); }
+#design-gallery summary { cursor: pointer; width: fit-content; font-weight: 600; }
+#design-gallery[open] summary { margin-bottom: .75rem; }
+#design-gallery p { display: inline-block; margin: .5rem 1rem; }
+#studies { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: .6rem; margin-top: .75rem; }
+#studies button { padding: .3rem .3rem .5rem; text-align: left; }
+#studies img { display: block; width: 100%; border-radius: .25rem; margin-bottom: .25rem; }
+#studies [aria-pressed=true] { outline: 2px solid #294e40; background: #e0e8db; }
