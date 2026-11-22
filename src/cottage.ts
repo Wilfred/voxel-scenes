@@ -65,4 +65,6 @@ export function buildCottage(box: Box, design = 0) {
   pitchedRoof(bricks, house.roof, 8, 6, 6, house.tiers + 1, wall);
   bricks(house.chimney, 8, -2, 2, 5, 2, stone);
   for (let i = 0; i < 3; i++) bricks(house.chimney + i, 14 + i * 2, -2, 1, 1, 1, smoke);
+  // A smaller, higher puff drifts downwind as the smoke thins.
+  bricks(house.chimney + 3.25, 20.25, -1.75, 0.5, 0.5, 0.5, smoke);
 }
