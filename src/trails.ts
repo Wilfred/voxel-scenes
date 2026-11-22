@@ -3,14 +3,51 @@ import type { Elevation } from "./sites";
 type Point = [number, number];
 type Step = { x: number; z: number; cost: number; previous?: Step };
 
+// A binary min-heap on step cost keeps the search near-linear on large grids.
+// Among equal costs, the most recently queued step leaves first.
+function frontier() {
+  const heap: Step[] = [];
+  const order = new Map<Step, number>();
+  const before = (a: Step, b: Step) => a.cost < b.cost || (a.cost === b.cost && order.get(a)! > order.get(b)!);
+  return {
+    get size() { return heap.length; },
+    push(step: Step) {
+      order.set(step, order.size);
+      let i = heap.push(step) - 1;
+      while (i > 0) {
+        const parent = (i - 1) >> 1;
+        if (!before(heap[i], heap[parent])) break;
+        [heap[parent], heap[i]] = [heap[i], heap[parent]];
+        i = parent;
+      }
+    },
+    pop() {
+      const top = heap[0], last = heap.pop()!;
+      if (heap.length) {
+        heap[0] = last;
+        for (let i = 0; ;) {
+          const left = 2 * i + 1, right = left + 1;
+          let least = i;
+          if (left < heap.length && before(heap[left], heap[least])) least = left;
+          if (right < heap.length && before(heap[right], heap[least])) least = right;
+          if (least === i) break;
+          [heap[least], heap[i]] = [heap[i], heap[least]];
+          i = least;
+        }
+      }
+      return top;
+    },
+  };
+}
+
 // Between destinations, prefer dry, gently sloping ground. A short search
 // corridor lets the trail skirt a ledge without taking it across the valley.
 function connect(from: Point, to: Point, elevation: Elevation, dry: (x: number, z: number) => boolean) {
-  const queue: Step[] = [{ x: from[0], z: from[1], cost: 0 }];
+  const queue = frontier();
+  queue.push({ x: from[0], z: from[1], cost: 0 });
   const costs = new Map<string, number>([[from.join(","), 0]]);
-  while (queue.length) {
-    queue.sort((a, b) => b.cost - a.cost);
-    const here = queue.pop()!;
+  while (queue.size) {
+    const here = queue.pop();
     if (here.cost !== costs.get(here.x + "," + here.z)) continue;
     if (here.x === to[0] && here.z === to[1]) {
       const segment: Point[] = [];
