@@ -88,7 +88,8 @@ export function treePlanter(box: Box, voxel: number) {
     for (const key of keys) occupied.add(key);
     if (!sapling) adultRoots.add(patchX + "," + patchZ);
     for (const part of parts) {
-      box(x, ground + (part.bottom + part.height / 2) * voxel, z,
+      const y = ground + (part.bottom + part.height / 2) * voxel;
+      box(x, y, z,
         part.width * voxel, part.height * voxel, part.depth * voxel, palette[part.part]);
     }
   };

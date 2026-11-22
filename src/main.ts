@@ -45,10 +45,12 @@ if (!context) {
   sun.shadow.camera.updateProjectionMatrix();
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.normalBias = 0.035;
-  scene.add(sun, sun.target, new THREE.HemisphereLight(0xfff7e9, 0xadb9bb, 1.55));
+  const skylight = new THREE.HemisphereLight(0xfff7e9, 0xadb9bb, 1.55);
+  scene.add(sun, sun.target, skylight);
 
   let seed = 1846;
   const sceneSelect = document.querySelector<HTMLSelectElement>("#scene")!;
+  const framing = document.querySelector<HTMLSelectElement>("#framing")!;
   const generate = document.querySelector<HTMLButtonElement>("#generate")!;
   const islandDescription = canvas.getAttribute("aria-label")!;
   let island: ReturnType<typeof buildIsland> | undefined;
@@ -78,7 +80,13 @@ if (!context) {
 
     const mountain = sceneSelect.value === "mountains";
     const woodland = sceneSelect.value === "woods";
+    framing.parentElement!.hidden = !woodland;
+    const model = woodland && framing.value === "model";
+    sea.position.set(0, 0, 0);
+    sea.scale.setScalar(1);
     sea.visible = !mountain;
+    sun.color.setHex(woodland ? 0xffe1b6 : 0xffeed5);
+    skylight.color.setHex(woodland ? 0xe2eff1 : 0xfff7e9);
     scene.backgroundRotation.y = mountain ? skyRotation : 0;
     renderer.toneMapping = mountain ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
     const extent = mountain ? 52 : 28;
@@ -105,9 +113,21 @@ if (!context) {
       sun.target.position.set(-6, 10, -15);
       sun.position.copy(sun.target.position).addScaledVector(alpineSun, 95);
     } else {
-      const p = woodland ? { sea: 0x528e89, sky: 0xffdfa8, sun: [-23, 30, 14], eye: [16, 32, 40], span: 30 } : islandPalette;
+      const p = woodland ? { sea: 0x477f82, sky: 0xe4e9d9, sun: [-26, 21, 18], eye: [16, 32, 40], span: 38 } : islandPalette;
+      cameraTarget.set(0, 2, 0);
+      camera.position.fromArray(p.eye);
       if (woodland) {
-        const woods = buildWoods(seed);
+        const woods = buildWoods(seed, model);
+        // Keep the crossing left of centre with the lit approach in view.
+        cameraTarget.copy(woods.bridge).add(new THREE.Vector3(4, 1, 2));
+        if (model) {
+          const bounds = woods.bounds;
+          cameraTarget.set(bounds.x, 2, bounds.z);
+          camera.position.set(26, 32, 42);
+          sea.position.set(bounds.x, 0.002, bounds.z);
+          sea.scale.set(bounds.width / sea.geometry.parameters.width, bounds.depth / sea.geometry.parameters.height, 1);
+        }
+        camera.position.add(new THREE.Vector3(cameraTarget.x, cameraTarget.y - 2, cameraTarget.z));
         mesh = woods.mesh;
         woodlandDepth = woods.depth;
         surface.depth.value = woods.depth;
@@ -117,18 +137,16 @@ if (!context) {
         scene.add(island.floor);
         surface.depth.value = island.depth;
       }
-      cameraTarget.set(0, 2, 0);
       surface.deep.value.setHex(p.sea);
       surface.sky.value.setHex(p.sky);
       surface.sun.value.fromArray(p.sun).normalize();
-      surface.eye.value.fromArray(p.eye).sub(cameraTarget).normalize();
+      surface.eye.value.copy(camera.position).sub(cameraTarget).normalize();
       surface.phase.value = (seed % 997) / 53;
-      scene.background = new THREE.Color(p.sky);
+      scene.background = new THREE.Color(model ? 0x39494f : p.sky);
       scene.fog = new THREE.FogExp2(p.sky, 0.005);
       sun.target.position.set(0, 0, 0);
       sun.position.fromArray(p.sun);
-      camera.position.fromArray(p.eye);
-      camera.top = p.span / 2;
+      camera.top = model ? 23 : p.span / 2;
     }
     scene.add(mesh);
     canvas.setAttribute("aria-label", mountain ? "A cabin on the wooded shoulder of a snowcapped mountain under a clouded sky" : woodland ? "A stream winding through woodland with a timber footbridge" : islandDescription);
@@ -142,13 +160,14 @@ if (!context) {
     preview();
   }
 
-  sceneSelect.onchange = update;
+  framing.onchange = sceneSelect.onchange = update;
   generate.onclick = () => {
     seed = crypto.getRandomValues(new Uint32Array(1))[0];
     update();
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
-    const filename = `${sceneSelect.value}-${seed}-graphic.png`;
+    const variant = sceneSelect.value === "woods" ? `-${framing.value}` : "";
+    const filename = `${sceneSelect.value}-${seed}-graphic${variant}.png`;
     renderer.setSize(2560, 1440, false);
     renderer.render(scene, sceneSelect.value === "mountains" ? alpineCamera : camera);
     canvas.toBlob(blob => {
@@ -164,6 +183,7 @@ if (!context) {
     }, "image/png");
     preview();
   };
+  if (new URLSearchParams(location.search).get("scene") === "woods") sceneSelect.value = "woods";
   update();
   new ResizeObserver(preview).observe(canvas);
 }

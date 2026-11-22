@@ -2,7 +2,7 @@ import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import * as THREE from "three";
 
-export function buildWoods(seed: number) {
+export function buildWoods(seed: number, model: boolean) {
   const random = seededRandom(seed);
 
   const phase = random() * 2 * Math.PI;
@@ -16,7 +16,6 @@ export function buildWoods(seed: number) {
     return Math.max(-3, Math.min(8, Math.floor(bank * rise * 2) / 2 + 0.25));
   }
   const { box, buildMesh } = voxelBatch();
-  const plantTree = treePlanter(box, 0.5);
 
   const bridgeZ = -3;
   let west = Math.round(riverX(bridgeZ));
@@ -24,6 +23,15 @@ export function buildWoods(seed: number) {
   while (elevation(west, bridgeZ) < 0) west--;
   while (elevation(east, bridgeZ) < 0) east++;
 
+  const centreX = (west + east) / 2;
+  const centreZ = bridgeZ;
+  const width = 35;
+  const depth = 25;
+  // Snap the sides to terrain cell boundaries.
+  const left = Math.floor(centreX) - 17.5;
+  const back = centreZ - 12.5;
+  const inside = (x: number, z: number) => x > left && x < left + width && z > back && z < back + depth;
+  const plantTree = treePlanter(box, 0.5);
   // Route each approach over dry, face-adjacent terrain. Prefer gentle grades
   // and a diagonal traverse; leave the height of every path voxel intact.
   const trail = new Set<string>();
@@ -69,14 +77,25 @@ export function buildWoods(seed: number) {
       groves.push({ x: riverX(z) + side * (19 + random() * 22), z: z + 5, radius: 5 + random() * 6 });
     }
   }
-  const candidates: { x: number; z: number; h: number; leafPatch: number }[] = [];
+  const candidates: { x: number; z: number; leafPatch: number }[] = [];
   for (let z = -49; z <= 49; z++) {
     for (let x = -49; x <= 49; x++) {
       const h = elevation(x, z);
       const leafPatch = Math.sin(x * 0.20 + phase) + Math.sin(z * 0.16);
       const onTrail = trail.has(x + "," + z);
-      const ground = h < 0 ? 0x8e967b : h < 1 ? 0xabaa7b : leafPatch > 0 ? 0x91945b : 0x7e8c5d;
-      box(x, (h - 4) / 2, z, 1, h + 4, 1, onTrail ? 0xad906a : ground);
+      if (!model || inside(x, z)) {
+        const ground = h < 0 ? 0x8e967b : h < 1 ? 0xabaa7b : leafPatch > 0 ? 0x91945b : 0x7e8c5d;
+        const tint = onTrail ? 0xad906a : ground;
+        const edge = model && (x - 0.5 === left || x + 0.5 === left + width ||
+          z - 0.5 === back || z + 0.5 === back + depth);
+        if (edge) {
+          box(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, 0x886f58);
+          box(x, h - 0.25, z, 1, 0.5, 1, tint);
+          if (h < 0) box(x, h / 2, z, 1, -h, 1, 0x508782);
+        } else {
+          box(x, (h - 4) / 2, z, 1, h + 4, 1, tint);
+        }
+      }
       if (onTrail || h < 0.5 || (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)) continue;
 
       const bankDistance = Math.abs(x - riverX(z));
@@ -87,19 +106,20 @@ export function buildWoods(seed: number) {
         const distance = Math.hypot(x - grove.x, z - grove.z) / grove.radius;
         if (distance < 1) density += (1 - distance) ** 2 * (0.95 + moisture) / (1 + slope);
       }
-      if (random() < density) candidates.push({ x, z, h, leafPatch });
+      if (random() < density) candidates.push({ x, z, leafPatch });
     }
   }
   // Work in half-unit cubes for every trunk, branch and leaf. Check actual
   // occupied cells so a sapling can grow beside a high canopy on a slope.
   while (candidates.length) {
     const index = Math.floor(random() * candidates.length);
-    const { x, z, h, leafPatch } = candidates[index];
+    const { x, z, leafPatch } = candidates[index];
     candidates[index] = candidates[candidates.length - 1];
     candidates.pop();
     const sapling = random() < 0.27;
     const pine = leafPatch < 0.45;
-    plantTree(x, h, z, pine ? "pine" : "broadleaf", sapling);
+    if (model && (!inside(x - 1.25, z - 1.25) || !inside(x + 1.25, z + 1.25))) continue;
+    plantTree(x, elevation(x, z), z, pine ? "pine" : "broadleaf", sapling);
   }
 
   // All timber faces sit on the quarter-unit grid, including the submerged
@@ -122,13 +142,13 @@ export function buildWoods(seed: number) {
   // The existing water shader samples a 64-unit square centered at the origin.
   const samples = new Uint8Array(128 * 128);
   for (let i = 0; i < samples.length; i++) {
-    const x = Math.round((i % 128 + 0.5) / 2 - 32);
-    const z = Math.round((Math.floor(i / 128) + 0.5) / 2 - 32);
+    const x = Math.floor((i % 128 + 0.5) / 2 - 31.5);
+    const z = Math.floor((Math.floor(i / 128) + 0.5) / 2 - 31.5);
     samples[i] = Math.round(255 * Math.max(0, -elevation(x, z)) / 6);
   }
-  const depth = new THREE.DataTexture(samples, 128, 128, THREE.RedFormat);
-  depth.magFilter = depth.minFilter = THREE.LinearFilter;
-  depth.needsUpdate = true;
+  const depthMap = new THREE.DataTexture(samples, 128, 128, THREE.RedFormat);
+  depthMap.magFilter = depthMap.minFilter = THREE.LinearFilter;
+  depthMap.needsUpdate = true;
   const mesh = buildMesh();
-  return { mesh, depth };
+  return { mesh, depth: depthMap, bounds: { x: left + width / 2, z: back + depth / 2, width, depth }, bridge: new THREE.Vector3(middle, deck, bridgeZ) };
 }
