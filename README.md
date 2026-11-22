@@ -14,3 +14,9 @@ in `dist/`. Run `npm run preview` to serve that build locally.
 
 The mountain sky uses a tone-mapped copy of the CC0 panorama
 [Kloofendal 48d Partly Cloudy from Poly Haven](https://polyhaven.com/a/kloofendal_48d_partly_cloudy).
+
+The woodland **Tiny Nature props** checkbox previews two trees and a cut stump
+from Luminous Dice's [Tiny Voxel Nature Pack](https://luminous-dice.itch.io/tiny-voxel-nature-pack).
+The three models were converted from the pack's MagicaVoxel file into boxes
+for the scene's instanced renderer. The creator's asset licence applies to
+these models.
