@@ -1,9 +1,9 @@
-import { addStump } from "./tiny-nature";
+import { addDuck } from "./ducks";
 import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import * as THREE from "three";
 
-export function buildWoods(seed: number, model: boolean, showStump: boolean) {
+export function buildWoods(seed: number, model: boolean, showDucks: boolean) {
   const random = seededRandom(seed);
 
   const phase = random() * 2 * Math.PI;
@@ -70,22 +70,13 @@ export function buildWoods(seed: number, model: boolean, showStump: boolean) {
   approach(west, -1);
   approach(east, 1);
 
-  let stump: { x: number; z: number } | undefined;
-  if (showStump) {
-    const targetX = west - 2;
-    const targetZ = bridgeZ + 2;
-    let nearest = Infinity;
-    for (let z = targetZ - 4; z <= targetZ + 4; z++) {
-      for (let x = targetX - 4; x <= targetX + 4; x++) {
-        if (!inside(x, z) || elevation(x, z) < 0.5 || trail.has(x + "," + z)) continue;
-        const distance = Math.hypot(x - targetX, z - targetZ);
-        if (distance < nearest) {
-          nearest = distance;
-          stump = { x, z };
-        }
-      }
-    }
-    if (stump) addStump(box, stump.x, elevation(stump.x, stump.z), stump.z);
+  if (showDucks) {
+    // Follow the bend a few tiles beyond the bridge, leaving room around both birds.
+    const z = bridgeZ + 5;
+    const slope = (riverX(z + 1) - riverX(z - 1)) / 2;
+    const heading = Math.atan2(-1, slope);
+    addDuck(box, riverX(z) - 0.75, z, heading + 0.32, true);
+    addDuck(box, riverX(z + 1.75) + 0.5, z + 1.75, heading - 0.23, false);
   }
 
   // Seed stands along each bank independently, with gaps between seed sources.
@@ -138,7 +129,6 @@ export function buildWoods(seed: number, model: boolean, showStump: boolean) {
     const sapling = random() < 0.27;
     const pine = leafPatch < 0.45;
     if (model && (!inside(x - 1.25, z - 1.25) || !inside(x + 1.25, z + 1.25))) continue;
-    if (stump && Math.abs(x - stump.x) <= 1 && Math.abs(z - stump.z) <= 1) continue;
     plantTree(x, elevation(x, z), z, pine ? "pine" : "broadleaf", sapling);
   }
 

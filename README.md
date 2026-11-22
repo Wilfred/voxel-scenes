@@ -15,7 +15,5 @@ in `dist/`. Run `npm run preview` to serve that build locally.
 The mountain sky uses a tone-mapped copy of the CC0 panorama
 [Kloofendal 48d Partly Cloudy from Poly Haven](https://polyhaven.com/a/kloofendal_48d_partly_cloudy).
 
-The woodland **Cut stump** checkbox previews a stump from Luminous Dice's
-[Tiny Voxel Nature Pack](https://luminous-dice.itch.io/tiny-voxel-nature-pack).
-Its wood tones match the woodland palette. The creator's asset licence applies
-to the adapted model.
+Toggle **Ducks** in Woodland stream to compare a pair of birds on the water
+with the same uninhabited view.

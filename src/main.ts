@@ -51,7 +51,7 @@ if (!context) {
   let seed = 1846;
   const sceneSelect = document.querySelector<HTMLSelectElement>("#scene")!;
   const framing = document.querySelector<HTMLSelectElement>("#framing")!;
-  const natureProps = document.querySelector<HTMLInputElement>("#nature-props")!;
+  const ducks = document.querySelector<HTMLInputElement>("#ducks")!;
   const generate = document.querySelector<HTMLButtonElement>("#generate")!;
   const islandDescription = canvas.getAttribute("aria-label")!;
   let island: ReturnType<typeof buildIsland> | undefined;
@@ -81,7 +81,7 @@ if (!context) {
 
     const mountain = sceneSelect.value === "mountains";
     const woodland = sceneSelect.value === "woods";
-    natureProps.parentElement!.hidden = !woodland;
+    ducks.parentElement!.hidden = !woodland;
     framing.parentElement!.hidden = !woodland;
     const model = woodland && framing.value === "model";
     sea.position.set(0, 0, 0);
@@ -119,7 +119,7 @@ if (!context) {
       cameraTarget.set(0, 2, 0);
       camera.position.fromArray(p.eye);
       if (woodland) {
-        const woods = buildWoods(seed, model, natureProps.checked);
+        const woods = buildWoods(seed, model, ducks.checked);
         // Keep the crossing left of centre with the lit approach in view.
         cameraTarget.copy(woods.bridge).add(new THREE.Vector3(4, 1, 2));
         if (model) {
@@ -162,13 +162,13 @@ if (!context) {
     preview();
   }
 
-  natureProps.onchange = framing.onchange = sceneSelect.onchange = update;
+  ducks.onchange = framing.onchange = sceneSelect.onchange = update;
   generate.onclick = () => {
     seed = crypto.getRandomValues(new Uint32Array(1))[0];
     update();
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
-    const variant = sceneSelect.value === "woods" ? `-${framing.value}${natureProps.checked ? "-tiny-nature" : ""}` : "";
+    const variant = sceneSelect.value === "woods" ? `-${framing.value}${ducks.checked ? "-ducks" : ""}` : "";
     const filename = `${sceneSelect.value}-${seed}-graphic${variant}.png`;
     renderer.setSize(2560, 1440, false);
     renderer.render(scene, sceneSelect.value === "mountains" ? alpineCamera : camera);
