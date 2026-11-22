@@ -40,6 +40,7 @@ export const palette = {
     skyLight: 0xfff7e9,
     groundLight: 0xadb9bb,
   },
+  harvest: { apple: 0xac5142, blossom: 0xe8cec1 },
   gull: { white: 0xf1efe3, wing: 0xabb6b8, tip: 0x4d5657 },
   duck: {
     breast: 0xb6ac90,

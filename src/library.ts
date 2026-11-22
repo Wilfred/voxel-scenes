@@ -1,3 +1,4 @@
+import { animals, village } from "./village";
 import { buildOutbuilding, buildingNames } from "./outbuildings";
 import * as THREE from "three";
 import { buildCottage } from "./cottage";
@@ -124,6 +125,8 @@ function library(renderer: THREE.WebGLRenderer) {
   section("birds", "Water birds", (["drake", "hen", "gull"] as const).map((species, i) => ({
     name: ["Mallard drake", "Mallard hen", "Seagull"][i], draw: box => addBird(box, 0, 0, 0, species),
   })));
+  section("animals", "Land animals", animals);
+  section("village", "Village and orchard", village, false);
   section("structures", "Structures and props", [
     { name: "Timber footbridge", draw: box => footbridge(box, -3, 3, 0, x => Math.abs(x) >= 3 ? 0 : -1) },
     { name: "Landing pier", draw: box => pier(box, { x: 0, z: 0 }, 1, 0, () => -1) },

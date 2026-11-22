@@ -1,3 +1,4 @@
+import { chicken, creel, villageYard } from "./village";
 import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
 import { treeVoxel } from "./scale";
@@ -127,6 +128,10 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   const yards = placeOutbuildings(box, grid >= 6 ? ["nets", "store"] : grid >= 3 ? ["nets"] : [],
     approaches, unit, (x, z) => height(x, z) + unit, (x, z) =>
       Math.hypot(x - centreX, z - centreZ) > 2.5 && !stairs.has(x + "," + z));
+  const yard = villageYard(box, (x,z) => height(Math.round(x*2)/2,Math.round(z*2)/2)+unit,
+    (x,z) => Math.hypot(x-centreX,z-centreZ)>2.5 && !stairs.has(Math.round(x*2)/2+","+Math.round(z*2)/2) && !yards.near(x,z));
+  yard.place(creel, shore.x,shore.z,0.32);
+  yard.place(chicken, centreX+2,centreZ+2,0.2);
   for (let z = -Math.ceil(14 * grid); z <= Math.ceil(14 * grid); z += 0.5) {
     for (let x = -Math.ceil(21 * grid); x <= Math.ceil(21 * grid); x += 0.5) {
       const h = height(x, z);
@@ -141,7 +146,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
       ground(x, top - unit / 2, z, unit, unit, unit, yards.paths.has(x + "," + z) ? palette.ground.path : palette.green.grass);
       const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
       const density = (x < -6 ? 0.10 : 0.055) * grove;
-      if (yards.near(x, z) || yards.paths.has(x + "," + z) || Math.hypot(x - centreX, z - centreZ) < 3.5 || random() > density) continue;
+      if (yard.near(x,z,1.25) || yards.near(x, z) || yards.paths.has(x + "," + z) || Math.hypot(x - centreX, z - centreZ) < 3.5 || random() > density) continue;
       plantTree(x, top, z, "pine", random() < 0.25);
     }
   }
