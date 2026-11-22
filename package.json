@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && tsc --noEmit -p scripts && vite build",
     "preview": "vite preview",
-    "check": "node scripts/check-scenes.ts"
+    "check": "node scripts/check-scenes.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "three": "0.187.0"
@@ -14,6 +16,7 @@
   "devDependencies": {
     "@types/node": "^22.20.5",
     "@types/three": "0.187.0",
+    "prettier": "^3.10.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"
   }

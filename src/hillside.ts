@@ -153,6 +153,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       if (bank < 0) {
         const y = shelf(x, z);
         const l = x - 0.5, r = x + 0.5, b = z - 0.5, f = z + 0.5;
+        // prettier-ignore
         vertices.push(l,y,b, l,y,f, r,y,b, r,y,b, l,y,f, r,y,f);
         // Draw the exposed faces of water blocks, omitting shared faces so
         // transparency does not accumulate between neighboring river cells.
@@ -166,6 +167,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
           const ax = faceX - dz * 0.5, az = faceZ + dx * 0.5;
           const bx = faceX + dz * 0.5, bz = faceZ - dx * 0.5;
           const foot = wet ? shelf(nx, nz) : low;
+          // prettier-ignore
           vertices.push(ax,foot,az, bx,foot,bz, ax,y,az, bx,foot,bz, bx,y,bz, ax,y,az);
           if (!wet) continue;
           // Whitewater varies cell by cell without drawing from the seeded

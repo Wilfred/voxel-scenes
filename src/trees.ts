@@ -9,6 +9,7 @@ type Species = "pine" | "broadleaf";
 // Conifers taper to a single-voxel leader, except the flat-topped stone and cushion pines.
 type Tier = [number, number, number];
 type Profile = Tier[];
+// prettier-ignore
 const profiles: Record<Species, [Profile, Profile][]> = {
   pine: [
     [[[1,1,1],[5,2,5],[3,2,3],[1,1,1]], [[1,1,1],[3,2,1],[1,1,1]]],
