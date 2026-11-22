@@ -103,7 +103,18 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   }
 
   const { box, terrainLayer, buildMesh } = voxelBatch();
-  const base = terrainLayer(), ground = terrainLayer();
+  const base = terrainLayer(), ground = terrainLayer(), seabed = terrainLayer();
+  // Shallows clear enough to see the bed show it as stepped voxels. Deeper
+  // water hides a smooth floor beneath.
+  const shelfDepth = 3.5;
+  const wetSand = new THREE.Color(palette.ground.sand);
+  const silt = new THREE.Color(palette.ground.silt);
+  const bedColor = new THREE.Color();
+  const patches = (x: number, z: number) => Math.sin(x * 0.8 + phase) * Math.sin(z * 0.64 + x * 0.24);
+  function bedTint(x: number, z: number, y: number, steps = 0) {
+    const t = THREE.MathUtils.clamp(-y / 7 + patches(x, z) * 0.13, 0, 1);
+    return bedColor.copy(wetSand).lerp(silt, steps ? Math.round(t * steps) / steps : t);
+  }
   const plantTree = treePlanter(box, treeVoxel, designs, seed);
 
   // Follow a walkable contour inland from the shore stairs before looking
@@ -136,7 +147,11 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   for (let z = -Math.ceil(14 * grid); z <= Math.ceil(14 * grid); z += 0.5) {
     for (let x = -Math.ceil(21 * grid); x <= Math.ceil(21 * grid); x += 0.5) {
       const h = height(x, z);
-      if (h < 0) continue;
+      if (h < 0) {
+        const inside = !model || (Math.abs(x) + unit / 2 <= bounds.width / 2 && Math.abs(z) + unit / 2 <= bounds.depth / 2);
+        if (h >= -shelfDepth && inside) seabed(x, h - 0.75, z, unit, 1.5, unit, bedTint(x, z, h, 10).getHex());
+        continue;
+      }
       // The landing and stairs replace entire columns in the bank. Their
       // supports fill those columns down to the same base as the terrain.
       if (stairs.has(x + "," + z)) continue;
@@ -176,22 +191,19 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   const positions = floorGeometry.getAttribute("position");
   const samples = new Uint8Array(resolution * resolution);
   const colors = new Float32Array(positions.count * 3);
-  const wetSand = new THREE.Color(palette.ground.sand);
-  const silt = new THREE.Color(palette.ground.silt);
-  const floorColor = new THREE.Color();
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i);
     const z = positions.getZ(i);
-    const y = THREE.MathUtils.clamp(naturalHeight(x, z), -7, -0.14);
+    const natural = naturalHeight(x, z);
+    // Sink the smooth floor below the stepped shallows so it never pokes through.
+    const y = natural >= -shelfDepth - unit ? natural - 1.5 : THREE.MathUtils.clamp(natural, -7, -0.14);
     // The floor and water sample the same world-space footprint at every grid setting.
     const sampleX = ((i % resolution) / (resolution - 1) - 0.5) * 64 * grid;
     const sampleZ = (Math.floor(i / resolution) / (resolution - 1) - 0.5) * 64 * grid;
     samples[i] = Math.round(255 * THREE.MathUtils.clamp(-naturalHeight(sampleX, sampleZ) / 6, 0.14 / 6, 1));
     // Extend the outer ring under the whole view so the horizon has a bottom.
     positions.setXYZ(i, Math.abs(x) === 32 * grid ? x * 8 : x, y, Math.abs(z) === 32 * grid ? z * 8 : z);
-    const patches = Math.sin(x * 0.8 + phase) * Math.sin(z * 0.64 + x * 0.24);
-    floorColor.copy(wetSand).lerp(silt, THREE.MathUtils.clamp(-y / 7 + patches * 0.13, 0, 1));
-    floorColor.toArray(colors, i * 3);
+    bedTint(x, z, Math.min(natural, -0.14)).toArray(colors, i * 3);
   }
   floorGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   floorGeometry.computeVertexNormals();
