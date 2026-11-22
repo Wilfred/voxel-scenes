@@ -3,13 +3,14 @@ import * as THREE from "three";
 
 // Water samples the terrain on a grid-scaled square centred at the origin.
 export function riverDepthMap(depthAt: (x: number, z: number) => number, grid = 1) {
-  const samples = new Uint8Array(128 * 128);
+  const size = Math.max(128, Math.ceil(64 * grid));
+  const samples = new Uint8Array(size * size);
   for (let i = 0; i < samples.length; i++) {
-    const x = Math.floor(((i % 128 + 0.5) / 2 - 32) * grid + 0.5);
-    const z = Math.floor(((Math.floor(i / 128) + 0.5) / 2 - 32) * grid + 0.5);
+    const x = Math.floor(((i % size + 0.5) * 64 / size - 32) * grid + 0.5);
+    const z = Math.floor(((Math.floor(i / size) + 0.5) * 64 / size - 32) * grid + 0.5);
     samples[i] = Math.round(255 * THREE.MathUtils.clamp(depthAt(x, z) / 6, 0, 1));
   }
-  const depth = new THREE.DataTexture(samples, 128, 128, THREE.RedFormat);
+  const depth = new THREE.DataTexture(samples, size, size, THREE.RedFormat);
   depth.magFilter = depth.minFilter = THREE.LinearFilter;
   depth.needsUpdate = true;
   return depth;
@@ -35,12 +36,12 @@ export function createWater() {
       seabed: surface.depth, deepWater: surface.deep, skyTint: surface.sky,
       gridScale: surface.grid, sunlight: surface.sun, viewDirection: surface.eye, wavePhase: surface.phase,
     });
-    shader.vertexShader = 'varying vec2 oceanXZ; varying float curtain;\n' + shader.vertexShader.replace(
+    shader.vertexShader = 'varying vec2 oceanXZ;\n' + shader.vertexShader.replace(
       '#include <begin_vertex>',
-      '#include <begin_vertex>\ncurtain = 1.0 - abs(normalize(mat3(modelMatrix) * normal).y);\noceanXZ = (modelMatrix * vec4(position, 1.0)).xz;',
+      '#include <begin_vertex>\noceanXZ = (modelMatrix * vec4(position, 1.0)).xz;',
     );
     shader.fragmentShader = `
-      varying vec2 oceanXZ; varying float curtain;
+      varying vec2 oceanXZ;
       uniform sampler2D seabed;
       uniform vec3 horizonTint, zenithTint, glintTint;
       uniform vec3 deepWater, skyTint, sunlight, viewDirection;
@@ -85,7 +86,7 @@ export function createWater() {
       outgoingLight = mix(outgoingLight, skyLight, fresnel) + glintTint * sparkle;
       float pathLength = 6.0 * depthFraction / max(facing, 0.22);
       float transmission = exp(-0.30 * pathLength) * (1.0 - fresnel);
-      diffuseColor.a = mix(1.0 - transmission, 0.46, curtain);
+      diffuseColor.a = 1.0 - transmission;
       #include <opaque_fragment>
     `);
   };

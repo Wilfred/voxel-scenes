@@ -96,7 +96,8 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     return naturalHeight(x, z);
   }
 
-  const { box, buildMesh } = voxelBatch();
+  const { box, terrainLayer, buildMesh } = voxelBatch();
+  const base = terrainLayer(), ground = terrainLayer();
   const plantTree = treePlanter(box, 0.25, designs);
 
   for (let z = -Math.ceil(14 * grid); z <= Math.ceil(14 * grid); z += 0.5) {
@@ -108,9 +109,9 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
       if (stairs.has(x + "," + z)) continue;
       const top = h + unit;
       const soilTop = h >= 1 ? h : top;
-      box(x, (soilTop - unit) / 2, z, unit, soilTop + unit, unit, h < 1 ? palette.ground.sand : palette.ground.stone);
+      base(x, (soilTop - unit) / 2, z, unit, soilTop + unit, unit, h < 1 ? palette.ground.sand : palette.ground.stone);
       if (h < 1) continue;
-      box(x, top - unit / 2, z, unit, unit, unit, palette.green.meadow);
+      ground(x, top - unit / 2, z, unit, unit, unit, palette.green.meadow);
       const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
       const density = (x < -6 ? 0.26 : 0.14) * grove;
       if (Math.hypot(x - centreX, z - centreZ) < 2 || random() > density) continue;

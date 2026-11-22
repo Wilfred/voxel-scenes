@@ -5,4 +5,4 @@ export const designNames = {
   cottage: ["Original cottage", "Crofter’s cottage", "Net mender’s house", "Stone bothy", "Gardener’s cottage", "Orchard house", "Fisher’s cottage", "Longhouse", "Mill keeper’s house", "Forester’s cottage"],
 };
 export type Family = keyof typeof designNames;
-export const defaultDesigns = { pine: 0, broadleaf: 0, cottage: 1 };
+export const defaultDesigns = { pine: 0, broadleaf: 0, cottage: 3 };

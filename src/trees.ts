@@ -35,7 +35,8 @@ const profiles: Record<Species, [Profile, Profile][]> = {
 };
 
 export function treePlanter(box: Box, voxel: number, designs = defaultDesigns) {
-  const occupied = new Set<string>();
+  type CrownBox = { x: number; y: number; z: number; width: number; height: number; depth: number };
+  const stands = new Map<string, CrownBox[]>();
   const adultRoots = new Set<string>();
   return (x: number, ground: number, z: number, species: Species, sapling: boolean) => {
     const model = profiles[species][designs[species]][sapling ? 1 : 0];
@@ -61,7 +62,7 @@ export function treePlanter(box: Box, voxel: number, designs = defaultDesigns) {
     const foliage = species === "pine"
       ? { trunk: palette.wood, leaf: palette.green.pine, tip: palette.green.pineTip }
       : { trunk: palette.wood, leaf: palette.green.leaf, tip: palette.green.leafTip };
-    const keys: string[] = [];
+
     let base = 0;
     const parts = model.map(([width, layers, depth], i) => {
       const part = i === 0 ? "trunk" : i === model.length - 1 ? "tip" : "leaf";
@@ -70,20 +71,24 @@ export function treePlanter(box: Box, voxel: number, designs = defaultDesigns) {
       base += height;
       return { width, depth, height, bottom, color: foliage[part] };
     });
-    for (const part of parts) {
-      const rx = (part.width - 1) / 2;
-      const rz = (part.depth - 1) / 2;
-      for (let dy = 0; dy < part.height; dy++) {
-        for (let dz = -rz; dz <= rz; dz++) {
-          for (let dx = -rx; dx <= rx; dx++) {
-            const key = (gx + dx) + "," + (gy + part.bottom + dy) + "," + (gz + dz);
-            if (occupied.has(key)) return;
-            keys.push(key);
-          }
-        }
+    const boxes = parts.map(p => ({
+      x: gx, y: gy + p.bottom + p.height / 2, z: gz, width: p.width, height: p.height, depth: p.depth,
+    }));
+    // The widest crowns span five voxels. Only roots in adjoining four-voxel
+    // patches can intersect; check whole tiers instead of storing every leaf cell.
+    for (let dz = -1; dz <= 1; dz++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const neighbors = stands.get((patchX + dx) + "," + (patchZ + dz));
+        if (neighbors?.some(a => boxes.some(b =>
+          2 * Math.abs(a.x - b.x) < a.width + b.width &&
+          2 * Math.abs(a.y - b.y) < a.height + b.height &&
+          2 * Math.abs(a.z - b.z) < a.depth + b.depth))) return;
       }
     }
-    for (const key of keys) occupied.add(key);
+    const key = patchX + "," + patchZ;
+    const patch = stands.get(key);
+    if (patch) patch.push(...boxes);
+    else stands.set(key, boxes);
     if (!sapling) adultRoots.add(patchX + "," + patchZ);
     for (const part of parts) {
       const y = ground + (part.bottom + part.height / 2) * voxel;

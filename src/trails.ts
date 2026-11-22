@@ -33,6 +33,7 @@ function connect(from: Point, to: Point, elevation: Elevation, dry: (x: number, 
 }
 
 export function terrainTrail(elevation: Elevation, dry: (x: number, z: number) => boolean) {
+  const verge = new Set<string>();
   const tiles = new Map<string, number>();
   return {
     tiles,
@@ -68,16 +69,15 @@ export function terrainTrail(elevation: Elevation, dry: (x: number, z: number) =
       const last = tread.length - 1;
       for (let i = 0; i <= last; i++) {
         const approach = Math.max(heights[0] - i * layer, heights[last] - (last - i) * layer);
+        const [x, z] = points[i];
+        for (let dz = -1; dz <= 1; dz++) {
+          for (let dx = -1; dx <= 1; dx++) verge.add((x + dx) + "," + (z + dz));
+        }
         tiles.set(points[i].join(","), Math.max(tread[i], approach));
       }
     },
     near(x: number, z: number) {
-      for (let dz = -1; dz <= 1; dz++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          if (tiles.has((x + dx) + "," + (z + dz))) return true;
-        }
-      }
-      return false;
+      return verge.has(x + "," + z);
     },
   };
 }

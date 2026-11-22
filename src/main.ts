@@ -29,6 +29,10 @@ if (!context) {
   const { sea, surface } = createWater();
   scene.add(sea);
 
+  const blockWater = new THREE.MeshLambertMaterial({
+    color: palette.water.river, transparent: true, opacity: 0.52, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+  });
   const sun = lightScene(scene);
   const sunOffset = sun.position.clone();
   sun.castShadow = true;
@@ -46,16 +50,25 @@ if (!context) {
   let riverDepth: THREE.Texture | undefined;
   let mesh: ReturnType<typeof buildHillside>["mesh"] | undefined;
   let hillsideWater: THREE.Mesh<THREE.BufferGeometry> | undefined;
+  let foam: typeof mesh;
   function preview() {
     const width = Math.max(1, Math.round(canvas.clientWidth * Math.min(devicePixelRatio, 2)));
     renderer.setSize(width, Math.round(width * 9 / 16), false);
     renderer.render(scene, camera);
   }
   function update() {
+    window.clearTimeout(pendingGrid);
     if (hillsideWater) {
       scene.remove(hillsideWater);
       hillsideWater.geometry.dispose();
       hillsideWater = undefined;
+    }
+    if (foam) {
+      scene.remove(foam);
+      foam.dispose();
+      foam.geometry.dispose();
+      foam.material.dispose();
+      foam = undefined;
     }
     riverDepth?.dispose();
     riverDepth = undefined;
@@ -82,16 +95,18 @@ if (!context) {
     const sky = inland ? palette.light.forestSky : palette.light.coastalSky;
     sea.visible = !hill;
     sea.position.set(0, 0, 0);
-    sea.scale.setScalar(1);
+    sea.scale.set(grid, grid, 1);
     cameraTarget.set(0, 2, 0);
     let waterBounds;
     if (hill) {
       const hillside = buildHillside(seed, model, grid, designs);
       mesh = hillside.mesh;
-      hillsideWater = new THREE.Mesh(hillside.water, sea.material);
+      hillsideWater = new THREE.Mesh(hillside.water, blockWater);
+      hillsideWater.renderOrder = 1;
       hillsideWater.receiveShadow = true;
       scene.add(hillsideWater);
-      riverDepth = hillside.depth;
+      foam = hillside.foam;
+      scene.add(foam);
       cameraTarget.set(-1, model ? 3 : 5, model ? -2 : -5);
       camera.top = model ? 28 : 13;
     } else if (woodland) {
@@ -118,6 +133,7 @@ if (!context) {
     else if (inland) camera.position.set(16, 30, 40);
     else camera.position.set(8, 27, 43);
     camera.top *= grid;
+    camera.far = 350 * grid;
     camera.position.multiplyScalar(grid).add(cameraTarget);
     scene.background = new THREE.Color(model ? palette.light.backdrop : sky);
     scene.fog = new THREE.FogExp2(sky, 0.005 / grid);
@@ -147,8 +163,8 @@ if (!context) {
   let pendingGrid = 0;
   resolution.oninput = () => {
     gridValue.value = resolution.value + "×";
-    cancelAnimationFrame(pendingGrid);
-    pendingGrid = requestAnimationFrame(update);
+    window.clearTimeout(pendingGrid);
+    pendingGrid = window.setTimeout(update, 150);
   };
   framing.onchange = sceneSelect.onchange = update;
   generate.onclick = () => {
@@ -156,6 +172,7 @@ if (!context) {
     update();
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
+    if (surface.grid.value !== Number(resolution.value)) update();
     const variant = `-${framing.value}-${resolution.value}x-p${designs.pine + 1}-b${designs.broadleaf + 1}-c${designs.cottage + 1}`;
     const filename = `${sceneSelect.value}-${seed}-graphic${variant}.png`;
     renderer.setSize(2560, 1440, false);

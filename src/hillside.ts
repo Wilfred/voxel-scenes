@@ -1,7 +1,6 @@
 import { defaultDesigns } from "./designs";
 import { findSite } from "./sites";
 import { waterfowl } from "./ducks";
-import { riverDepthMap } from "./water";
 import * as THREE from "three";
 import { buildCottage, cottageDoor } from "./cottage";
 import { palette } from "./palette";
@@ -15,7 +14,8 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
   const phase = random() * Math.PI * 2;
   const drop = 3 + Math.floor(random() * 3) * 0.5;
   const lip = -2;
-  const { box, buildMesh } = voxelBatch();
+  const { box, terrainLayer, buildMesh } = voxelBatch();
+  const base = terrainLayer(), ground = terrainLayer();
   const plantTree = treePlanter(box, 0.5, designs);
 
   function channel(z: number) {
@@ -81,9 +81,10 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
     return level(cx, cz) === 0 ? -elevation(cx, cz) : 0;
   });
 
-  const radius = Math.ceil(54 * grid);
+  const radius = Math.ceil((grid > 2 ? 36 : 54) * grid);
   const radiusX = model ? Math.round(21 * grid) : radius, radiusZ = model ? Math.round(16 * grid) : radius;
   const vertices: number[] = [];
+  const spray = voxelBatch();
   for (let z = -radius; z <= radius; z++) {
     for (let x = -radius; x <= radius; x++) {
       const chance = random(), sapling = random() < 0.25;
@@ -97,33 +98,38 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       const waterStep = x === landingX && z === landingZ;
       const color = waterStep ? palette.ground.stone : path !== undefined ? palette.ground.path : bank < 0 ? palette.ground.riverbed
         : ledge ? palette.ground.stone : grass;
-      box(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, ledge ? palette.ground.stone : palette.ground.soil);
-      box(x, h - 0.25, z, 1, 0.5, 1, color);
+      base(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, ledge ? palette.ground.stone : palette.ground.soil);
+      ground(x, h - 0.25, z, 1, 0.5, 1, color);
       if (bank < 0) {
         const y = level(x, z);
         const l = x - 0.5, r = x + 0.5, b = z - 0.5, f = z + 0.5;
         vertices.push(l,y,b, l,y,f, r,y,b, r,y,b, l,y,f, r,y,f);
-        // Fill every exposed edge between levels, including the notch's side.
-        for (const [dx, dz] of [[0, 1], [-1, 0], [1, 0]]) {
-          const low = level(x + dx, z + dz);
-          if (low >= y || bankDistance(x + dx, z + dz) >= 0) continue;
+        // Draw the exposed faces of water blocks, omitting shared faces so
+        // transparency does not accumulate between neighboring river cells.
+        for (const [dx, dz] of [[0, 1], [0, -1], [-1, 0], [1, 0]]) {
+          const nx = x + dx, nz = z + dz;
+          const cut = Math.abs(nx) > radiusX || Math.abs(nz) > radiusZ;
+          const wet = !cut && bankDistance(nx, nz) < 0;
+          const low = Math.max(h, cut ? h : wet ? level(nx, nz) : elevation(nx, nz));
+          if (low >= y) continue;
           const faceX = x + dx * 0.5, faceZ = z + dz * 0.5;
-          // A vertical sheet shares the translucent river material. Wind the
-          // face towards the lower pool, including the two sides of the notch.
           const ax = faceX - dz * 0.5, az = faceZ + dx * 0.5;
           const bx = faceX + dz * 0.5, bz = faceZ - dx * 0.5;
-          vertices.push(ax,low,az, bx,low,bz, ax,y,az, bx,low,bz, bx,y,bz, ax,y,az);
-          if (dz) {
+          const foot = wet ? level(nx, nz) : low;
+          vertices.push(ax,foot,az, bx,foot,bz, ax,y,az, bx,foot,bz, bx,y,bz, ax,y,az);
+          if (!wet) continue;
+          // A narrow aerated crest traces the entire lip, including the notch.
+          spray.box(faceX - dx / 16, y, faceZ - dz / 16,
+            dz ? 1 : 0.125, 0.125, dx ? 1 : 0.125, palette.water.foam);
+          if (dz === 1) {
             const ripple = Math.sin(x * 4.1 + z + phase);
             const spread = ripple > 0 ? 0.75 : 0.5;
-            box(x, low + 0.0625, faceZ + spread / 2, 0.75, 0.125, spread, palette.water.foam);
-            // A broken glint follows each falling sheet down to its splash.
-            const run = (y - low) * (0.45 + 0.2 * ripple);
-            box(x + ripple * 0.25, y - run / 2, faceZ + 0.13, 0.125, run, 0.0625, palette.water.froth);
-            box(x - 0.25, low + 0.125, faceZ + spread, 0.25, 0.25, 0.25, palette.water.froth);
+            spray.box(x, foot + 0.0625, faceZ + spread / 2, 0.75, 0.125, spread, palette.water.foam);
+            const run = (y - foot) * (0.45 + 0.2 * ripple);
+            spray.box(x + ripple * 0.25, y - run / 2, faceZ + 0.0625, 0.125, run, 0.125, palette.water.froth);
+            spray.box(x - 0.25, foot + 0.125, faceZ + spread, 0.25, 0.25, 0.25, palette.water.froth);
           }
         }
-        if (model && Math.abs(z) === radiusZ) box(x, (h + y) / 2, z, 1, y - h, 1, palette.water.cutFace);
         continue;
       }
       if (Math.abs(x) >= radiusX - 1 || Math.abs(z) >= radiusZ - 1 || bank < 2 ||
@@ -134,6 +140,11 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
   const water = new THREE.BufferGeometry();
   water.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
   water.computeVertexNormals();
-  const depth = riverDepthMap((x, z) => level(x, z) - elevation(x, z), grid);
-  return { mesh: buildMesh(), water, depth };
+  const foam = spray.buildMesh();
+  foam.material.transparent = true;
+  foam.material.opacity = 0.55;
+  foam.material.depthWrite = false;
+  foam.castShadow = false;
+  foam.renderOrder = 2;
+  return { mesh: buildMesh(), water, foam };
 }

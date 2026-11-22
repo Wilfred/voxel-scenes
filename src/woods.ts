@@ -22,7 +22,8 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
     const rise = 0.42 + 0.15 * Math.sin(z * 0.19 + phase) + 0.14 * Math.cos(x * 0.24);
     return Math.max(-3, Math.min(7.75, Math.floor(bank * rise * 2) / 2 + 0.25));
   }
-  const { box, buildMesh } = voxelBatch();
+  const { box, terrainLayer, buildMesh } = voxelBatch();
+  const base = terrainLayer(), ground = terrainLayer();
 
   function banks(z: number) {
     let west = Math.round(riverX(z)), east = west;
@@ -77,22 +78,23 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
   }
   const candidates: { x: number; z: number; leafPatch: number }[] = [];
   for (let z = -radius; z <= radius; z++) {
+    const nearbyGroves = groves.filter(grove => Math.abs(z - grove.z) < grove.radius);
     for (let x = -radius; x <= radius; x++) {
       const pathHeight = trail.tiles.get(x + "," + z);
       const h = pathHeight ?? elevation(x, z);
       const leafPatch = Math.sin(x * 0.20 + phase) + Math.sin(z * 0.16);
       const onTrail = pathHeight !== undefined;
       if (!model || inside(x, z)) {
-        const ground = h < 0 ? palette.ground.riverbed : h < 1 ? palette.ground.sand : leafPatch > 0 ? palette.green.meadow : palette.green.grass;
-        const tint = onTrail ? palette.ground.path : ground;
+        const groundColor = h < 0 ? palette.ground.riverbed : h < 1 ? palette.ground.sand : leafPatch > 0 ? palette.green.meadow : palette.green.grass;
+        const tint = onTrail ? palette.ground.path : groundColor;
         const edge = model && (x - 0.5 === left || x + 0.5 === left + width ||
           z - 0.5 === back || z + 0.5 === back + depth);
         if (edge) {
-          box(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, palette.ground.soil);
-          box(x, h - 0.25, z, 1, 0.5, 1, tint);
+          base(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, palette.ground.soil);
+          ground(x, h - 0.25, z, 1, 0.5, 1, tint);
           if (h < 0) box(x, h / 2, z, 1, -h, 1, palette.water.cutFace);
         } else {
-          box(x, (h - 4) / 2, z, 1, h + 4, 1, tint);
+          ground(x, (h - 4) / 2, z, 1, h + 4, 1, tint);
         }
       }
       if (trail.near(x, z) || (sign && Math.hypot(x - sign.x, z - sign.z) < 2) || h < 0.5 || (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)) continue;
@@ -101,7 +103,7 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
       const slope = Math.hypot(elevation(x + 1, z) - h, elevation(x, z + 1) - h);
       const moisture = Math.exp(-((bankDistance - 9) ** 2) / 65);
       let density = 0.011;
-      for (const grove of groves) {
+      for (const grove of nearbyGroves) {
         const distance = Math.hypot(x - grove.x, z - grove.z) / grove.radius;
         if (distance < 1) density += (1 - distance) ** 2 * (0.95 + moisture) / (1 + slope);
       }

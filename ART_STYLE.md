@@ -49,3 +49,6 @@ Around Halloween, low light might throw long tree shadows across a
 clearing. A few warm lights on a fir or a pumpkin lantern by a cottage
 door can reward a closer look. Keep them small enough to belong in the
 scene at its natural scale.
+
+Use the Stone bothy and Orchard house as cottage references. Keep the roof
+silhouette clear and align projections such as porches and bays to the brick grid.
