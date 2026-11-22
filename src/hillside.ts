@@ -98,10 +98,10 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
     const [x, z] = key.split(",").map(Number);
     return { x, z };
   });
-  const barrier = fenceBuilder(box, (x,z) => trail.tiles.get(Math.round(x) + "," + Math.round(z)) ?? elevation(Math.round(x),Math.round(z)));
-  for (const {x,z} of approaches) {
+  const barrier = fenceBuilder(box, (x, z) => trail.tiles.get(Math.round(x) + "," + Math.round(z)) ?? elevation(Math.round(x), Math.round(z)));
+  for (const { x, z } of approaches) {
     const h = trail.tiles.get(x + "," + z)!;
-    for (const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const nx = x + dx, nz = z + dz;
       if (trail.tiles.has(nx + "," + nz) || h - elevation(nx,nz) < 1.5) continue;
       // Keep posts on the path shoulder, leaving the centre clear to walk.
@@ -114,12 +114,12 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
     approaches, 1, (x, z) => elevation(Math.round(x), Math.round(z)), (x, z) =>
       bankDistance(x, z) > 1 && Math.hypot(x - cabinX, z - cabinZ) > 3 &&
       !trail.tiles.has(Math.round(x) + "," + Math.round(z)) && (!stack || Math.hypot(x - stack.x, z - stack.z) > 1.5));
-  const yard = villageYard(box, (x,z) => elevation(Math.round(x),Math.round(z)), (x,z) =>
-    bankDistance(x,z)>0 && Math.hypot(x-cabinX,z-cabinZ)>2.5 && !yards.near(x,z) &&
-    !trail.near(Math.round(x),Math.round(z)) && (!stack || Math.hypot(x-stack.x,z-stack.z)>1));
-  yard.place(hive, cabinX-3,cabinZ,0.5);
-  yard.place(chicken, cabinX+2,cabinZ+3,0.25);
-  yard.place(sheep, cabinX-4,cabinZ+5,0.5);
+  const yard = villageYard(box, (x, z) => elevation(Math.round(x), Math.round(z)), (x, z) =>
+    bankDistance(x, z) > 0 && Math.hypot(x - cabinX, z - cabinZ) > 2.5 && !yards.near(x, z) &&
+    !trail.near(Math.round(x), Math.round(z)) && (!stack || Math.hypot(x - stack.x, z - stack.z) > 1));
+  yard.place(hive, cabinX - 3, cabinZ, 0.5);
+  yard.place(chicken, cabinX + 2, cabinZ + 3, 0.25);
+  yard.place(sheep, cabinX - 4, cabinZ + 5, 0.5);
   const poolDepth = (x: number, z: number) => {
     const cx = Math.round(x), cz = Math.round(z);
     return shelf(cx, cz) === 0 ? -elevation(cx, cz) : 0;
@@ -199,7 +199,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
         }
         continue;
       }
-      if (exposed || yard.near(x,z,1.5) || yards.near(x, z) || yards.paths.has(x + "," + z) || Math.abs(x) >= radiusX - 1 || Math.abs(z) >= radiusZ - 1 || bank < 2 ||
+      if (exposed || yard.near(x, z, 1.5) || yards.near(x, z) || yards.paths.has(x + "," + z) || Math.abs(x) >= radiusX - 1 || Math.abs(z) >= radiusZ - 1 || bank < 2 ||
         Math.hypot(x - cabinX, z - cabinZ) < 3.5 || (stack && Math.hypot(x - stack.x, z - stack.z) < 2) || trail.near(x, z)) continue;
       if (chance < standDensity(cover)) plantTree(x, h, z, cover > 0.35 ? "pine" : "broadleaf", sapling);
     }

@@ -118,11 +118,11 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
     (x, z) => elevation(Math.round(x), Math.round(z)), (x, z) =>
       inside(x, z) && Math.abs(x - riverX(z)) > 5 && !trail.tiles.has(Math.round(x) + "," + Math.round(z)) &&
       signs.every(p => Math.hypot(x - p.x, z - p.z) > 1));
-  const yard = villageYard(box, (x,z) => elevation(Math.round(x),Math.round(z)), (x,z) =>
-    !trail.near(Math.round(x),Math.round(z)) && !yards.near(x,z) && signs.every(p=>Math.hypot(x-p.x,z-p.z)>1));
-  yard.place(deer, west-8,bridgeZ-6,0.45,true);
-  yard.place(rabbit, east+4,bridgeZ+3,0.25);
-  yard.place(rabbit, east+6,bridgeZ+4,0.25,true);
+  const yard = villageYard(box, (x, z) => elevation(Math.round(x), Math.round(z)), (x, z) =>
+    !trail.near(Math.round(x), Math.round(z)) && !yards.near(x, z) && signs.every(p => Math.hypot(x - p.x, z - p.z) > 1));
+  yard.place(deer, west - 8, bridgeZ - 6, 0.45, true);
+  yard.place(rabbit, east + 4, bridgeZ + 3, 0.25);
+  yard.place(rabbit, east + 6, bridgeZ + 4, 0.25, true);
   // Seed stands along each bank independently, with gaps between seed sources.
   const groves: { x: number; z: number; radius: number }[] = [];
   for (const side of [-1, 1]) {
@@ -152,7 +152,7 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
           ground(x, (h - 4) / 2, z, 1, h + 4, 1, tint);
         }
       }
-      if (yard.near(x,z,1.5) || yards.near(x, z) || onTrail || trail.near(x, z) || signs.some(p => Math.hypot(x - p.x, z - p.z) < 2) || h < 0.5 || (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)) continue;
+      if (yard.near(x, z, 1.5) || yards.near(x, z) || onTrail || trail.near(x, z) || signs.some(p => Math.hypot(x - p.x, z - p.z) < 2) || h < 0.5 || (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)) continue;
 
       const bankDistance = Math.abs(x - riverX(z));
       const slope = Math.hypot(elevation(x + 1, z) - h, elevation(x, z + 1) - h);
