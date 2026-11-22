@@ -21,10 +21,15 @@
           <option value="vista">Vista</option>
           <option value="model">Rectangular model</option>
         </select></label>
+        <div class="zoom" role="group" aria-label="Camera zoom">
+          <button id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+          <output id="zoom-value" aria-label="Zoom level">100%</output>
+          <button id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+        </div>
         <label>Grid resolution <input id="resolution" type="range" min="0.75" max="5" step="0.25" value="1">
           <output id="grid-value" for="resolution">1×</output></label>
         <label>Weather <select id="weather"><option value="clear">Clear daylight</option><option value="morning">Morning sun</option><option value="overcast">Bright overcast</option><option value="clearing">Clearing rain</option></select></label>
-        <label><input type="checkbox" id="ray-trace"> Ray-traced contact shading</label>
+        <label><input type="checkbox" id="ray-trace" checked> Ray-traced light and water</label>
         <button id="generate">New island</button>
         <button id="save">Save PNG</button>
       </div>

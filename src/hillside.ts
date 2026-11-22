@@ -1,3 +1,5 @@
+import { fenceBuilder } from "./fences";
+import { riverDepthMap } from "./water";
 import { chicken, hive, sheep, villageYard } from "./village";
 import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
@@ -96,6 +98,18 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
     const [x, z] = key.split(",").map(Number);
     return { x, z };
   });
+  const barrier = fenceBuilder(box, (x,z) => trail.tiles.get(Math.round(x) + "," + Math.round(z)) ?? elevation(Math.round(x),Math.round(z)));
+  for (const {x,z} of approaches) {
+    const h = trail.tiles.get(x + "," + z)!;
+    for (const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx = x + dx, nz = z + dz;
+      if (trail.tiles.has(nx + "," + nz) || h - elevation(nx,nz) < 1.5) continue;
+      // Keep posts on the path shoulder, leaving the centre clear to walk.
+      barrier.bay(x + dx * 0.375 - dz * 0.375, z + dz * 0.375 - dx * 0.375,
+        x + dx * 0.375 + dz * 0.375, z + dz * 0.375 + dx * 0.375);
+    }
+  }
+  barrier.finish();
   const yards = placeOutbuildings(box, grid >= 6 ? ["store", "shelter"] : grid >= 3 ? ["store"] : [],
     approaches, 1, (x, z) => elevation(Math.round(x), Math.round(z)), (x, z) =>
       bankDistance(x, z) > 1 && Math.hypot(x - cabinX, z - cabinZ) > 3 &&
@@ -182,5 +196,5 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
   foam.material.depthWrite = false;
   foam.castShadow = false;
   foam.renderOrder = 2;
-  return { mesh: buildMesh(), water, foam };
+  return { mesh: buildMesh(), water, foam, depth: riverDepthMap((x, z) => shelf(x, z) - elevation(x, z), grid) };
 }

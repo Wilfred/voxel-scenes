@@ -1,3 +1,5 @@
+import { fenceBuilder } from "./fences";
+import { contactRays } from "./contact-rays";
 import { animals, village } from "./village";
 import { buildOutbuilding, buildingNames } from "./outbuildings";
 import * as THREE from "three";
@@ -52,6 +54,7 @@ function library(renderer: THREE.WebGLRenderer) {
       const { box, buildMesh } = voxelBatch();
       draw(box);
       const mesh = buildMesh();
+      contactRays(mesh);
       const bounds = new THREE.Box3().setFromObject(mesh);
       return { name, mesh, sphere: bounds.getBoundingSphere(new THREE.Sphere()) };
     });
@@ -128,6 +131,10 @@ function library(renderer: THREE.WebGLRenderer) {
   section("animals", "Land animals", animals);
   section("village", "Village and orchard", village, false);
   section("structures", "Structures and props", [
+    { name: "Pasture fence and gate", draw: box => {
+      const fence = fenceBuilder(box, () => 0);
+      fence.bay(-2, 0, 0, 0); fence.bay(0, 0, 2, 0, true); fence.finish();
+    } },
     { name: "Timber footbridge", draw: box => footbridge(box, -3, 3, 0, x => Math.abs(x) >= 3 ? 0 : -1) },
     { name: "Landing pier", draw: box => pier(box, { x: 0, z: 0 }, 1, 0, () => -1) },
     { name: "Shore stairs", draw: box => shoreStairs(box, [0, 0.5, 1, 1.5].map(x => ({ x, z: 0 })), 2, 3) },

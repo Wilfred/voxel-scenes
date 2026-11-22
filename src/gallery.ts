@@ -1,3 +1,4 @@
+import { contactRays } from "./contact-rays";
 import { lightScene } from "./lighting";
 import * as THREE from "three";
 import { buildCottage } from "./cottage";
@@ -32,10 +33,12 @@ export function designGallery(designs: typeof defaultDesigns, apply: () => void)
       }
       box(0, -0.125, 0, 5.25, 0.25, 3, palette.green.grass);
       const mesh = buildMesh();
+      const disposeRays = contactRays(mesh);
       scene.add(mesh);
       renderer!.render(scene, camera);
       const url = renderer!.domElement.toDataURL();
       scene.remove(mesh);
+      disposeRays();
       mesh.dispose(); mesh.geometry.dispose(); mesh.material.dispose();
       return url;
     });

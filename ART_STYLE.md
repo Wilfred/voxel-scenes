@@ -86,3 +86,9 @@ Use a half-course for a small functional detail such as a signboard or sill.
 Small animals can use their own finer grid so their legs and heads read at
 the established body size. Keep a single detail scale within each model.
 Water, foam and smoke can depart from the solid grid for surface and air effects.
+
+For cottage windows, use the deep reveals and paired lights in the Chedworth
+cottage photographs as a guide. At wallpaper scale one inset pane, or a pair
+with a single mullion, can describe the opening. Let the wall material form
+the sill and jambs. [Village cottage](https://www.geograph.org.uk/photo/223590)
+and [Church Row](https://www.geograph.org.uk/photo/6379744).

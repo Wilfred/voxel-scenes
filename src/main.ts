@@ -32,13 +32,9 @@ if (!context) {
   const scene = new THREE.Scene();
   const cameraTarget = new THREE.Vector3(0, 2, 0);
   const camera = new THREE.OrthographicCamera(-24, 24, 14, -14, 0.1, 350);
-  const { sea, surface } = createWater();
+  const { sea, surface, rays } = createWater();
   scene.add(sea);
 
-  const blockWater = new THREE.MeshLambertMaterial({
-    color: palette.water.river, transparent: true, opacity: 0.52, depthWrite: false,
-    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
-  });
   const sun = lightScene(scene);
   const skyLight = scene.children.find(light => light instanceof THREE.HemisphereLight)!;
   const weatherSelect = document.querySelector<HTMLSelectElement>("#weather")!;
@@ -74,14 +70,35 @@ if (!context) {
       renderer.render(scene, camera);
     });
   });
-  canvas.ondblclick = () => orbit.reset();
+  const zoomLevels = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 2.5, 3];
+  const defaultZoom = zoomLevels.indexOf(1);
+  let zoomIndex = defaultZoom;
+  const zoomIn = document.querySelector<HTMLButtonElement>("#zoom-in")!;
+  const zoomOut = document.querySelector<HTMLButtonElement>("#zoom-out")!;
+  const zoomValue = document.querySelector<HTMLOutputElement>("#zoom-value")!;
+  function setZoom(index: number) {
+    zoomIndex = index;
+    camera.zoom = zoomLevels[index];
+    camera.updateProjectionMatrix();
+    zoomValue.value = Math.round(camera.zoom * 100) + "%";
+    zoomIn.disabled = index === zoomLevels.length - 1;
+    zoomOut.disabled = index === 0;
+    preview();
+  }
+  zoomIn.onclick = () => setZoom(zoomIndex + 1);
+  zoomOut.onclick = () => setZoom(zoomIndex - 1);
+  function resetView() {
+    orbit.reset();
+    setZoom(defaultZoom);
+  }
+  canvas.ondblclick = resetView;
   canvas.onkeydown = event => {
     switch (event.key) {
       case "ArrowLeft": orbit.rotateLeft(0.12); break;
       case "ArrowRight": orbit.rotateLeft(-0.12); break;
       case "ArrowUp": orbit.rotateUp(0.08); break;
       case "ArrowDown": orbit.rotateUp(-0.08); break;
-      case "Home": orbit.reset(); break;
+      case "Home": resetView(); break;
       default: return;
     }
     event.preventDefault();
@@ -93,8 +110,8 @@ if (!context) {
     renderer.render(scene, camera);
   }
   function updateRays() {
-    clearRays?.();
-    clearRays = tracing.checked && mesh ? contactRays(mesh, surface.grid.value) : undefined;
+    if (tracing.checked && mesh && !clearRays) clearRays = contactRays(mesh, surface.grid.value, rays);
+    rays.tracingEnabled.value = tracing.checked;
   }
   function applyWeather() {
     const preset = weather[weatherSelect.value as keyof typeof weather];
@@ -163,7 +180,8 @@ if (!context) {
     if (hill) {
       const hillside = buildHillside(seed, model, grid, designs);
       mesh = hillside.mesh;
-      hillsideWater = new THREE.Mesh(hillside.water, blockWater);
+      riverDepth = hillside.depth;
+      hillsideWater = new THREE.Mesh(hillside.water, sea.material);
       hillsideWater.renderOrder = 1;
       hillsideWater.receiveShadow = true;
       scene.add(hillsideWater);
@@ -252,7 +270,8 @@ if (!context) {
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
     if (surface.grid.value !== Number(resolution.value) * 2) update();
     const variant = `-${framing.value}-${resolution.value}x-p${designs.pine + 1}-b${designs.broadleaf + 1}-c${designs.cottage + 1}-${weatherSelect.value}${tracing.checked ? "-rays" : ""}`;
-    const filename = `${sceneSelect.value}-${seed}-graphic${variant}.png`;
+    const zoomSuffix = camera.zoom === 1 ? "" : `-zoom${Math.round(camera.zoom * 100)}`;
+    const filename = `${sceneSelect.value}-${seed}-graphic${variant}${zoomSuffix}.png`;
     renderer.setSize(2560, 1440, false);
     renderer.render(scene, camera);
     canvas.toBlob(blob => {

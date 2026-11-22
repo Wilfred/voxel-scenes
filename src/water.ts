@@ -1,3 +1,4 @@
+import { rayUniforms, voxelTrace } from "./contact-rays";
 import { palette } from "./palette";
 import * as THREE from "three";
 
@@ -18,6 +19,7 @@ export function riverDepthMap(depthAt: (x: number, z: number) => number, grid = 
 
 // Retain Three's lighting and island shadows underneath the reflected sky.
 export function createWater() {
+  const rays = rayUniforms();
   const surface = {
     depth: { value: null as THREE.Texture | null },
     deep: { value: new THREE.Color() },
@@ -33,19 +35,21 @@ export function createWater() {
   };
   const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
   material.onBeforeCompile = shader => {
-    Object.assign(shader.uniforms, {
+    Object.assign(shader.uniforms, rays, {
       horizonTint: surface.horizon,
       zenithTint: surface.zenith, ripple: surface.ripple, rain: surface.rain,
       glintTint: { value: new THREE.Color(palette.light.sunGlint) },
       seabed: surface.depth, deepWater: surface.deep, skyTint: surface.sky,
       gridScale: surface.grid, sunlight: surface.sun, viewDirection: surface.eye, wavePhase: surface.phase,
     });
-    shader.vertexShader = 'varying vec2 oceanXZ;\n' + shader.vertexShader.replace(
+    shader.vertexShader = 'varying vec3 waterPoint, waterNormal;\n' + shader.vertexShader.replace(
       '#include <begin_vertex>',
-      '#include <begin_vertex>\noceanXZ = (modelMatrix * vec4(position, 1.0)).xz;',
+      '#include <begin_vertex>\nwaterPoint = (modelMatrix * vec4(position, 1.0)).xyz; waterNormal = normalize(mat3(modelMatrix) * normal);',
     );
-    shader.fragmentShader = `
-      varying vec2 oceanXZ;
+    shader.fragmentShader = voxelTrace + `
+      uniform sampler2D rayColors;
+      uniform bool tracingEnabled;
+      varying vec3 waterPoint, waterNormal;
       uniform sampler2D seabed;
       uniform vec3 horizonTint, zenithTint, glintTint;
       uniform vec3 deepWater, skyTint, sunlight, viewDirection;
@@ -70,7 +74,7 @@ export function createWater() {
       }
     ` + shader.fragmentShader.replace('#include <color_fragment>', `
       #include <color_fragment>
-      vec2 p = oceanXZ;
+      vec2 p = waterPoint.xz;
       float depthFraction = texture2D(seabed, p / (64.0 * gridScale) + 0.5).r;
       vec2 wind = vec2(0.92, 0.392);
       vec2 across = vec2(-wind.y, wind.x);
@@ -87,7 +91,8 @@ export function createWater() {
         tilt += 0.035 * normalize(offset + 0.00001) * sin(ring * 95.0) *
           exp(-ring * ring * 620.0) * (1.0 - age);
       }
-      vec3 waveNormal = normalize(vec3(tilt.x * ripple, 1.0, tilt.y * ripple));
+      vec3 n = faceforward(normalize(waterNormal), -viewDirection, normalize(waterNormal));
+      vec3 waveNormal = normalize(n + vec3(tilt.x, 0.0, tilt.y) * ripple);
       diffuseColor.rgb = deepWater;
     `).replace('#include <opaque_fragment>', `
       vec3 reflected = reflect(-viewDirection, waveNormal);
@@ -95,15 +100,27 @@ export function createWater() {
       float fresnel = 0.035 + 0.965 * pow(1.0 - facing, 4.0);
       vec3 skyLight = mix(mix(skyTint, horizonTint, 0.65), zenithTint, smoothstep(0.05, 0.70, reflected.y));
       float sparkle = pow(max(dot(reflected, sunlight), 0.0), 90.0);
-      outgoingLight = mix(outgoingLight, skyLight, fresnel) + glintTint * sparkle;
+      if (tracingEnabled) {
+        float travel; vec3 face;
+        float reach = min(36.0, 54.0 * cellSize);
+        float id = traceVoxel(waterPoint + n * (0.51 * cellSize), reflected, reach, travel, face);
+        if (id > 0.0) {
+          vec3 tint = texelFetch(rayColors, ivec2(int(round(id * 255.0)), 0), 0).rgb;
+          vec3 bankLight = tint * (0.64 + 0.50 * max(dot(face, sunlight), 0.0));
+          skyLight = mix(bankLight, skyLight, smoothstep(reach * 0.65, reach, travel));
+          sparkle *= smoothstep(reach * 0.65, reach, travel);
+        }
+      }
       float pathLength = 6.0 * depthFraction / max(facing, 0.22);
-      float transmission = exp(-0.30 * pathLength) * (1.0 - fresnel);
-      diffuseColor.a = 1.0 - transmission;
+      float body = abs(n.y) < 0.5 ? 0.43 : 1.0 - exp(-0.30 * pathLength);
+      diffuseColor.a = fresnel + (1.0 - fresnel) * body;
+      outgoingLight = (outgoingLight * body * (1.0 - fresnel) + skyLight * fresnel + glintTint * sparkle)
+                    / max(diffuseColor.a, 0.001);
       #include <opaque_fragment>
     `);
   };
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), material);
   sea.rotation.x = -Math.PI / 2;
   sea.receiveShadow = true;
-  return { sea, surface };
+  return { sea, surface, rays };
 }
