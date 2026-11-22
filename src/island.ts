@@ -1,3 +1,4 @@
+import { pier, shoreStairs } from "./trail-details";
 import { defaultDesigns } from "./designs";
 import { findSite } from "./sites";
 import { waterfowl } from "./ducks";
@@ -125,12 +126,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
       (forwardX ? d : w) * cottageScale, h * cottageScale, (forwardX ? w : d) * cottageScale, color);
   }
   buildCottage(cottageBox, designs.cottage);
-  route.forEach((p, i) => {
-    const top = foundationTop - unit * Math.floor(i * risers / (route.length - 1));
-    const stoneTop = top - unit;
-    box(p.x, (stoneTop - unit) / 2, p.z, unit, stoneTop + unit, unit, palette.ground.stone);
-    box(p.x, top - unit / 2, p.z, unit, unit, unit, palette.wood);
-  });
+  shoreStairs(box, route, foundationTop, risers);
   const end = route[route.length - 1];
   // Prefer a straight pier, provided its entire deck is over open water.
   const previous = route[route.length - 2];
@@ -138,15 +134,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   const headings = [incoming, [incoming[1], -incoming[0]], [-incoming[1], incoming[0]]];
   const [pierX, pierZ] = headings.find(([dx, dz]) =>
     [1, 2, 3].every(i => naturalHeight(end.x + dx * unit * i, end.z + dz * unit * i) < 0)) ?? incoming;
-  for (let i = 1; i <= 3; i++) {
-    box(end.x + pierX * unit * i, dockTop - unit / 2, end.z + pierZ * unit * i, unit, unit, unit, palette.wood);
-  }
-  const tipX = end.x + pierX * unit * 3, tipZ = end.z + pierZ * unit * 3;
-  for (const side of [-1, 1]) {
-    const px = tipX + side * pierZ * unit, pz = tipZ - side * pierX * unit;
-    const foot = Math.min(-unit, naturalHeight(px, pz));
-    box(px, (dockTop + unit + foot) / 2, pz, unit, dockTop + unit - foot, unit, palette.wood);
-  }
+  pier(box, end, pierX, pierZ, naturalHeight);
 
   // The floor mesh and the water's absorption map use the same soundings.
   const resolution = 128;

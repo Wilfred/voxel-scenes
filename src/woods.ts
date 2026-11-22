@@ -2,7 +2,7 @@ import { defaultDesigns } from "./designs";
 import { findSite } from "./sites";
 import { riverDepthMap } from "./water";
 import { terrainTrail } from "./trails";
-import { waypost } from "./trail-details";
+import { footbridge, waypost } from "./trail-details";
 import { palette } from "./palette";
 import { waterfowl } from "./ducks";
 import { treePlanter } from "./trees";
@@ -123,22 +123,8 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
     plantTree(x, elevation(x, z), z, pine ? "pine" : "broadleaf", sapling);
   }
 
-  // All timber faces sit on the quarter-unit grid, including the submerged
-  // posts. The deck meets the higher bank with one step on the lower side.
-  const deck = Math.max(elevation(east, bridgeZ), elevation(west, bridgeZ));
-  const span = east - west - 1;
+  const deck = footbridge(box, west, east, bridgeZ, elevation);
   const middle = (west + east) / 2;
-  box(middle, deck - 0.25, bridgeZ, span, 0.5, 1.5, palette.wood);
-  for (const side of [-0.75, 0.5]) {
-    const z = bridgeZ + side + 0.125;
-    box(middle, deck + 0.875, z, span, 0.25, 0.25, palette.wood);
-    const bays = Math.ceil(span / 3);
-    for (let i = 0; i <= bays; i++) {
-      const left = west + 0.5 + Math.round((span - 0.25) * i / bays * 4) / 4;
-      const bottom = elevation(Math.round(left + 0.125), Math.round(z)) - 0.5;
-      box(left + 0.125, (bottom + deck + 0.75) / 2, z, 0.25, deck + 0.75 - bottom, 0.25, palette.wood);
-    }
-  }
 
   const depthMap = riverDepthMap((x, z) => -elevation(x, z), grid);
   const mesh = buildMesh();
