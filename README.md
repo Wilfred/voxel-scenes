@@ -13,7 +13,7 @@ Run `npm run build` to type-check the TypeScript and create the static site
 in `dist/`. Run `npm run preview` to serve that build locally.
 
 Grid resolution controls how many terrain cells fit across the wallpaper.
-The range is 1× to 10× in quarter steps. At 10×, ten times as many cells fit
+The range is 0.75× to 5× in quarter steps. At 5×, five times as many cells fit
 across the wallpaper. The export remains 2560 × 1440.
 Open **Design studies** to compare ten cottages, ten pines, or ten broadleaf trees.
 Selecting a card applies that model wherever it occurs in the landscape.

@@ -86,8 +86,8 @@ if (!context) {
       mesh.material.dispose();
     }
 
-    const grid = Number(resolution.value);
-    gridValue.value = grid + "×";
+    const grid = Number(resolution.value) * 2;
+    gridValue.value = resolution.value + "×";
     const hill = sceneSelect.value === "hillside";
     const woodland = sceneSelect.value === "woods";
     const model = framing.value === "model";
@@ -108,7 +108,7 @@ if (!context) {
       foam = hillside.foam;
       scene.add(foam);
       cameraTarget.set(-1, model ? 3 : 5, model ? -2 : -5);
-      camera.top = model ? 28 : 13;
+      camera.top = 13;
     } else if (woodland) {
       const woods = buildWoods(seed, model, grid, designs);
       mesh = woods.mesh;
@@ -116,21 +116,20 @@ if (!context) {
       waterBounds = woods.bounds;
       cameraTarget.copy(woods.bridge).add(new THREE.Vector3(4, 1, 2));
       if (model) cameraTarget.set(waterBounds.x, 2, waterBounds.z);
-      camera.top = model ? 23 : 19;
+      camera.top = 19;
     } else {
       island = buildIsland(seed, model, grid, designs);
       mesh = island.mesh;
       waterBounds = island.bounds;
       scene.add(island.floor);
-      if (model) cameraTarget.y = -2;
-      camera.top = model ? 28 : 12.5;
+      if (model) cameraTarget.y = -3;
+      camera.top = 12.5;
     }
     if (model && waterBounds) {
       sea.position.set(waterBounds.x, 0.002, waterBounds.z);
       sea.scale.set(waterBounds.width / sea.geometry.parameters.width, waterBounds.depth / sea.geometry.parameters.height, 1);
     }
-    if (model) camera.position.set(26, 30, 42);
-    else if (inland) camera.position.set(16, 30, 40);
+    if (inland) camera.position.set(16, 30, 40);
     else camera.position.set(8, 27, 43);
     camera.top *= grid;
     camera.far = 350 * grid;
@@ -172,7 +171,7 @@ if (!context) {
     update();
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
-    if (surface.grid.value !== Number(resolution.value)) update();
+    if (surface.grid.value !== Number(resolution.value) * 2) update();
     const variant = `-${framing.value}-${resolution.value}x-p${designs.pine + 1}-b${designs.broadleaf + 1}-c${designs.cottage + 1}`;
     const filename = `${sceneSelect.value}-${seed}-graphic${variant}.png`;
     renderer.setSize(2560, 1440, false);
@@ -194,5 +193,15 @@ if (!context) {
   if (requested === "woods" || requested === "hillside") sceneSelect.value = requested;
   if (requested === "mountains") sceneSelect.value = "hillside";
   update();
+  let idleTimer = 0;
+  function wakeControls() {
+    document.body.classList.remove("idle");
+    clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(() => document.body.classList.add("idle"), 3200);
+  }
+  for (const event of ["pointermove", "pointerdown", "keydown", "focusin", "input", "change", "wheel"]) {
+    document.addEventListener(event, wakeControls, { passive: true });
+  }
+  wakeControls();
   new ResizeObserver(preview).observe(canvas);
 }

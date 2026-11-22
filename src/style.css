@@ -32,3 +32,26 @@ header a, .library a { color: #294e40; text-underline-offset: .2em; }
 .asset-grid canvas { aspect-ratio: 4 / 3; background: #e4e9d9; border-radius: .4rem; cursor: grab; touch-action: none; }
 .asset-grid canvas:active { cursor: grabbing; }
 .asset-grid figcaption { padding-top: .35rem; }
+
+.wallpaper { position: fixed; inset: 0; display: grid; place-items: center; background: #233436; }
+.wallpaper > canvas { width: min(100%, 177.77778dvh); height: auto; }
+.wallpaper header, .toolbox, .wallpaper #status:not(:empty) {
+  position: absolute; z-index: 1; background: rgb(249 249 240 / 94%);
+  border-radius: .65rem; box-shadow: 0 2px 12px #142c272a; transition: opacity .22s;
+}
+.wallpaper header { top: max(.6rem, env(safe-area-inset-top)); inset-inline: .6rem; padding: .5rem .9rem; }
+.wallpaper h1 { font-size: 1.5rem; }
+.toolbox { inset-inline: .6rem; bottom: max(.6rem, env(safe-area-inset-bottom)); padding: .65rem .85rem; max-height: 65dvh; overflow: auto; }
+.toolbox .controls, .toolbox #design-gallery { margin: 0; padding: 0; }
+.toolbox #design-gallery { margin-top: .45rem; }
+.wallpaper #status { position: absolute; top: 3rem; }
+body.idle .wallpaper { cursor: none; }
+body.idle .wallpaper header, body.idle .toolbox { opacity: 0; pointer-events: none; }
+@media (max-width: 650px) {
+  .wallpaper header, .toolbox .controls { gap: .35rem .65rem; }
+  .wallpaper select, .wallpaper button { padding: .3rem; }
+  .wallpaper #seed { font-size: .7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wallpaper header, .toolbox { transition: none; }
+}
