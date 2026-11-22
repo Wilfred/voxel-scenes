@@ -25,17 +25,21 @@ export function addBird(box: Box, x: number, z: number, heading: number, species
 }
 
 export function waterfowl(box: Box, x: number, z: number, heading: number, depth: Elevation, coastal = false) {
-  // Keep the pair together with clear water under the full body of each bird.
-  const offsetX = Math.cos(heading) < 0 ? -1 : 1;
-  const site = findSite(x - 2, x + 2, z - 2, z + 2, 0.5, (cx, cz) => {
-    for (const [dx, dz] of [[0, 0], [offsetX, 1.5]]) {
-      for (const ox of [-0.5, 0.5]) for (const oz of [-0.5, 0.5]) {
-        if (depth(cx + dx + ox, cz + dz + oz) < 0.25) return Infinity;
+  const flock = coastal
+    ? [[0, 0], [1.5, 0.5], [-1, 1], [2.25, -1], [-2, -0.75], [0.75, 2]]
+    : [[0, 0], [0.75, 1], [-0.75, 1.75]];
+  const placed: { x: number; z: number }[] = [];
+  for (const [i, [dx, dz]] of flock.entries()) {
+    const tx = x + dx, tz = z + dz;
+    const site = findSite(tx - 2, tx + 2, tz - 2, tz + 2, 0.5, (cx, cz) => {
+      if (placed.some(p => Math.hypot(cx - p.x, cz - p.z) < 0.8)) return Infinity;
+      for (const ox of [-0.2, 0.2]) for (const oz of [-0.2, 0.2]) {
+        if (depth(cx + ox, cz + oz) < 0.25) return Infinity;
       }
-    }
-    return Math.hypot(cx - x, cz - z);
-  });
-  if (!site) return;
-  addBird(box, site.x, site.z, heading + 0.32, coastal ? "gull" : "drake");
-  addBird(box, site.x + offsetX, site.z + 1.5, heading - 0.23, coastal ? "gull" : "hen");
+      return Math.hypot(cx - tx, cz - tz);
+    });
+    if (!site) continue;
+    placed.push(site);
+    addBird(box, site.x, site.z, heading + 0.45 * Math.cos(i * 2.4), coastal ? "gull" : i % 2 ? "hen" : "drake");
+  }
 }

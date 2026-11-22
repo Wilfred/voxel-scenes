@@ -19,7 +19,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
   const drop = 3 + Math.floor(random() * 3) * 0.5;
   const lip = -2;
   const { box, terrainLayer, buildMesh } = voxelBatch();
-  const base = terrainLayer(), ground = terrainLayer();
+  const base = terrainLayer(), soil = terrainLayer(), ground = terrainLayer();
   const plantTree = treePlanter(box, treeVoxel, designs, seed);
 
   function channel(z: number) {
@@ -29,21 +29,32 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
     const pool = 1.75 * Math.exp(-((z - lip - 3) ** 2) / 12);
     return Math.abs(x - channel(z)) - (1.8 + pool + 0.35 * Math.cos(z * 0.27));
   }
-  const crestX = channel(lip);
-  function level(x: number, z: number) {
-    // A notch on the near bank splits the rock sill into two short cascades.
-    const crest = lip + (x < crestX - 0.5 ? 1 : 0);
+  // A low escarpment runs across the valley before the stream cuts into it.
+  function shelf(x: number, z: number) {
+    const crest = lip + Math.round(1.4 * Math.sin(x * 0.19 + phase));
     if (z <= crest) return drop;
-    if (z <= crest + (x > crestX ? 1 : 2)) return 1;
+    if (z <= crest + 2) return 1;
     return 0;
   }
-  function elevation(x: number, z: number) {
+  function landHeight(x: number, z: number) {
+    const valley = Math.abs(x - 3) / 14;
+    const floorWeight = Math.exp(-valley * valley);
+    return 1 + shelf(x, z) * floorWeight + (8 + 9 * relief(x, z)) * (1 - floorWeight);
+  }
+  function bedrockHeight(x: number, z: number, land: number) {
+    // Soil thins across coherent ribs of rock, including the escarpment face.
+    const seam = relief(x + 76, z - 43);
+    const cover = Math.max(0, 2.25 - 4.4 * seam - 0.65 * (shelf(x, z) - shelf(x, z + 1)));
+    return Math.floor((land - cover) * 2) / 2;
+  }
+
+  function elevation(x: number, z: number, land = landHeight(x, z), rock = bedrockHeight(x, z, land)) {
     const bank = bankDistance(x, z);
-    if (bank < 0) return level(x, z) - 0.5 - Math.floor(-bank * 1.5) / 2;
-    // The rock sill cuts across the stream. On either side it eases into a hillside.
-    const shoulder = Math.min(1, Math.max(0, 0.5 + (lip + 0.5 - z) / (1 + bank * 1.6)));
-    const hill = 8 + 10 * relief(x, z);
-    return 0.5 + Math.round(2 * (drop * shoulder + hill * (1 - Math.exp(-bank / 10)))) / 2;
+    const y = shelf(x, z);
+    if (bank < 0) return y - 0.5 - Math.floor(-bank * 1.5) / 2;
+    const bankHeight = y + 0.5 + 0.5 * bank;
+    // The stream strips soil from its banks, leaving the more resistant rock standing.
+    return Math.round(2 * Math.min(land, Math.max(bankHeight, rock))) / 2;
   }
 
   // Find an existing shelf above the pool, with a level step at the door.
@@ -88,10 +99,13 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
     approaches, 1, (x, z) => elevation(Math.round(x), Math.round(z)), (x, z) =>
       bankDistance(x, z) > 1 && Math.hypot(x - cabinX, z - cabinZ) > 3 &&
       !trail.tiles.has(Math.round(x) + "," + Math.round(z)) && (!stack || Math.hypot(x - stack.x, z - stack.z) > 1.5));
-  waterfowl(box, channel(lip + 6) - 0.75, lip + 6, -0.7, (x, z) => {
+  const poolDepth = (x: number, z: number) => {
     const cx = Math.round(x), cz = Math.round(z);
-    return level(cx, cz) === 0 ? -elevation(cx, cz) : 0;
-  });
+    return shelf(cx, cz) === 0 ? -elevation(cx, cz) : 0;
+  };
+  waterfowl(box, channel(lip + 6), lip + 6, -0.7, poolDepth);
+  const bendZ = lip + Math.max(13, 7 * grid);
+  waterfowl(box, channel(bendZ), bendZ, 0.8, poolDepth);
 
   const radius = Math.ceil((grid > 2 ? 36 : 54) * grid);
   const radiusX = model ? Math.round(15 * grid) : radius, radiusZ = model ? Math.round(10 * grid) : radius;
@@ -103,17 +117,20 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       if (Math.abs(x) > radiusX || Math.abs(z) > radiusZ) continue;
       const bank = bankDistance(x, z);
       const path = trail.tiles.get(x + "," + z);
-      const h = path ?? elevation(x, z);
-      const ledge = bank >= 0 && bank < 2 && Math.abs(z - lip) <= 2;
+      const land = landHeight(x, z);
+      const rock = bedrockHeight(x, z, land);
+      const h = path ?? elevation(x, z, land, rock);
+      const exposed = rock >= h;
       const grove = Math.sin(x * 0.3 + phase) + Math.cos(z * 0.23);
-      const grass = palette.green.grass;
-      const waterStep = x === landingX && z === landingZ;
-      const color = waterStep ? palette.ground.stone : path !== undefined || yards.paths.has(x + "," + z) ? palette.ground.path : bank < 0 ? palette.ground.riverbed
-        : ledge ? palette.ground.stone : grass;
-      base(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, ledge ? palette.ground.stone : palette.ground.soil);
+      const onPath = path !== undefined || yards.paths.has(x + "," + z);
+      const color = onPath ? palette.ground.path : exposed ? palette.ground.stone
+        : bank < 0 ? palette.ground.riverbed : palette.green.grass;
+      const top = h - 0.5, boundary = Math.max(-4, Math.min(top, rock));
+      if (boundary > -4) base(x, (boundary - 4) / 2, z, 1, boundary + 4, 1, palette.ground.stone);
+      if (top > boundary) soil(x, (boundary + top) / 2, z, 1, top - boundary, 1, palette.ground.soil);
       ground(x, h - 0.25, z, 1, 0.5, 1, color);
       if (bank < 0) {
-        const y = level(x, z);
+        const y = shelf(x, z);
         const l = x - 0.5, r = x + 0.5, b = z - 0.5, f = z + 0.5;
         vertices.push(l,y,b, l,y,f, r,y,b, r,y,b, l,y,f, r,y,f);
         // Draw the exposed faces of water blocks, omitting shared faces so
@@ -122,12 +139,12 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
           const nx = x + dx, nz = z + dz;
           const cut = Math.abs(nx) > radiusX || Math.abs(nz) > radiusZ;
           const wet = !cut && bankDistance(nx, nz) < 0;
-          const low = Math.max(h, cut ? h : wet ? level(nx, nz) : elevation(nx, nz));
+          const low = Math.max(h, cut ? h : wet ? shelf(nx, nz) : elevation(nx, nz));
           if (low >= y) continue;
           const faceX = x + dx * 0.5, faceZ = z + dz * 0.5;
           const ax = faceX - dz * 0.5, az = faceZ + dx * 0.5;
           const bx = faceX + dz * 0.5, bz = faceZ - dx * 0.5;
-          const foot = wet ? level(nx, nz) : low;
+          const foot = wet ? shelf(nx, nz) : low;
           vertices.push(ax,foot,az, bx,foot,bz, ax,y,az, bx,foot,bz, bx,y,bz, ax,y,az);
           if (!wet) continue;
           // A narrow aerated crest traces the entire lip, including the notch.
@@ -144,7 +161,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
         }
         continue;
       }
-      if (yards.near(x, z) || yards.paths.has(x + "," + z) || Math.abs(x) >= radiusX - 1 || Math.abs(z) >= radiusZ - 1 || bank < 2 ||
+      if (exposed || yards.near(x, z) || yards.paths.has(x + "," + z) || Math.abs(x) >= radiusX - 1 || Math.abs(z) >= radiusZ - 1 || bank < 2 ||
         Math.hypot(x - cabinX, z - cabinZ) < 3.5 || (stack && Math.hypot(x - stack.x, z - stack.z) < 2) || trail.near(x, z)) continue;
       if (chance < 0.024 + 0.105 * Math.max(0, grove)) plantTree(x, h, z, grove > 1 ? "pine" : "broadleaf", sapling);
     }

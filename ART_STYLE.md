@@ -65,3 +65,11 @@ determine its apparent miniature scale.
 Use one grass green across the scenes. Let the stepped terrain, shadows and
 tree cover describe meadow relief. Give larger landscapes a few working
 buildings on gentle ground beside a route that explains their presence.
+
+Keep a cottage door visible from the wallpaper camera and connect it to its
+approach. Give the entrance depth with a recessed door and low stone sill.
+Let open-sided working buildings reveal the space where their work happens.
+
+Around waterfalls, establish the grassy valley, bedrock and soil cover before
+carving the channel. Exposed stone should continue naturally from an outcrop
+into the bank or streambed.

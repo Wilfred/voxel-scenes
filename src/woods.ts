@@ -104,8 +104,10 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
   for (const p of signs) waypost(box, p.x, elevation(p.x, p.z), p.z, true);
   const bendZ = bridgeZ + 5;
   const slope = (riverX(bendZ + 1) - riverX(bendZ - 1)) / 2;
-  waterfowl(box, riverX(bendZ) - 0.75, bendZ, Math.atan2(-1, slope),
-    (x, z) => -elevation(Math.round(x), Math.round(z)));
+  const waterDepth = (x: number, z: number) => -elevation(Math.round(x), Math.round(z));
+  waterfowl(box, riverX(bendZ) - 0.75, bendZ, Math.atan2(-1, slope), waterDepth);
+  const upstreamZ = bridgeZ - Math.round(7 * grid);
+  waterfowl(box, riverX(upstreamZ), upstreamZ, 1.2, waterDepth);
 
   const tracks = [...trail.tiles.keys()].map(key => {
     const [x, z] = key.split(",").map(Number);
