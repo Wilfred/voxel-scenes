@@ -34,11 +34,17 @@ export const voxelTrace = `
 `;
 
 function nearestSwatch(swatches: Uint8Array, rgb: number) {
-  let best = 1, distance = Infinity;
+  let best = 1,
+    distance = Infinity;
   for (let id = 1; id < 256; id++) {
-    const d = (swatches[id * 4] - (rgb >> 16)) ** 2 + (swatches[id * 4 + 1] - ((rgb >> 8) & 255)) ** 2
-      + (swatches[id * 4 + 2] - (rgb & 255)) ** 2;
-    if (d < distance) { distance = d; best = id; }
+    const d =
+      (swatches[id * 4] - (rgb >> 16)) ** 2 +
+      (swatches[id * 4 + 1] - ((rgb >> 8) & 255)) ** 2 +
+      (swatches[id * 4 + 2] - (rgb & 255)) ** 2;
+    if (d < distance) {
+      distance = d;
+      best = id;
+    }
   }
   return best;
 }
@@ -55,8 +61,10 @@ export function contactRays(
 ) {
   const bounds = new THREE.Box3().setFromObject(mesh);
   const extent = bounds.getSize(new THREE.Vector3());
-  const cell = grid === undefined ? Math.max(1 / 32, extent.length() / 48)
-    : Math.max(0.25, grid / 4, (Math.max(extent.x, extent.y, extent.z) + 4) / (maxCells - 4));
+  const cell =
+    grid === undefined
+      ? Math.max(1 / 32, extent.length() / 48)
+      : Math.max(0.25, grid / 4, (Math.max(extent.x, extent.y, extent.z) + 4) / (maxCells - 4));
   const width = Math.ceil(extent.x / cell) + 4;
   const height = Math.ceil(extent.y / cell) + 4;
   const depth = Math.ceil(extent.z / cell) + 4;
@@ -66,7 +74,7 @@ export function contactRays(
   const colorIds = new Map<number, number>();
   const tint = new THREE.Color();
   const matrix = new THREE.Matrix4();
-  mesh.traverse((part) => {
+  mesh.traverse(part => {
     if (!(part instanceof THREE.InstancedMesh)) return;
     for (let i = 0; i < part.count; i++) {
       part.getMatrixAt(i, matrix);
@@ -111,7 +119,7 @@ export function contactRays(
   uniforms.rayColors.value = colors;
   uniforms.tracingEnabled.value = true;
   const material = mesh.material;
-  material.onBeforeCompile = (shader) => {
+  material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, uniforms);
     const varyings = "varying vec3 rayPos; varying vec3 rayNormal;\n";
     shader.vertexShader =
@@ -124,7 +132,8 @@ export function contactRays(
       rayNormal = normalize(mat3(modelMatrix * instanceMatrix) * normal);`,
       );
     shader.fragmentShader =
-      varyings + voxelTrace +
+      varyings +
+      voxelTrace +
       `
       uniform bool tracingEnabled;
       float visibility(vec3 start, vec3 dir) {

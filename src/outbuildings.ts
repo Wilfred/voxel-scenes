@@ -33,8 +33,14 @@ export function buildOutbuilding(box: Box, kind: Kind) {
 
 // Survey short spurs from the existing route. The front faces the approach,
 // and the foundation can bridge at most one terrain layer across its footprint.
-export function placeOutbuildings(box: Box, kinds: Kind[], route: (Cell & { approach?: Cell[] })[], step: number,
-  elevation: Elevation, available: (x: number, z: number) => boolean) {
+export function placeOutbuildings(
+  box: Box,
+  kinds: Kind[],
+  route: (Cell & { approach?: Cell[] })[],
+  step: number,
+  elevation: Elevation,
+  available: (x: number, z: number) => boolean,
+) {
   const buildings: Cell[] = [];
   const paths = new Set<string>();
   const near = (x: number, z: number) => buildings.some(p => Math.hypot(x - p.x, z - p.z) < 3.5);
@@ -42,11 +48,17 @@ export function placeOutbuildings(box: Box, kinds: Kind[], route: (Cell & { appr
     let best: { x: number; z: number; dx: number; dz: number; floor: number; spur: Cell[] } | undefined;
     let score = Infinity;
     for (const start of route) {
-      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      for (const [dx, dz] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
         const spur: Cell[] = [];
         let previous = elevation(start.x, start.z);
         for (let distance = step; distance <= 10; distance += step) {
-          const x = start.x + dx * distance, z = start.z + dz * distance;
+          const x = start.x + dx * distance,
+            z = start.z + dz * distance;
           const h = elevation(x, z);
           if (h <= 0 || Math.abs(h - previous) > 0.5 || near(x, z)) break;
           previous = h;
@@ -54,18 +66,29 @@ export function placeOutbuildings(box: Box, kinds: Kind[], route: (Cell & { appr
           if (walk >= score) break;
           if (!available(x, z)) break;
           if (distance >= 3) {
-            let low = h, high = h, clear = true;
+            let low = h,
+              high = h,
+              clear = true;
             for (let a = -1.5; a <= 1.5; a += 0.5) {
               for (let b = -1; b <= 1; b += 0.5) {
-                const px = x + dz * a + dx * b, pz = z - dx * a + dz * b;
+                const px = x + dz * a + dx * b,
+                  pz = z - dx * a + dz * b;
                 const ground = elevation(px, pz);
-                low = Math.min(low, ground); high = Math.max(high, ground);
+                low = Math.min(low, ground);
+                high = Math.max(high, ground);
                 if (!available(px, pz)) clear = false;
               }
             }
             const cost = walk + 10 * (high - low);
             if (clear && low > 0 && high - low <= 0.5 && cost < score) {
-              best = { x, z, dx, dz, floor: high, spur: [...(start.approach ?? []), ...spur.filter(p => Math.abs(p.x - x) + Math.abs(p.z - z) >= 1)] };
+              best = {
+                x,
+                z,
+                dx,
+                dz,
+                floor: high,
+                spur: [...(start.approach ?? []), ...spur.filter(p => Math.abs(p.x - x) + Math.abs(p.z - z) >= 1)],
+              };
               score = cost;
             }
           }
@@ -75,8 +98,11 @@ export function placeOutbuildings(box: Box, kinds: Kind[], route: (Cell & { appr
     }
     if (!best) continue;
     const { x, z, floor, dx, dz, spur } = best;
-    buildOutbuilding((a, y, b, w, h, d, tint) =>
-      box(x - dz * a - dx * b, floor + y, z + dx * a - dz * b, dx ? d : w, h, dx ? w : d, tint), kind);
+    buildOutbuilding(
+      (a, y, b, w, h, d, tint) =>
+        box(x - dz * a - dx * b, floor + y, z + dx * a - dz * b, dx ? d : w, h, dx ? w : d, tint),
+      kind,
+    );
     buildings.push({ x, z });
     for (const p of spur) paths.add(p.x + "," + p.z);
   }

@@ -10,18 +10,29 @@ export function fenceBuilder(box: Box, elevation: Elevation) {
   function bay(x: number, z: number, endX: number, endZ: number, gate = false) {
     const floor = Math.max(elevation(x, z), elevation(endX, endZ));
     const top = floor + 3 * timber;
-    for (const [px, pz] of [[x, z], [endX, endZ]]) {
+    for (const [px, pz] of [
+      [x, z],
+      [endX, endZ],
+    ]) {
       const key = px + "," + pz;
       const existing = posts.get(key);
       posts.set(key, { x: px, z: pz, bottom: elevation(px, pz), top: Math.max(existing?.top ?? top, top) });
     }
     const alongX = x !== endX;
     const span = Math.abs(endX - x) + Math.abs(endZ - z) - timber;
-    const cx = (x + endX) / 2, cz = (z + endZ) / 2;
+    const cx = (x + endX) / 2,
+      cz = (z + endZ) / 2;
     const thickness = gate ? timber / 2 : timber;
     for (const offset of [timber, 2.5 * timber]) {
-      box(cx, floor + offset + timber / 4, cz, alongX ? span : thickness,
-        timber / 2, alongX ? thickness : span, palette.wood);
+      box(
+        cx,
+        floor + offset + timber / 4,
+        cz,
+        alongX ? span : thickness,
+        timber / 2,
+        alongX ? thickness : span,
+        palette.wood,
+      );
     }
     if (gate) box(cx, floor + 2 * timber, cz, timber, timber, timber, palette.wood);
   }

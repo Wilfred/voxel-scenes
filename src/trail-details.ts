@@ -27,7 +27,7 @@ export function footbridge(box: Box, west: number, east: number, bridgeZ: number
     box(middle, deck + 0.625, z, span, timber, timber, palette.wood);
     const bays = Math.ceil(span / 3);
     for (let i = 0; i <= bays; i++) {
-      const left = west + 0.5 + Math.round((span - 0.25) * i / bays * 4) / 4;
+      const left = west + 0.5 + Math.round((((span - 0.25) * i) / bays) * 4) / 4;
       const bottom = elevation(Math.round(left + 0.125), Math.round(z)) - 0.5;
       box(left + 0.125, (bottom + deck + 0.5) / 2, z, timber, deck + 0.5 - bottom, timber, palette.wood);
     }
@@ -40,7 +40,7 @@ type Cell = { x: number; z: number };
 export function shoreStairs(box: Box, route: Cell[], foundationTop: number, risers: number) {
   const unit = 0.5;
   route.forEach((p, i) => {
-    const top = foundationTop - unit * Math.floor(i * risers / (route.length - 1));
+    const top = foundationTop - unit * Math.floor((i * risers) / (route.length - 1));
     const stoneTop = top - unit;
     box(p.x, (stoneTop - unit) / 2, p.z, unit, stoneTop + unit, unit, palette.ground.stone);
     box(p.x, top - unit / 2, p.z, unit, unit, unit, palette.wood);
@@ -48,7 +48,9 @@ export function shoreStairs(box: Box, route: Cell[], foundationTop: number, rise
 }
 
 export function pier(box: Box, end: Cell, pierX: number, pierZ: number, naturalHeight: Elevation) {
-  const dockTop = 0.5, length = 6 * timber, width = 4 * timber;
+  const dockTop = 0.5,
+    length = 6 * timber,
+    width = 4 * timber;
   // The final stair ends half a terrain cell beyond its centre.
   const along = (forward: number, side: number) => ({
     x: end.x + pierX * forward + pierZ * side,
@@ -58,7 +60,7 @@ export function pier(box: Box, end: Cell, pierX: number, pierZ: number, naturalH
   box(middle.x, dockTop - timber / 2, middle.z, pierX ? length : width, timber, pierX ? width : length, palette.wood);
   for (const forward of [1.5 * timber, length + timber / 2]) {
     for (const side of [-1, 1]) {
-      const p = along(forward, side * (width - timber) / 2);
+      const p = along(forward, (side * (width - timber)) / 2);
       const foot = Math.min(-timber, Math.floor(naturalHeight(p.x, p.z) / timber) * timber);
       const cap = forward > length ? dockTop + timber : dockTop - timber;
       // Split the mooring bollard at deck level so no timber occupies the same space twice.

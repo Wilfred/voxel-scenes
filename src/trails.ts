@@ -10,7 +10,9 @@ function frontier() {
   const order = new Map<Step, number>();
   const before = (a: Step, b: Step) => a.cost < b.cost || (a.cost === b.cost && order.get(a)! > order.get(b)!);
   return {
-    get size() { return heap.length; },
+    get size() {
+      return heap.length;
+    },
     push(step: Step) {
       order.set(step, order.size);
       let i = heap.push(step) - 1;
@@ -22,11 +24,13 @@ function frontier() {
       }
     },
     pop() {
-      const top = heap[0], last = heap.pop()!;
+      const top = heap[0],
+        last = heap.pop()!;
       if (heap.length) {
         heap[0] = last;
         for (let i = 0; ;) {
-          const left = 2 * i + 1, right = left + 1;
+          const left = 2 * i + 1,
+            right = left + 1;
           let least = i;
           if (left < heap.length && before(heap[left], heap[least])) least = left;
           if (right < heap.length && before(heap[right], heap[least])) least = right;
@@ -54,10 +58,22 @@ function connect(from: Point, to: Point, elevation: Elevation, dry: (x: number, 
       for (let p: Step | undefined = here; p?.previous; p = p.previous) segment.push([p.x, p.z]);
       return segment.reverse();
     }
-    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const x = here.x + dx, z = here.z + dz;
-      if (x < Math.min(from[0], to[0]) - 4 || x > Math.max(from[0], to[0]) + 4 ||
-          z < Math.min(from[1], to[1]) - 4 || z > Math.max(from[1], to[1]) + 4 || !dry(x, z)) continue;
+    for (const [dx, dz] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      const x = here.x + dx,
+        z = here.z + dz;
+      if (
+        x < Math.min(from[0], to[0]) - 4 ||
+        x > Math.max(from[0], to[0]) + 4 ||
+        z < Math.min(from[1], to[1]) - 4 ||
+        z > Math.max(from[1], to[1]) + 4 ||
+        !dry(x, z)
+      )
+        continue;
       const rise = Math.abs(elevation(x, z) - elevation(here.x, here.z));
       const cost = here.cost + 1 + rise * rise * 5 + Math.hypot(x - to[0], z - to[1]) * 0.015;
       const key = x + "," + z;
@@ -109,14 +125,14 @@ export function terrainTrail(elevation: Elevation, dry: (x: number, z: number) =
       for (let i = tread.length - 2; i > 0; i--) tread[i] = Math.min(tread[i], tread[i + 1] + layer);
       const last = tread.length - 1;
       // An existing tread is a fixed landing anywhere the two routes meet.
-      const approach = existing.map((h, i) => i === 0 || i === last ? heights[i] : h ?? -Infinity);
+      const approach = existing.map((h, i) => (i === 0 || i === last ? heights[i] : (h ?? -Infinity)));
       for (let i = 1; i <= last; i++) approach[i] = Math.max(approach[i], approach[i - 1] - layer);
       for (let i = last - 1; i >= 0; i--) approach[i] = Math.max(approach[i], approach[i + 1] - layer);
       for (let i = 0; i <= last; i++) {
         if (existing[i] !== undefined) continue;
         const [x, z] = points[i];
         for (let dz = -1; dz <= 1; dz++) {
-          for (let dx = -1; dx <= 1; dx++) verge.add((x + dx) + "," + (z + dz));
+          for (let dx = -1; dx <= 1; dx++) verge.add(x + dx + "," + (z + dz));
         }
         tiles.set(points[i].join(","), Math.max(tread[i], approach[i]));
       }

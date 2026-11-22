@@ -29,7 +29,8 @@ const seeds = [dailySeed(new Date(2026, 10, 22)), ...Array.from({ length: 11 }, 
 const failures: string[] = [];
 
 function instances(mesh: THREE.InstancedMesh, visit: (matrix: number[], color: number) => void) {
-  const matrix = new Matrix4(), color = new Color();
+  const matrix = new Matrix4(),
+    color = new Color();
   mesh.traverse(part => {
     if (!(part as THREE.InstancedMesh).isInstancedMesh) return;
     const batch = part as THREE.InstancedMesh;
@@ -70,7 +71,8 @@ for (const [name, build] of Object.entries(scenes)) {
       // Walkers climb at most one terrain layer between neighbouring treads.
       for (const route of scene.routes) {
         for (let i = 1; i < route.length; i++) {
-          const a = route[i - 1], b = route[i];
+          const a = route[i - 1],
+            b = route[i];
           const step = Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
           if (step > 1 || Math.abs(a.y - b.y) > 0.5) {
             failures.push(`${label}: route jumps from (${a.x}, ${a.y}, ${a.z}) to (${b.x}, ${b.y}, ${b.z})`);

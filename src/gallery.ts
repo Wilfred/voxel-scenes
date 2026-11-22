@@ -38,7 +38,9 @@ export function designGallery(designs: typeof defaultDesigns, apply: () => void)
       const url = renderer.domElement.toDataURL();
       scene.remove(mesh);
       disposeRays();
-      mesh.dispose(); mesh.geometry.dispose(); mesh.material.dispose();
+      mesh.dispose();
+      mesh.geometry.dispose();
+      mesh.material.dispose();
       return url;
     });
     // Release the offscreen context; browsers limit how many stay alive.
@@ -52,20 +54,22 @@ export function designGallery(designs: typeof defaultDesigns, apply: () => void)
     if (!panel.open) return;
     const family = selector.value as Family;
     const previews = thumbnails(family);
-    studies.replaceChildren(...designNames[family].map((name, index) => {
-      const button = document.createElement("button");
-      const img = new Image();
-      img.src = previews[index];
-      img.alt = "";
-      button.append(img, (index + 1) + ". " + name);
-      button.setAttribute("aria-pressed", String(designs[family] === index));
-      button.onclick = () => {
-        designs[family] = index;
-        for (const child of studies.children) child.setAttribute("aria-pressed", String(child === button));
-        apply();
-      };
-      return button;
-    }));
+    studies.replaceChildren(
+      ...designNames[family].map((name, index) => {
+        const button = document.createElement("button");
+        const img = new Image();
+        img.src = previews[index];
+        img.alt = "";
+        button.append(img, index + 1 + ". " + name);
+        button.setAttribute("aria-pressed", String(designs[family] === index));
+        button.onclick = () => {
+          designs[family] = index;
+          for (const child of studies.children) child.setAttribute("aria-pressed", String(child === button));
+          apply();
+        };
+        return button;
+      }),
+    );
   }
   panel.ontoggle = show;
   selector.onchange = show;

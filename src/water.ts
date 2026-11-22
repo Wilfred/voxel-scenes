@@ -17,7 +17,7 @@ export function riverDepthMap(depthAt: (x: number, z: number) => number, extent:
   const size = THREE.MathUtils.clamp(Math.ceil(extent), 128, 2048);
   const samples = new Uint8Array(size * size);
   for (let i = 0; i < samples.length; i++) {
-    const x = Math.floor(((i % size + 0.5) / size - 0.5) * extent + 0.5);
+    const x = Math.floor((((i % size) + 0.5) / size - 0.5) * extent + 0.5);
     const z = Math.floor(((Math.floor(i / size) + 0.5) / size - 0.5) * extent + 0.5);
     samples[i] = Math.round(255 * THREE.MathUtils.clamp(depthAt(x, z) / 6, 0, 1));
   }
@@ -45,16 +45,28 @@ export function createWater() {
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, rays, {
       horizonTint: surface.horizon,
-      zenithTint: surface.zenith, ripple: surface.ripple, rain: surface.rain,
+      zenithTint: surface.zenith,
+      ripple: surface.ripple,
+      rain: surface.rain,
       glintTint: { value: new THREE.Color(palette.light.sunGlint) },
-      seabed: surface.depth, depthExtent: surface.depthExtent, deepWater: surface.deep, skyTint: surface.sky,
-      gridScale: surface.grid, sunlight: surface.sun, viewDirection: surface.eye, wavePhase: surface.phase,
+      seabed: surface.depth,
+      depthExtent: surface.depthExtent,
+      deepWater: surface.deep,
+      skyTint: surface.sky,
+      gridScale: surface.grid,
+      sunlight: surface.sun,
+      viewDirection: surface.eye,
+      wavePhase: surface.phase,
     });
-    shader.vertexShader = 'varying vec3 waterPoint, waterNormal;\n' + shader.vertexShader.replace(
-      '#include <begin_vertex>',
-      '#include <begin_vertex>\nwaterPoint = (modelMatrix * vec4(position, 1.0)).xyz; waterNormal = normalize(mat3(modelMatrix) * normal);',
-    );
-    shader.fragmentShader = voxelTrace + `
+    shader.vertexShader =
+      "varying vec3 waterPoint, waterNormal;\n" +
+      shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        "#include <begin_vertex>\nwaterPoint = (modelMatrix * vec4(position, 1.0)).xyz; waterNormal = normalize(mat3(modelMatrix) * normal);",
+      );
+    shader.fragmentShader =
+      voxelTrace +
+      `
       uniform sampler2D rayColors;
       uniform bool tracingEnabled;
       varying vec3 waterPoint, waterNormal;
@@ -84,7 +96,11 @@ export function createWater() {
         vec2 cycles = footprint * frequency;
         return waveSlope(pos, frequency) * (1.0 - smoothstep(0.15, 0.4, max(cycles.x, cycles.y)));
       }
-    ` + shader.fragmentShader.replace('#include <color_fragment>', `
+    ` +
+      shader.fragmentShader
+        .replace(
+          "#include <color_fragment>",
+          `
       #include <color_fragment>
       vec2 p = waterPoint.xz;
       float depthFraction = texture2D(seabed, p / depthExtent + 0.5).r;
@@ -110,7 +126,11 @@ export function createWater() {
       vec3 n = faceforward(normalize(waterNormal), -eye, normalize(waterNormal));
       vec3 waveNormal = normalize(n + vec3(tilt.x, 0.0, tilt.y) * ripple);
       diffuseColor.rgb = deepWater;
-    `).replace('#include <opaque_fragment>', `
+    `,
+        )
+        .replace(
+          "#include <opaque_fragment>",
+          `
       vec3 reflected = reflect(-eye, waveNormal);
       float facing = clamp(dot(eye, waveNormal), 0.0, 1.0);
       float fresnel = 0.035 + 0.965 * pow(1.0 - facing, 4.0);
@@ -133,7 +153,8 @@ export function createWater() {
       outgoingLight = (outgoingLight * body * (1.0 - fresnel) + skyLight * fresnel + glintTint * sparkle)
                     / max(diffuseColor.a, 0.001);
       #include <opaque_fragment>
-    `);
+    `,
+        );
   };
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), material);
   sea.rotation.x = -Math.PI / 2;

@@ -30,15 +30,18 @@ function library(renderer: THREE.WebGLRenderer) {
   lightScene(scene);
   const camera = new THREE.OrthographicCamera();
   const draws = new Map<Element, () => void>();
-  const observer = new IntersectionObserver(entries => {
-    for (const entry of entries) {
-      if (entry.isIntersecting) {
-        draws.get(entry.target)!();
-        observer.unobserve(entry.target);
-        draws.delete(entry.target);
+  const observer = new IntersectionObserver(
+    entries => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          draws.get(entry.target)!();
+          observer.unobserve(entry.target);
+          draws.delete(entry.target);
+        }
       }
-    }
-  }, { rootMargin: "200px" });
+    },
+    { rootMargin: "200px" },
+  );
 
   function section(id: string, title: string, assets: Asset[], sameScale = true) {
     const section = document.createElement("section");
@@ -73,16 +76,19 @@ function library(renderer: THREE.WebGLRenderer) {
       figure.append(canvas, caption);
       grid.append(figure);
       const context = canvas.getContext("2d")!;
-      let yaw = 0.5, pitch = 0.35;
+      let yaw = 0.5,
+        pitch = 0.35;
       function render() {
         const radius = (sameScale ? familyRadius : sphere.radius) * 1.04;
         const horizontal = Math.cos(pitch);
-        camera.position.set(Math.sin(yaw) * horizontal, Math.sin(pitch), Math.cos(yaw) * horizontal)
-          .multiplyScalar(radius * 3).add(sphere.center);
+        camera.position
+          .set(Math.sin(yaw) * horizontal, Math.sin(pitch), Math.cos(yaw) * horizontal)
+          .multiplyScalar(radius * 3)
+          .add(sphere.center);
         camera.lookAt(sphere.center);
         camera.top = radius;
         camera.bottom = -radius;
-        camera.right = radius * 4 / 3;
+        camera.right = (radius * 4) / 3;
         camera.left = -camera.right;
         camera.updateProjectionMatrix();
         scene.add(mesh);
@@ -95,20 +101,26 @@ function library(renderer: THREE.WebGLRenderer) {
         pitch = THREE.MathUtils.clamp(pitch + dy, -1.45, 1.45);
         render();
       }
-      let lastX = 0, lastY = 0;
+      let lastX = 0,
+        lastY = 0;
       canvas.onpointerdown = e => {
         if (!e.isPrimary || e.button !== 0) return;
-        lastX = e.clientX; lastY = e.clientY;
+        lastX = e.clientX;
+        lastY = e.clientY;
         canvas.setPointerCapture(e.pointerId);
       };
       canvas.onpointermove = e => {
         if (!canvas.hasPointerCapture(e.pointerId)) return;
         rotate((lastX - e.clientX) * 0.018, (e.clientY - lastY) * 0.014);
-        lastX = e.clientX; lastY = e.clientY;
+        lastX = e.clientX;
+        lastY = e.clientY;
       };
       canvas.onkeydown = e => {
         const steps: Record<string, [number, number]> = {
-          ArrowLeft: [-0.2, 0], ArrowRight: [0.2, 0], ArrowUp: [0, 0.15], ArrowDown: [0, -0.15],
+          ArrowLeft: [-0.2, 0],
+          ArrowRight: [0.2, 0],
+          ArrowUp: [0, 0.15],
+          ArrowDown: [0, -0.15],
         };
         if (!steps[e.key]) return;
         e.preventDefault();
@@ -121,26 +133,59 @@ function library(renderer: THREE.WebGLRenderer) {
 
   section("pines", "Pines · adult and sapling", trees("pine"));
   section("broadleaf", "Broadleaf trees · adult and sapling", trees("broadleaf"));
-  section("cottages", "Cottages", designNames.cottage.map((name, i) => ({ name, draw: box => buildCottage(box, i) })));
-  section("outbuildings", "Working buildings", (Object.keys(buildingNames) as (keyof typeof buildingNames)[]).map(kind => ({
-    name: buildingNames[kind], draw: box => buildOutbuilding(box, kind),
-  })));
-  section("birds", "Water birds", (["drake", "hen", "gull"] as const).map((species, i) => ({
-    name: ["Mallard drake", "Mallard hen", "Seagull"][i], draw: box => addBird(box, 0, 0, 0, species),
-  })));
+  section(
+    "cottages",
+    "Cottages",
+    designNames.cottage.map((name, i) => ({ name, draw: box => buildCottage(box, i) })),
+  );
+  section(
+    "outbuildings",
+    "Working buildings",
+    (Object.keys(buildingNames) as (keyof typeof buildingNames)[]).map(kind => ({
+      name: buildingNames[kind],
+      draw: box => buildOutbuilding(box, kind),
+    })),
+  );
+  section(
+    "birds",
+    "Water birds",
+    (["drake", "hen", "gull"] as const).map((species, i) => ({
+      name: ["Mallard drake", "Mallard hen", "Seagull"][i],
+      draw: box => addBird(box, 0, 0, 0, species),
+    })),
+  );
   section("animals", "Land animals", animals);
   section("village", "Village and orchard", village, false);
-  section("structures", "Structures and props", [
-    { name: "Pasture fence and gate", draw: box => {
-      const fence = fenceBuilder(box, () => 0);
-      fence.bay(-2, 0, 0, 0); fence.bay(0, 0, 2, 0, true); fence.finish();
-    } },
-    { name: "Timber footbridge", draw: box => footbridge(box, -3, 3, 0, x => Math.abs(x) >= 3 ? 0 : -1) },
-    { name: "Landing pier", draw: box => pier(box, { x: 0, z: 0 }, 1, 0, () => -1) },
-    { name: "Shore stairs", draw: box => shoreStairs(box, [0, 0.5, 1, 1.5].map(x => ({ x, z: 0 })), 2, 3) },
-    { name: "Waypost", draw: box => waypost(box, 0, 0, 0) },
-    { name: "Stacked firewood", draw: box => firewood(box, 0, 0, 0) },
-  ], false);
+  section(
+    "structures",
+    "Structures and props",
+    [
+      {
+        name: "Pasture fence and gate",
+        draw: box => {
+          const fence = fenceBuilder(box, () => 0);
+          fence.bay(-2, 0, 0, 0);
+          fence.bay(0, 0, 2, 0, true);
+          fence.finish();
+        },
+      },
+      { name: "Timber footbridge", draw: box => footbridge(box, -3, 3, 0, x => (Math.abs(x) >= 3 ? 0 : -1)) },
+      { name: "Landing pier", draw: box => pier(box, { x: 0, z: 0 }, 1, 0, () => -1) },
+      {
+        name: "Shore stairs",
+        draw: box =>
+          shoreStairs(
+            box,
+            [0, 0.5, 1, 1.5].map(x => ({ x, z: 0 })),
+            2,
+            3,
+          ),
+      },
+      { name: "Waypost", draw: box => waypost(box, 0, 0, 0) },
+      { name: "Stacked firewood", draw: box => firewood(box, 0, 0, 0) },
+    ],
+    false,
+  );
 }
 
 const canvas = document.createElement("canvas");
@@ -150,5 +195,6 @@ if (context) {
   renderer.setSize(480, 360, false);
   library(renderer);
 } else {
-  document.querySelector("#instructions")!.textContent = "Viewing the models requires WebGL 2. Check that hardware acceleration is enabled.";
+  document.querySelector("#instructions")!.textContent =
+    "Viewing the models requires WebGL 2. Check that hardware acceleration is enabled.";
 }

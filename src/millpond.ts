@@ -84,21 +84,42 @@ export function buildMillpond(
   // Reserve a small grazing field beside the cart track. Its gate occupies
   // the bay nearest the track, and the whole enclosure must fit on dry ground.
   const paddock = findSite(orchardX - 8, orchardX + 8, orchardZ + 2, orchardZ + 9, 1, (x, z) => {
-    let low = Infinity, high = -Infinity;
-    for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) {
-      const px = x + dx, pz = z + dz, h = elevation(px, pz);
-      if (h <= 0 || Math.abs(px) >= radiusX || Math.abs(pz) >= radiusZ || millFootprint(px, pz) ||
-        trail.tiles.has(px + "," + pz) || yard.near(px, pz, 0.75)) return Infinity;
-      low = Math.min(low, h); high = Math.max(high, h);
-    }
+    let low = Infinity,
+      high = -Infinity;
+    for (let dz = -2; dz <= 2; dz++)
+      for (let dx = -2; dx <= 2; dx++) {
+        const px = x + dx,
+          pz = z + dz,
+          h = elevation(px, pz);
+        if (
+          h <= 0 ||
+          Math.abs(px) >= radiusX ||
+          Math.abs(pz) >= radiusZ ||
+          millFootprint(px, pz) ||
+          trail.tiles.has(px + "," + pz) ||
+          yard.near(px, pz, 0.75)
+        )
+          return Infinity;
+        low = Math.min(low, h);
+        high = Math.max(high, h);
+      }
     return high - low <= 0.5 ? 8 * (high - low) + Math.hypot(x - orchardX + 3, z - orchardZ - 4) : Infinity;
   });
-  const inField = (x: number, z: number, margin: number) => paddock &&
-    Math.abs(x - paddock.x) <= 2 + margin && Math.abs(z - paddock.z) <= 2 + margin;
+  const inField = (x: number, z: number, margin: number) =>
+    paddock && Math.abs(x - paddock.x) <= 2 + margin && Math.abs(z - paddock.z) <= 2 + margin;
   if (paddock) {
     const { x, z } = paddock;
     const fence = fenceBuilder(box, (px, pz) => elevation(Math.round(px), Math.round(pz)));
-    const corners = [[-2, -2], [0, -2], [2, -2], [2, 0], [2, 2], [0, 2], [-2, 2], [-2, 0]];
+    const corners = [
+      [-2, -2],
+      [0, -2],
+      [2, -2],
+      [2, 0],
+      [2, 2],
+      [0, 2],
+      [-2, 2],
+      [-2, 0],
+    ];
     const track = [...trail.tiles.keys()].map(key => key.split(",").map(Number));
     const distances = corners.map(([a, b], i) => {
       const [c, d] = corners[(i + 1) % corners.length];
@@ -120,7 +141,8 @@ export function buildMillpond(
       if (
         Math.abs(x) + 2 >= radiusX ||
         Math.abs(z) + 2 >= radiusZ ||
-        inField(x, z, 1.5) || trail.near(x, z) ||
+        inField(x, z, 1.5) ||
+        trail.near(x, z) ||
         yard.near(x, z, 1.2) ||
         elevation(x, z) < 0
       )
@@ -147,14 +169,14 @@ export function buildMillpond(
         Math.abs(x) >= radiusX - 1 ||
         Math.abs(z) >= radiusZ - 1 ||
         Math.hypot(x - millX, z - wheelZ) < 5 ||
-        inField(x, z, 1.5) || trail.near(x, z) ||
+        inField(x, z, 1.5) ||
+        trail.near(x, z) ||
         yard.near(x, z, 1.5) ||
         orchard.has(x + "," + z)
       )
         continue;
       const cover = relief(x + 41, z - 67);
-      if (random() < standDensity(cover))
-        plant(x, h, z, cover > 0.4 ? "pine" : "broadleaf", random() < 0.23);
+      if (random() < standDensity(cover)) plant(x, h, z, cover > 0.4 ? "pine" : "broadleaf", random() < 0.23);
     }
   return {
     mesh: buildMesh(),

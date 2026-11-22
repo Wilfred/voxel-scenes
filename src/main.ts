@@ -68,10 +68,11 @@ if (!context) {
   let frame = 0;
   orbit.addEventListener("change", () => {
     surface.eye.value.copy(camera.position).sub(orbit.target).normalize();
-    if (!frame) frame = requestAnimationFrame(() => {
-      frame = 0;
-      renderer.render(scene, camera);
-    });
+    if (!frame)
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        renderer.render(scene, camera);
+      });
   });
   const zoomLevels = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 2.5, 3];
   const defaultZoom = zoomLevels.indexOf(1);
@@ -97,23 +98,35 @@ if (!context) {
   canvas.ondblclick = resetView;
   canvas.onkeydown = event => {
     switch (event.key) {
-      case "ArrowLeft": orbit.rotateLeft(0.12); break;
-      case "ArrowRight": orbit.rotateLeft(-0.12); break;
-      case "ArrowUp": orbit.rotateUp(0.08); break;
-      case "ArrowDown": orbit.rotateUp(-0.08); break;
-      case "Home": resetView(); break;
-      default: return;
+      case "ArrowLeft":
+        orbit.rotateLeft(0.12);
+        break;
+      case "ArrowRight":
+        orbit.rotateLeft(-0.12);
+        break;
+      case "ArrowUp":
+        orbit.rotateUp(0.08);
+        break;
+      case "ArrowDown":
+        orbit.rotateUp(-0.08);
+        break;
+      case "Home":
+        resetView();
+        break;
+      default:
+        return;
     }
     event.preventDefault();
     orbit.update();
   };
   function preview() {
     const width = Math.max(1, Math.round(canvas.clientWidth * Math.min(devicePixelRatio, 2)));
-    renderer.setSize(width, Math.round(width * 9 / 16), false);
+    renderer.setSize(width, Math.round((width * 9) / 16), false);
     renderer.render(scene, camera);
   }
   function updateRays() {
-    if (tracing.checked && landscape && !clearRays) clearRays = contactRays(landscape.mesh, surface.grid.value, rays, volumeLimit);
+    if (tracing.checked && landscape && !clearRays)
+      clearRays = contactRays(landscape.mesh, surface.grid.value, rays, volumeLimit);
     rays.tracingEnabled.value = tracing.checked;
   }
   function distance() {
@@ -128,7 +141,8 @@ if (!context) {
     scene.background = new THREE.Color(model ? palette.light.backdrop : horizon);
     // Keep the focus crisp and let the haze close in on the far terrain.
     const reach = distance();
-    scene.fog = model ? new THREE.FogExp2(horizon, preset.haze / grid)
+    scene.fog = model
+      ? new THREE.FogExp2(horizon, preset.haze / grid)
       : new THREE.Fog(horizon, reach * 0.9, reach * (1 + 0.006 / preset.haze));
     sun.color.setHex(preset.sunlight);
     sun.intensity = preset.sun;
@@ -156,14 +170,23 @@ if (!context) {
   function fitShadow(sunDistance: number) {
     const grid = surface.grid.value;
     const radius = camera === modelCamera ? 28 * grid : 0.9 * distance();
-    const size = THREE.MathUtils.clamp(THREE.MathUtils.ceilPowerOfTwo(2 * radius / 0.1), 2048,
-      Math.min(4096, renderer.capabilities.maxTextureSize));
+    const size = THREE.MathUtils.clamp(
+      THREE.MathUtils.ceilPowerOfTwo((2 * radius) / 0.1),
+      2048,
+      Math.min(4096, renderer.capabilities.maxTextureSize),
+    );
     if (sun.shadow.mapSize.x !== size) {
       sun.shadow.mapSize.set(size, size);
       sun.shadow.map?.dispose();
       sun.shadow.map = null;
     }
-    Object.assign(sun.shadow.camera, { left: -radius, right: radius, top: radius, bottom: -radius, far: sunDistance + 2 * radius });
+    Object.assign(sun.shadow.camera, {
+      left: -radius,
+      right: radius,
+      top: radius,
+      bottom: -radius,
+      far: sunDistance + 2 * radius,
+    });
     sun.shadow.camera.updateProjectionMatrix();
   }
   function update() {
@@ -197,13 +220,23 @@ if (!context) {
     // Orbit the front and both front corners while keeping the door joined to its path.
     orbit.minAzimuthAngle = landscape.frontOnly ? facade - Math.PI * 0.38 : -Infinity;
     orbit.maxAzimuthAngle = landscape.frontOnly ? facade + Math.PI * 0.38 : Infinity;
-    const offset = new THREE.Vector3(16, model ? landscape.modelRise ?? 30 : 0, 40).applyAxisAngle(new THREE.Vector3(0, 1, 0), facade);
+    const offset = new THREE.Vector3(16, model ? (landscape.modelRise ?? 30) : 0, 40).applyAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      facade,
+    );
     if (model) {
       target.copy(landscape.modelTarget);
       orbit.minPolarAngle = 0.3;
       orbit.maxPolarAngle = 1.02;
       const top = landscape.modelHeight * grid;
-      Object.assign(modelCamera, { top, bottom: -top, right: top * 16 / 9, left: -top * 16 / 9, near: 0.1, far: 350 * grid });
+      Object.assign(modelCamera, {
+        top,
+        bottom: -top,
+        right: (top * 16) / 9,
+        left: (-top * 16) / 9,
+        near: 0.1,
+        far: 350 * grid,
+      });
       offset.multiplyScalar(grid);
     } else {
       const distance = vistaDistance * landscape.modelHeight * grid;
@@ -216,8 +249,8 @@ if (!context) {
         // Set the focus on a third, facing into the larger part of the frame.
         const right = new THREE.Vector3(Math.cos(azimuth), 0, -Math.sin(azimuth));
         const facing = new THREE.Vector3(Math.sin(facade), 0, Math.cos(facade)).dot(right);
-        const halfWidth = distance * Math.tan(THREE.MathUtils.degToRad(vistaFov / 2)) * 16 / 9;
-        target.addScaledVector(right, (facing < 0 ? -1 : 1) * halfWidth / 3);
+        const halfWidth = (distance * Math.tan(THREE.MathUtils.degToRad(vistaFov / 2)) * 16) / 9;
+        target.addScaledVector(right, ((facing < 0 ? -1 : 1) * halfWidth) / 3);
       }
       vistaCamera.near = 0.5;
       vistaCamera.far = distance * 8;
@@ -254,8 +287,14 @@ if (!context) {
     pendingGrid = window.setTimeout(update, 150);
   };
   framing.onchange = sceneSelect.onchange = update;
-  weatherSelect.onchange = () => { applyWeather(); preview(); };
-  tracing.onchange = () => { updateRays(); preview(); };
+  weatherSelect.onchange = () => {
+    applyWeather();
+    preview();
+  };
+  tracing.onchange = () => {
+    updateRays();
+    preview();
+  };
   generate.onclick = () => {
     seed = crypto.getRandomValues(new Uint32Array(1))[0];
     update();
@@ -282,7 +321,11 @@ if (!context) {
   };
   // Reproduce a shared composition from ?scene=, &framing=, &weather= and &seed=.
   const params = new URLSearchParams(location.search);
-  for (const [select, key] of [[sceneSelect, "scene"], [framing, "framing"], [weatherSelect, "weather"]] as const) {
+  for (const [select, key] of [
+    [sceneSelect, "scene"],
+    [framing, "framing"],
+    [weatherSelect, "weather"],
+  ] as const) {
     const value = params.get(key);
     if (value && [...select.options].some(option => option.value === value)) select.value = value;
   }

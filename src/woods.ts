@@ -35,18 +35,20 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
     return Math.floor(height * 2) / 2 + 0.25;
   }
   const { box, terrainLayer, buildMesh } = voxelBatch();
-  const base = terrainLayer(), ground = terrainLayer();
+  const base = terrainLayer(),
+    ground = terrainLayer();
 
   function banks(z: number) {
-    let west = Math.round(riverX(z)), east = west;
+    let west = Math.round(riverX(z)),
+      east = west;
     while (elevation(west, z) < 0) west--;
     while (elevation(east, z) < 0) east++;
     return { west, east };
   }
   const crossing = findSite(0, 0, -7, 0, 1, (_, z) => {
     const { west, east } = banks(z);
-    const approach = Math.abs(elevation(west - 2, z) - elevation(west, z))
-      + Math.abs(elevation(east + 2, z) - elevation(east, z));
+    const approach =
+      Math.abs(elevation(west - 2, z) - elevation(west, z)) + Math.abs(elevation(east + 2, z) - elevation(east, z));
     if (elevation(east, z + 1) <= 0 && elevation(east, z - 1) <= 0) return Infinity;
     return east - west + approach + Math.abs(z + 3) * 0.22;
   })!;
@@ -66,20 +68,29 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
   // climbed out of the channel, then turn towards the forest tracks.
   const signZ = elevation(east, bridgeZ + 1) > 0 ? bridgeZ + 1 : bridgeZ - 1;
   const sign = { x: east, z: signZ };
-  const trail = terrainTrail(elevation, (x, z) => elevation(x, z) > 0 && Math.abs(x) <= radius &&
-    (x !== sign.x || z !== sign.z));
+  const trail = terrainTrail(
+    elevation,
+    (x, z) => elevation(x, z) > 0 && Math.abs(x) <= radius && (x !== sign.x || z !== sign.z),
+  );
   const forkX = east + 9;
-  for (const [bank, side] of [[west, -1], [east, 1]]) {
-    let x = bank + 9 * side, z = bridgeZ;
-    const points: [number, number][] = [[bank, z], [x, z]];
+  for (const [bank, side] of [
+    [west, -1],
+    [east, 1],
+  ]) {
+    let x = bank + 9 * side,
+      z = bridgeZ;
+    const points: [number, number][] = [
+      [bank, z],
+      [x, z],
+    ];
     // Survey successive passes across the hills. Local slope and distance
     // determine the tread between these longer-distance destinations.
     while (Math.abs(x) < radius) {
       x = side * Math.min(radius, side * x + 12);
       const line = bridgeZ + side * (6 + 26 * relief(x, 51));
       const pass = findSite(x, x, z - 9, z + 9, 1, (px, pz) =>
-        side * (px - riverX(pz)) < 5 ? Infinity :
-        elevation(px, pz) + 0.45 * Math.abs(pz - line));
+        side * (px - riverX(pz)) < 5 ? Infinity : elevation(px, pz) + 0.45 * Math.abs(pz - line),
+      );
       if (pass) z = pass.z;
       points.push([x, z]);
     }
@@ -92,13 +103,21 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
   }
   trail.route(branch);
   const occupied = (x: number, z: number) => trail.tiles.has(x + "," + z);
-  const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const directions = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
   const junction = findSite(forkX - 12, forkX + 12, bridgeZ - 10, bridgeZ + 10, 1, (x, z) =>
     occupied(x, z) && directions.filter(([dx, dz]) => occupied(x + dx, z + dz)).length >= 3
-      ? Math.hypot(x - forkX, z - bridgeZ) : Infinity);
+      ? Math.hypot(x - forkX, z - bridgeZ)
+      : Infinity,
+  );
   const signs = [sign];
   if (junction) {
-    const verge = [...directions, [-1, -1], [1, -1], [-1, 1], [1, 1]].map(([dx, dz]) => ({ x: junction.x + dx, z: junction.z + dz }))
+    const verge = [...directions, [-1, -1], [1, -1], [-1, 1], [1, 1]]
+      .map(([dx, dz]) => ({ x: junction.x + dx, z: junction.z + dz }))
       .find(p => !occupied(p.x, p.z) && elevation(p.x, p.z) > 0 && Math.abs(p.x - east) > 2);
     if (verge) signs.push(verge);
   }
@@ -110,16 +129,32 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
   const upstreamZ = bridgeZ - Math.round(7 * grid);
   waterfowl(box, riverX(upstreamZ), upstreamZ, 1.2, waterDepth);
 
-  const tracks = [...trail.tiles.keys()].map(key => {
-    const [x, z] = key.split(",").map(Number);
-    return { x, z };
-  }).filter(p => Math.abs(p.x - centreX) < 15 * grid && Math.abs(p.z - centreZ) < 10 * grid);
-  const yards = placeOutbuildings(box, grid >= 3 ? ["shelter", "store"] : [], tracks, 1,
-    (x, z) => elevation(Math.round(x), Math.round(z)), (x, z) =>
-      inside(x, z) && Math.abs(x - riverX(z)) > 5 && !trail.tiles.has(Math.round(x) + "," + Math.round(z)) &&
-      signs.every(p => Math.hypot(x - p.x, z - p.z) > 1));
-  const yard = villageYard(box, (x, z) => elevation(Math.round(x), Math.round(z)), (x, z) =>
-    !trail.near(Math.round(x), Math.round(z)) && !yards.near(x, z) && signs.every(p => Math.hypot(x - p.x, z - p.z) > 1));
+  const tracks = [...trail.tiles.keys()]
+    .map(key => {
+      const [x, z] = key.split(",").map(Number);
+      return { x, z };
+    })
+    .filter(p => Math.abs(p.x - centreX) < 15 * grid && Math.abs(p.z - centreZ) < 10 * grid);
+  const yards = placeOutbuildings(
+    box,
+    grid >= 3 ? ["shelter", "store"] : [],
+    tracks,
+    1,
+    (x, z) => elevation(Math.round(x), Math.round(z)),
+    (x, z) =>
+      inside(x, z) &&
+      Math.abs(x - riverX(z)) > 5 &&
+      !trail.tiles.has(Math.round(x) + "," + Math.round(z)) &&
+      signs.every(p => Math.hypot(x - p.x, z - p.z) > 1),
+  );
+  const yard = villageYard(
+    box,
+    (x, z) => elevation(Math.round(x), Math.round(z)),
+    (x, z) =>
+      !trail.near(Math.round(x), Math.round(z)) &&
+      !yards.near(x, z) &&
+      signs.every(p => Math.hypot(x - p.x, z - p.z) > 1),
+  );
   yard.place(deer, west - 8, bridgeZ - 6, 0.45, true);
   yard.place(rabbit, east + 4, bridgeZ + 3, 0.25);
   yard.place(rabbit, east + 6, bridgeZ + 4, 0.25, true);
@@ -140,10 +175,15 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
       const leafPatch = 2 * relief(x + 93, z - 71);
       const onTrail = yards.paths.has(x + "," + z) || pathHeight !== undefined;
       if (!model || inside(x, z)) {
-        const groundColor = h < 0 ? palette.ground.riverbed : h < 1 ? palette.ground.sand : grassShade(h / 24 + 0.25 * relief(x - 29, z + 47));
+        const groundColor =
+          h < 0
+            ? palette.ground.riverbed
+            : h < 1
+              ? palette.ground.sand
+              : grassShade(h / 24 + 0.25 * relief(x - 29, z + 47));
         const tint = onTrail ? palette.ground.path : groundColor;
-        const edge = model && (x - 0.5 === left || x + 0.5 === left + width ||
-          z - 0.5 === back || z + 0.5 === back + depth);
+        const edge =
+          model && (x - 0.5 === left || x + 0.5 === left + width || z - 0.5 === back || z + 0.5 === back + depth);
         if (edge) {
           base(x, (h - 4.5) / 2, z, 1, h + 3.5, 1, palette.ground.soil);
           ground(x, h - 0.25, z, 1, 0.5, 1, tint);
@@ -152,15 +192,24 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
           ground(x, (h - 4) / 2, z, 1, h + 4, 1, tint);
         }
       }
-      if (yard.near(x, z, 1.5) || yards.near(x, z) || onTrail || trail.near(x, z) || signs.some(p => Math.hypot(x - p.x, z - p.z) < 2) || h < 0.5 || (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)) continue;
+      if (
+        yard.near(x, z, 1.5) ||
+        yards.near(x, z) ||
+        onTrail ||
+        trail.near(x, z) ||
+        signs.some(p => Math.hypot(x - p.x, z - p.z) < 2) ||
+        h < 0.5 ||
+        (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)
+      )
+        continue;
 
       const bankDistance = Math.abs(x - riverX(z));
       const slope = Math.hypot(elevation(x + 1, z) - h, elevation(x, z + 1) - h);
       const moisture = Math.exp(-((bankDistance - 9) ** 2) / 65);
-      let density = 0.009 + 0.35 * Math.max(0, leafPatch) ** 2 / (1 + slope);
+      let density = 0.009 + (0.35 * Math.max(0, leafPatch) ** 2) / (1 + slope);
       for (const grove of nearbyGroves) {
         const distance = Math.hypot(x - grove.x, z - grove.z) / grove.radius;
-        if (distance < 1) density += (1 - distance) ** 2 * (0.95 + moisture) / (1 + slope);
+        if (distance < 1) density += ((1 - distance) ** 2 * (0.95 + moisture)) / (1 + slope);
       }
       if (random() < density) candidates.push({ x, z, leafPatch });
     }
@@ -183,5 +232,11 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
 
   const depthMap = riverDepthMap((x, z) => -elevation(x, z), 2 * radius + 1);
   const mesh = buildMesh();
-  return { mesh, routes: trail.routes, depth: depthMap, bounds: { x: left + width / 2, z: back + depth / 2, width, depth }, bridge: new THREE.Vector3(middle, deck, bridgeZ) };
+  return {
+    mesh,
+    routes: trail.routes,
+    depth: depthMap,
+    bounds: { x: left + width / 2, z: back + depth / 2, width, depth },
+    bridge: new THREE.Vector3(middle, deck, bridgeZ),
+  };
 }

@@ -41,7 +41,8 @@ export function buildCottage(box: Box, design = 0) {
   side(2, 2, 6, 3, 3, 1, wall);
   side(-4, 5, 6, 9, 1, 1, wall);
   for (let i = 0; i < front.length; i++) {
-    const x = i - 7, opening = front[i];
+    const x = i - 7,
+      opening = front[i];
     if (opening === "W") {
       let width = 1;
       while (front[i + width] === "W" || front[i + width] === "|") width++;

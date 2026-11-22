@@ -4,19 +4,34 @@ import type { Box } from "./voxels";
 
 export function masonryCourses(box: Box) {
   return (x: number, y: number, z: number, w: number, h: number, d: number, color: number) => {
-    box((x + w / 2) * masonry, (y + h / 2) * masonry, (z + d / 2) * masonry,
-      w * masonry, h * masonry, d * masonry, color);
+    box(
+      (x + w / 2) * masonry,
+      (y + h / 2) * masonry,
+      (z + d / 2) * masonry,
+      w * masonry,
+      h * masonry,
+      d * masonry,
+      color,
+    );
   };
 }
 
 // The opening replaces the outer wall course. A half-course reveal catches
 // light under the head and along the jambs, even in a small facade.
-export function casement(course: ReturnType<typeof masonryCourses>, x: number, y: number,
-  z: number, width: number, height: number, surround: number) {
+export function casement(
+  course: ReturnType<typeof masonryCourses>,
+  x: number,
+  y: number,
+  z: number,
+  width: number,
+  height: number,
+  surround: number,
+) {
   const trim = 0.5;
   course(x, y, z, width, trim, 1, surround);
   course(x, y + height - trim, z, width, trim, 1, surround);
-  const bottom = y + trim, clear = height - 2 * trim;
+  const bottom = y + trim,
+    clear = height - 2 * trim;
   course(x, bottom, z, trim, clear, 1, surround);
   course(x + width - trim, bottom, z, trim, clear, 1, surround);
   course(x + trim, bottom, z, width - 2 * trim, clear, trim, palette.cottage.glass);
@@ -25,8 +40,15 @@ export function casement(course: ReturnType<typeof masonryCourses>, x: number, y
 
 export type Roof = "gable" | "hip" | "saltbox";
 
-export function pitchedRoof(course: ReturnType<typeof masonryCourses>, shape: Roof,
-  halfWidth: number, halfDepth: number, eaves: number, tiers: number, endWall: number) {
+export function pitchedRoof(
+  course: ReturnType<typeof masonryCourses>,
+  shape: Roof,
+  halfWidth: number,
+  halfDepth: number,
+  eaves: number,
+  tiers: number,
+  endWall: number,
+) {
   for (let i = 0; i < tiers; i++) {
     const inset = shape === "hip" ? i : 0;
     const back = -halfDepth + (shape === "saltbox" ? Math.floor(i / 2) : i);

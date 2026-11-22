@@ -6,8 +6,16 @@ export function addBird(box: Box, x: number, z: number, heading: number, species
   // The body sits partly below the waterline. Each part follows the same local X axis.
   function part(forward: number, y: number, length: number, height: number, width: number, color: number) {
     const scale = 0.375;
-    box(x + scale * forward * Math.cos(heading), scale * y, z - scale * forward * Math.sin(heading),
-      length * scale, height * scale, width * scale, color, heading);
+    box(
+      x + scale * forward * Math.cos(heading),
+      scale * y,
+      z - scale * forward * Math.sin(heading),
+      length * scale,
+      height * scale,
+      width * scale,
+      color,
+      heading,
+    );
   }
   if (species === "gull") {
     part(0, 0.0625, 0.75, 0.25, 0.375, palette.gull.white);
@@ -26,16 +34,29 @@ export function addBird(box: Box, x: number, z: number, heading: number, species
 
 export function waterfowl(box: Box, x: number, z: number, heading: number, depth: Elevation, coastal = false) {
   const flock = coastal
-    ? [[0, 0], [1.5, 0.5], [-1, 1], [2.25, -1], [-2, -0.75], [0.75, 2]]
-    : [[0, 0], [0.75, 1], [-0.75, 1.75]];
+    ? [
+        [0, 0],
+        [1.5, 0.5],
+        [-1, 1],
+        [2.25, -1],
+        [-2, -0.75],
+        [0.75, 2],
+      ]
+    : [
+        [0, 0],
+        [0.75, 1],
+        [-0.75, 1.75],
+      ];
   const placed: { x: number; z: number }[] = [];
   for (const [i, [dx, dz]] of flock.entries()) {
-    const tx = x + dx, tz = z + dz;
+    const tx = x + dx,
+      tz = z + dz;
     const site = findSite(tx - 2, tx + 2, tz - 2, tz + 2, 0.5, (cx, cz) => {
       if (placed.some(p => Math.hypot(cx - p.x, cz - p.z) < 0.8)) return Infinity;
-      for (const ox of [-0.2, 0.2]) for (const oz of [-0.2, 0.2]) {
-        if (depth(cx + ox, cz + oz) < 0.25) return Infinity;
-      }
+      for (const ox of [-0.2, 0.2])
+        for (const oz of [-0.2, 0.2]) {
+          if (depth(cx + ox, cz + oz) < 0.25) return Infinity;
+        }
       return Math.hypot(cx - tx, cz - tz);
     });
     if (!site) continue;

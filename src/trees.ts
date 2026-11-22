@@ -63,16 +63,17 @@ export function treePlanter(box: Box, voxel: number, designs = defaultDesigns, s
     if (!sapling) {
       for (let dz = -1; dz <= 1 && !crowded; dz++) {
         for (let dx = -1; dx <= 1; dx++) {
-          if (adultRoots.has((patchX + dx) + "," + (patchZ + dz))) {
+          if (adultRoots.has(patchX + dx + "," + (patchZ + dz))) {
             crowded = true;
             break;
           }
         }
       }
     }
-    const foliage = species === "pine"
-      ? { trunk: palette.wood, leaf: palette.green.pine, tip: palette.green.pineTip }
-      : { trunk: palette.wood, leaf: palette.green.leaf, tip: palette.green.leafTip };
+    const foliage =
+      species === "pine"
+        ? { trunk: palette.wood, leaf: palette.green.pine, tip: palette.green.pineTip }
+        : { trunk: palette.wood, leaf: palette.green.leaf, tip: palette.green.leafTip };
 
     const twist = Math.imul(gx ^ seed, 73856093) ^ Math.imul(gz, 19349663);
     const quarterTurn = ((twist ^ (twist >>> 16)) & 1) === 1;
@@ -82,20 +83,38 @@ export function treePlanter(box: Box, voxel: number, designs = defaultDesigns, s
       const height = layers + (i === 0 && crowded ? 1 : 0);
       const bottom = base;
       base += height;
-      return { width: quarterTurn ? depth : width, depth: quarterTurn ? width : depth, height, bottom, color: foliage[part] };
+      return {
+        width: quarterTurn ? depth : width,
+        depth: quarterTurn ? width : depth,
+        height,
+        bottom,
+        color: foliage[part],
+      };
     });
     const boxes = parts.map(p => ({
-      x: gx, y: gy + p.bottom + p.height / 2, z: gz, width: p.width, height: p.height, depth: p.depth,
+      x: gx,
+      y: gy + p.bottom + p.height / 2,
+      z: gz,
+      width: p.width,
+      height: p.height,
+      depth: p.depth,
     }));
     // The widest crowns span five voxels. Only roots in adjoining four-voxel
     // patches can intersect; check whole tiers instead of storing every leaf cell.
     for (let dz = -1; dz <= 1; dz++) {
       for (let dx = -1; dx <= 1; dx++) {
-        const neighbors = stands.get((patchX + dx) + "," + (patchZ + dz));
-        if (neighbors?.some(a => boxes.some(b =>
-          2 * Math.abs(a.x - b.x) < a.width + b.width &&
-          2 * Math.abs(a.y - b.y) < a.height + b.height &&
-          2 * Math.abs(a.z - b.z) < a.depth + b.depth))) return;
+        const neighbors = stands.get(patchX + dx + "," + (patchZ + dz));
+        if (
+          neighbors?.some(a =>
+            boxes.some(
+              b =>
+                2 * Math.abs(a.x - b.x) < a.width + b.width &&
+                2 * Math.abs(a.y - b.y) < a.height + b.height &&
+                2 * Math.abs(a.z - b.z) < a.depth + b.depth,
+            ),
+          )
+        )
+          return;
       }
     }
     const key = patchX + "," + patchZ;
