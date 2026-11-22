@@ -1,3 +1,5 @@
+import { buildOutbuilding, buildingNames } from "./outbuildings";
+import { treeVoxel } from "./scale";
 import * as THREE from "three";
 import { buildCottage } from "./cottage";
 import { defaultDesigns, designNames } from "./designs";
@@ -14,7 +16,7 @@ function trees(species: "pine" | "broadleaf"): Asset[] {
   return designNames[species].map((name, index) => ({
     name,
     draw(box) {
-      const plant = treePlanter(box, 0.5, { ...defaultDesigns, [species]: index });
+      const plant = treePlanter(box, treeVoxel, { ...defaultDesigns, [species]: index });
       plant(-0.75, 0, 0, species, false);
       plant(1.5, 0, 0, species, true);
     },
@@ -119,6 +121,9 @@ function library(renderer: THREE.WebGLRenderer) {
   section("pines", "Pines · adult and sapling", trees("pine"));
   section("broadleaf", "Broadleaf trees · adult and sapling", trees("broadleaf"));
   section("cottages", "Cottages", designNames.cottage.map((name, i) => ({ name, draw: box => buildCottage(box, i) })));
+  section("outbuildings", "Working buildings", (Object.keys(buildingNames) as (keyof typeof buildingNames)[]).map(kind => ({
+    name: buildingNames[kind], draw: box => buildOutbuilding(box, kind),
+  })));
   section("birds", "Water birds", (["drake", "hen", "gull"] as const).map((species, i) => ({
     name: ["Mallard drake", "Mallard hen", "Seagull"][i], draw: box => addBird(box, 0, 0, 0, species),
   })));

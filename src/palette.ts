@@ -6,8 +6,6 @@ export const palette = {
     leaf: 0x52774f,
     leafTip: 0x658861,
     grass: 0x7e8c5d,
-    meadow: 0x91945b,
-    dryGrass: 0xa29b76,
   },
   ground: {
     sand: 0xd9bc8b,

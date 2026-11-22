@@ -5,8 +5,9 @@ import type { Box } from "./voxels";
 export function addBird(box: Box, x: number, z: number, heading: number, species: "gull" | "drake" | "hen") {
   // The body sits partly below the waterline. Each part follows the same local X axis.
   function part(forward: number, y: number, length: number, height: number, width: number, color: number) {
-    box(x + forward * Math.cos(heading), y, z - forward * Math.sin(heading),
-      length, height, width, color, heading);
+    const scale = 0.375;
+    box(x + scale * forward * Math.cos(heading), scale * y, z - scale * forward * Math.sin(heading),
+      length * scale, height * scale, width * scale, color, heading);
   }
   if (species === "gull") {
     part(0, 0.0625, 0.75, 0.25, 0.375, palette.gull.white);

@@ -1,3 +1,5 @@
+import { placeOutbuildings } from "./outbuildings";
+import { treeVoxel } from "./scale";
 import { defaultDesigns } from "./designs";
 import { findSite } from "./sites";
 import { riverDepthMap } from "./water";
@@ -49,7 +51,7 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
   const left = Math.floor(centreX) - width / 2;
   const back = centreZ - depth / 2;
   const inside = (x: number, z: number) => x > left && x < left + width && z > back && z < back + depth;
-  const plantTree = treePlanter(box, 0.5, designs);
+  const plantTree = treePlanter(box, treeVoxel, designs);
   // Start on each bridge landing. Stay on the bank until the route has
   // climbed out of the channel, then turn towards the forest tracks.
   const trail = terrainTrail(elevation, (x, z) => elevation(x, z) > 0 && Math.abs(x) <= radius);
@@ -68,6 +70,14 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
   waterfowl(box, riverX(bendZ) - 0.75, bendZ, Math.atan2(-1, slope),
     (x, z) => -elevation(Math.round(x), Math.round(z)));
 
+  const tracks = [...trail.tiles.keys()].map(key => {
+    const [x, z] = key.split(",").map(Number);
+    return { x, z };
+  }).filter(p => Math.abs(p.x - centreX) < 15 * grid && Math.abs(p.z - centreZ) < 10 * grid);
+  const yards = placeOutbuildings(box, grid >= 3 ? ["shelter", "store"] : [], tracks, 1,
+    (x, z) => elevation(Math.round(x), Math.round(z)), (x, z) =>
+      inside(x, z) && Math.abs(x - riverX(z)) > 5 && !trail.tiles.has(Math.round(x) + "," + Math.round(z)) &&
+      (!sign || Math.hypot(x - sign.x, z - sign.z) > 1));
   // Seed stands along each bank independently, with gaps between seed sources.
   const groves: { x: number; z: number; radius: number }[] = [];
   for (const side of [-1, 1]) {
@@ -83,9 +93,9 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
       const pathHeight = trail.tiles.get(x + "," + z);
       const h = pathHeight ?? elevation(x, z);
       const leafPatch = Math.sin(x * 0.20 + phase) + Math.sin(z * 0.16);
-      const onTrail = pathHeight !== undefined;
+      const onTrail = yards.paths.has(x + "," + z) || pathHeight !== undefined;
       if (!model || inside(x, z)) {
-        const groundColor = h < 0 ? palette.ground.riverbed : h < 1 ? palette.ground.sand : leafPatch > 0 ? palette.green.meadow : palette.green.grass;
+        const groundColor = h < 0 ? palette.ground.riverbed : h < 1 ? palette.ground.sand : palette.green.grass;
         const tint = onTrail ? palette.ground.path : groundColor;
         const edge = model && (x - 0.5 === left || x + 0.5 === left + width ||
           z - 0.5 === back || z + 0.5 === back + depth);
@@ -97,7 +107,7 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = def
           ground(x, (h - 4) / 2, z, 1, h + 4, 1, tint);
         }
       }
-      if (trail.near(x, z) || (sign && Math.hypot(x - sign.x, z - sign.z) < 2) || h < 0.5 || (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)) continue;
+      if (yards.near(x, z) || onTrail || trail.near(x, z) || (sign && Math.hypot(x - sign.x, z - sign.z) < 2) || h < 0.5 || (Math.abs(z - bridgeZ) < 3 && x >= west - 2 && x <= east + 2)) continue;
 
       const bankDistance = Math.abs(x - riverX(z));
       const slope = Math.hypot(elevation(x + 1, z) - h, elevation(x, z + 1) - h);

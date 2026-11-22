@@ -52,3 +52,16 @@ scene at its natural scale.
 
 Use the Stone bothy and Orchard house as cottage references. Keep the roof
 silhouette clear and align projections such as porches and bays to the brick grid.
+
+## Model proportions
+
+Use two metres per world unit. A half-metre masonry voxel is 0.25 world units.
+Cottage walls occupy 14 × 10 masonry voxels (7 × 5 metres), and a doorway is
+two voxels wide and four high. Use metre-sized crown blocks for trees in every
+scene. A swimming duck or gull measures about 0.66 metres from tail to bill.
+These dimensions describe the depicted landscape. The camera and screen size
+determine its apparent miniature scale.
+
+Use one grass green across the scenes. Let the stepped terrain, shadows and
+tree cover describe meadow relief. Give larger landscapes a few working
+buildings on gentle ground beside a route that explains their presence.

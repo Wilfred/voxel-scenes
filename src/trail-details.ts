@@ -23,12 +23,12 @@ export function footbridge(box: Box, west: number, east: number, bridgeZ: number
   box(middle, deck - 0.25, bridgeZ, span, 0.5, 1.5, palette.wood);
   for (const side of [-0.75, 0.5]) {
     const z = bridgeZ + side + 0.125;
-    box(middle, deck + 0.875, z, span, 0.25, 0.25, palette.wood);
+    box(middle, deck + 0.625, z, span, 0.25, 0.25, palette.wood);
     const bays = Math.ceil(span / 3);
     for (let i = 0; i <= bays; i++) {
       const left = west + 0.5 + Math.round((span - 0.25) * i / bays * 4) / 4;
       const bottom = elevation(Math.round(left + 0.125), Math.round(z)) - 0.5;
-      box(left + 0.125, (bottom + deck + 0.75) / 2, z, 0.25, deck + 0.75 - bottom, 0.25, palette.wood);
+      box(left + 0.125, (bottom + deck + 0.5) / 2, z, 0.25, deck + 0.5 - bottom, 0.25, palette.wood);
     }
   }
   return deck;

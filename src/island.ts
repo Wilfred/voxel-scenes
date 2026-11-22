@@ -1,3 +1,5 @@
+import { placeOutbuildings } from "./outbuildings";
+import { treeVoxel } from "./scale";
 import { pier, shoreStairs } from "./trail-details";
 import { defaultDesigns } from "./designs";
 import { findSite } from "./sites";
@@ -9,7 +11,7 @@ import { buildCottage, cottageDoor } from "./cottage";
 import * as THREE from "three";
 
 export function buildIsland(seed: number, model: boolean, grid = 1, designs = defaultDesigns) {
-  const bounds = { x: 0, z: 0, width: 44 * grid, depth: 34 * grid };
+  const bounds = { x: 0, z: 0, width: 38 * grid, depth: 28 * grid };
   const random = seededRandom(seed);
 
   const phase = random() * Math.PI * 2;
@@ -65,7 +67,6 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   })!;
   const { x: cottageX, z: cottageZ } = cottage;
   const terrace = naturalHeight(cottageX, cottageZ);
-  const cottageScale = 0.75;
   const foundationTop = terrace + unit;
   const dockTop = unit;
   const shore = nearestWater(cottageX, cottageZ);
@@ -73,7 +74,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   const forwardX = Math.abs(dx) > Math.abs(dz) ? Math.sign(dx) : 0;
   const forwardZ = forwardX === 0 ? Math.sign(dz) : 0;
   const sideX = forwardZ, sideZ = -forwardX;
-  let x = cottageX + forwardX, z = cottageZ + forwardZ;
+  let x = cottageX + forwardX * 1.5, z = cottageZ + forwardZ * 1.5;
   const route = [{ x, z }];
   while (x !== shore.x || z !== shore.z) {
     if (Math.abs(shore.x - x) > Math.abs(shore.z - z)) x += Math.sign(shore.x - x) * unit;
@@ -87,20 +88,43 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     route.push({ x, z });
   }
   const stairs = new Set(route.map(p => p.x + "," + p.z));
-  const doorOffset = cottageDoor(designs.cottage) * cottageScale;
+  const doorOffset = cottageDoor(designs.cottage);
   const centreX = cottageX - sideX * doorOffset;
   const centreZ = cottageZ - sideZ * doorOffset;
   function height(x: number, z: number) {
     const across = (x - centreX) * sideX + (z - centreZ) * sideZ;
     const along = (x - centreX) * forwardX + (z - centreZ) * forwardZ;
-    if (Math.abs(across) <= 1 && Math.abs(along) <= 0.75) return terrace;
+    if (Math.abs(across) <= 1.75 && Math.abs(along) <= 1.25) return terrace;
     return naturalHeight(x, z);
   }
 
   const { box, terrainLayer, buildMesh } = voxelBatch();
   const base = terrainLayer(), ground = terrainLayer();
-  const plantTree = treePlanter(box, 0.25, designs);
+  const plantTree = treePlanter(box, treeVoxel, designs);
 
+  // Follow a walkable contour inland from the shore stairs before looking
+  // for a loft site. The selected approach becomes the path to its door.
+  type Approach = { x: number; z: number; approach: { x: number; z: number }[] };
+  const approaches: Approach[] = route.map(p => ({ ...p, approach: [] }));
+  const surveyed = new Set(stairs);
+  for (let i = 0; grid >= 3 && i < approaches.length; i++) {
+    const p = approaches[i];
+    if (p.approach.length >= 28) continue;
+    const top = p.approach.length ? height(p.x, p.z) + unit
+      : foundationTop - unit * Math.floor(i * risers / (route.length - 1));
+    for (const [ox, oz] of [[unit, 0], [-unit, 0], [0, unit], [0, -unit]]) {
+      const x = p.x + ox, z = p.z + oz, key = x + "," + z;
+      const h = height(x, z);
+      if (surveyed.has(key) || h < 0 || Math.abs(h + unit - top) > unit ||
+        (Math.abs((x - centreX) * sideX + (z - centreZ) * sideZ) < 2 &&
+         Math.abs((x - centreX) * forwardX + (z - centreZ) * forwardZ) < 1.5)) continue;
+      surveyed.add(key);
+      approaches.push({ x, z, approach: [...p.approach, { x, z }] });
+    }
+  }
+  const yards = placeOutbuildings(box, grid >= 6 ? ["nets", "store"] : grid >= 3 ? ["nets"] : [],
+    approaches, unit, (x, z) => height(x, z) + unit, (x, z) =>
+      Math.hypot(x - centreX, z - centreZ) > 2.5 && !stairs.has(x + "," + z));
   for (let z = -Math.ceil(14 * grid); z <= Math.ceil(14 * grid); z += 0.5) {
     for (let x = -Math.ceil(21 * grid); x <= Math.ceil(21 * grid); x += 0.5) {
       const h = height(x, z);
@@ -110,20 +134,20 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
       if (stairs.has(x + "," + z)) continue;
       const top = h + unit;
       const soilTop = h >= 1 ? h : top;
-      base(x, (soilTop - unit) / 2, z, unit, soilTop + unit, unit, h < 1 ? palette.ground.sand : palette.ground.stone);
+      base(x, (soilTop - unit) / 2, z, unit, soilTop + unit, unit, h < 1 ? (yards.paths.has(x + "," + z) ? palette.ground.path : palette.ground.sand) : palette.ground.stone);
       if (h < 1) continue;
-      ground(x, top - unit / 2, z, unit, unit, unit, palette.green.meadow);
+      ground(x, top - unit / 2, z, unit, unit, unit, yards.paths.has(x + "," + z) ? palette.ground.path : palette.green.grass);
       const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
-      const density = (x < -6 ? 0.26 : 0.14) * grove;
-      if (Math.hypot(x - centreX, z - centreZ) < 2 || random() > density) continue;
+      const density = (x < -6 ? 0.10 : 0.055) * grove;
+      if (yards.near(x, z) || yards.paths.has(x + "," + z) || Math.hypot(x - centreX, z - centreZ) < 3.5 || random() > density) continue;
       plantTree(x, top, z, "pine", random() < 0.25);
     }
   }
 
   function cottageBox(x: number, y: number, z: number, w: number, h: number, d: number, color: number) {
-    box(centreX + (x * sideX + z * forwardX) * cottageScale,
-      foundationTop + (y - 0.4) * cottageScale, centreZ + (x * sideZ + z * forwardZ) * cottageScale,
-      (forwardX ? d : w) * cottageScale, h * cottageScale, (forwardX ? w : d) * cottageScale, color);
+    box(centreX + (x * sideX + z * forwardX),
+      foundationTop + y, centreZ + (x * sideZ + z * forwardZ),
+      (forwardX ? d : w), h, (forwardX ? w : d), color);
   }
   buildCottage(cottageBox, designs.cottage);
   shoreStairs(box, route, foundationTop, risers);
@@ -171,6 +195,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     const z = (random() * 32 - 16) * grid;
     const y = naturalHeight(x, z);
     if (y > -0.5 || y < -2.5) continue;
+    if (model && (Math.abs(x) + 0.5 >= bounds.width / 2 || Math.abs(z) + 0.5 >= bounds.depth / 2)) continue;
     const size = 0.22 + random() * 0.52;
     box(x, y, z, size, size * 0.7, size * 0.8, palette.ground.stone);
   }

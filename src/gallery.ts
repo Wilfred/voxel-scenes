@@ -1,3 +1,4 @@
+import { treeVoxel } from "./scale";
 import { lightScene } from "./lighting";
 import * as THREE from "three";
 import { buildCottage } from "./cottage";
@@ -28,12 +29,11 @@ export function designGallery(designs: typeof defaultDesigns, apply: () => void)
       const { box, buildMesh } = voxelBatch();
       if (family === "cottage") buildCottage(box, index);
       else {
-        const plant = treePlanter(box, 0.45, { ...designs, [family]: index });
+        const plant = treePlanter(box, treeVoxel, { ...designs, [family]: index });
         plant(-0.8, 0, 0, family, false);
         plant(1.4, 0, 0.5, family, true);
       }
-      const ground = family === "cottage" ? 0.4 : 0;
-      box(0, ground - 0.125, 0, 5.25, 0.25, 3, palette.green.grass);
+      box(0, -0.125, 0, 5.25, 0.25, 3, palette.green.grass);
       const mesh = buildMesh();
       scene.add(mesh);
       renderer!.render(scene, camera);
