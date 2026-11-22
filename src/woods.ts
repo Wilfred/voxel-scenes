@@ -19,7 +19,7 @@ export function buildWoods(seed: number, model: boolean) {
   function elevation(x: number, z: number) {
     const bank = Math.abs(x - riverX(z)) - 3 - 0.8 * Math.cos(z * 0.19);
     const rise = 0.42 + 0.15 * Math.sin(z * 0.19 + phase) + 0.14 * Math.cos(x * 0.24);
-    return Math.max(-3, Math.min(8, Math.floor(bank * rise * 2) / 2 + 0.25));
+    return Math.max(-3, Math.min(7.75, Math.floor(bank * rise * 2) / 2 + 0.25));
   }
   const { box, buildMesh } = voxelBatch();
 

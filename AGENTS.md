@@ -56,6 +56,8 @@ bays, and future floating islands should feel like places in the same game.
 - Choose a voxel unit and align adjoining geometry to its grid. Check the
   faces where pieces meet. Give paths full coloured terrain voxels, stairs
   whole-voxel rises and runs, and bridges a usable approach on both banks.
+  Smooth a path by choosing a gentler route and cutting whole terrain layers
+  from high spots. Keep its surface on the surrounding voxel grid.
   Trace the route from the cottage door to the pier to catch abrupt drops.
   Select crossings and occupied sites from the terrain. Rank bridge sites by
   span and bank access, and check the whole footprint of props such as stacked

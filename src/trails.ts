@@ -54,19 +54,21 @@ export function terrainTrail(elevation: Elevation, dry: (x: number, z: number) =
         }
       }
       const heights = points.map(([x, z]) => elevation(x, z));
+      // Wear down a local crest by one terrain layer. Level ground keeps its
+      // original surface, including the woodland grid offset at the waterline.
+      const layer = 0.5;
       const tread = heights.map((h, i) => {
         if (i === 0 || i === heights.length - 1) return h;
-        const average = (heights[i - 1] + 2 * h + heights[i + 1]) / 4;
-        return Math.min(h, Math.round((average - 0.25) * 4) / 4);
+        return h > heights[i - 1] && h > heights[i + 1] ? h - layer : h;
       });
       // Grade isolated high spots from both approaches. Endpoints meet the
       // existing doorstep or bridge landing; wear is cut into the terrain.
-      for (let i = 1; i < tread.length - 1; i++) tread[i] = Math.min(tread[i], tread[i - 1] + 0.5);
-      for (let i = tread.length - 2; i > 0; i--) tread[i] = Math.min(tread[i], tread[i + 1] + 0.5);
+      for (let i = 1; i < tread.length - 1; i++) tread[i] = Math.min(tread[i], tread[i - 1] + layer);
+      for (let i = tread.length - 2; i > 0; i--) tread[i] = Math.min(tread[i], tread[i + 1] + layer);
       const last = tread.length - 1;
       for (let i = 0; i <= last; i++) {
-        const approach = Math.max(heights[0] - i * 0.5, heights[last] - (last - i) * 0.5);
-        tiles.set(points[i].join(","), Math.max(0.25, tread[i], approach));
+        const approach = Math.max(heights[0] - i * layer, heights[last] - (last - i) * layer);
+        tiles.set(points[i].join(","), Math.max(tread[i], approach));
       }
     },
     near(x: number, z: number) {
