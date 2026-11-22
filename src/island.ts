@@ -216,5 +216,5 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     }
   }
   const mesh = buildMesh();
-  return { mesh, floor, depth, bounds };
+  return { mesh, floor, depth, bounds, facadeAngle: Math.atan2(forwardX, forwardZ) };
 }

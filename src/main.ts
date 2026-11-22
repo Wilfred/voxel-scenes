@@ -159,8 +159,11 @@ if (!context) {
     }
     const yaw = home.radius > 0 ? orbit.getAzimuthalAngle() - home.theta : 0;
     const tilt = home.radius > 0 ? orbit.getPolarAngle() - home.phi : 0;
-    if (inland) camera.position.set(16, 30, 40);
-    else camera.position.set(8, 27, 43);
+    const facade = island?.facadeAngle ?? 0;
+    camera.position.set(16, inland ? 30 : 27, 40).applyAxisAngle(new THREE.Vector3(0, 1, 0), facade);
+    // Orbit the front and both front corners while keeping the door joined to its path.
+    orbit.minAzimuthAngle = woodland ? -Infinity : facade - Math.PI * 0.38;
+    orbit.maxAzimuthAngle = woodland ? Infinity : facade + Math.PI * 0.38;
     camera.top *= grid;
     camera.far = 350 * grid;
     home.setFromVector3(camera.position.multiplyScalar(grid));

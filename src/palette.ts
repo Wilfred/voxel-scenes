@@ -17,9 +17,9 @@ export const palette = {
     riverbed: 0x8e967b,
   },
   cottage: {
-    plaster: 0xbda98b,
-    tile: 0x956b53,
-    glass: 0x99aaa4,
+    plaster: 0xb9ab92,
+    tile: 0x906f58,
+    glass: 0x97a298,
     smoke: 0xe4ddd0,
   },
   water: {

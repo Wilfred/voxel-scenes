@@ -1,5 +1,5 @@
 import { palette } from "./palette";
-import { masonry } from "./scale";
+import { masonryCourses, pitchedRoof } from "./building";
 import type { Elevation } from "./sites";
 import type { Box } from "./voxels";
 
@@ -8,28 +8,24 @@ type Kind = keyof typeof buildingNames;
 type Cell = { x: number; z: number };
 
 export function buildOutbuilding(box: Box, kind: Kind) {
-  function course(x: number, y: number, z: number, w: number, h: number, d: number, color: number) {
-    box((x + w / 2) * masonry, (y + h / 2) * masonry, (z + d / 2) * masonry,
-      w * masonry, h * masonry, d * masonry, color);
-  }
+  const course = masonryCourses(box);
   const { wood, ground, cottage } = palette;
   course(-5, -4, -3, 10, 4, 6, ground.stone);
   if (kind === "shelter") {
     course(-5, 0, -3, 10, 4, 1, wood);
-    for (const x of [-5, 4]) course(x, 0, 2, 1, 4, 1, wood);
+    for (const x of [-5, 4]) course(x, 0, 2, 1, 6, 1, wood);
     course(-4, 0, -2, 6, 1, 2, wood);
     for (let i = 0; i < 3; i++) course(-6, 4 + i, -4 + i * 2, 12, 1, 4, cottage.tile);
   } else {
     const wall = kind === "store" ? ground.stone : wood;
-    course(-5, 0, -3, 10, 5, 5, wall);
+    course(-5, 0, -3, 10, 5, 1, wall);
+    for (const x of [-5, 4]) course(x, 0, -2, 1, 5, 4, wall);
+    course(-4, 0, -2, 8, 1, 4, ground.stone);
     course(-5, 0, 2, 3, 5, 1, wall);
-    course(-2, 0, 2, 3, 4, 1, kind === "store" ? wood : ground.soil);
+    if (kind === "store") course(-2, 0, 2, 3, 4, 1, wood);
     course(-2, 4, 2, 3, 1, 1, wall);
     course(1, 0, 2, 4, 5, 1, wall);
-    for (let i = 0; i < 4; i++) {
-      const inset = kind === "store" ? i : 0;
-      course(-6 + inset, 5 + i, -4 + i, 12 - inset * 2, 1, 8 - i * 2, cottage.tile);
-    }
+    pitchedRoof(course, kind === "store" ? "hip" : "gable", 6, 4, 5, 4, wall);
   }
 }
 
