@@ -168,16 +168,33 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
           const foot = wet ? shelf(nx, nz) : low;
           vertices.push(ax,foot,az, bx,foot,bz, ax,y,az, bx,foot,bz, bx,y,bz, ax,y,az);
           if (!wet) continue;
-          // A narrow aerated crest traces the entire lip, including the notch.
-          spray.box(faceX - dx / 16, y, faceZ - dz / 16,
-            dz ? 1 : 0.125, 0.125, dx ? 1 : 0.125, palette.water.foam);
+          // Whitewater varies cell by cell without drawing from the seeded
+          // sequence that places the rest of the landscape.
+          const noise = (k: number) => {
+            const v = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719 + phase) * 43758.5453;
+            return v - Math.floor(v);
+          };
+          // An aerated crest along the lip, broken where water slides over smoothly.
+          if (noise(0) > 0.25) {
+            spray.box(faceX - dx * 0.125, y + 0.0625, faceZ - dz * 0.125,
+              dz ? 1 : 0.25, 0.25, dx ? 1 : 0.25, palette.water.foam);
+          }
           if (dz === 1) {
-            const ripple = Math.sin(x * 4.1 + z + phase);
-            const spread = ripple > 0 ? 0.75 : 0.5;
-            spray.box(x, foot + 0.0625, faceZ + spread / 2, 0.75, 0.125, spread, palette.water.foam);
-            const run = (y - foot) * (0.45 + 0.2 * ripple);
-            spray.box(x + ripple * 0.25, y - run / 2, faceZ + 0.0625, 0.125, run, 0.125, palette.water.froth);
-            spray.box(x - 0.25, foot + 0.125, faceZ + spread, 0.25, 0.25, 0.25, palette.water.froth);
+            // Two chunky strands per cell fall part of the way, of uneven width.
+            for (const side of [-0.25, 0.25]) {
+              const width = noise(side + 1) > 0.5 ? 0.5 : 0.25;
+              const run = (y - foot) * (0.5 + 0.45 * noise(side + 2));
+              spray.box(x + side, y - run / 2, faceZ + 0.125,
+                width, run, 0.25, palette.water.foam);
+            }
+            // A broad churned pad at the foot, trailing a few loose blocks downstream.
+            const pad = 0.75 + 0.5 * Math.round(noise(3));
+            spray.box(x, foot + 0.125, faceZ + pad / 2, 1, 0.25, pad, palette.water.froth);
+            for (let i = 0; i < 2; i++) {
+              if (noise(4 + i) < 0.4) continue;
+              spray.box(x + (noise(6 + i) - 0.5) * 0.75, foot + 0.125, faceZ + pad + 0.25 + i * 0.5,
+                0.25, 0.25, 0.25, palette.water.froth);
+            }
           }
         }
         continue;
