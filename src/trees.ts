@@ -1,48 +1,44 @@
+import { defaultDesigns } from "./designs";
 import { palette } from "./palette";
 import type { Box } from "./voxels";
 
-type TreeBox = {
-  width: number;
-  height: number;
-  depth: number;
-  part: "trunk" | "leaf" | "tip";
+type Species = "pine" | "broadleaf";
+// Each tier is width, height, depth in voxels, from the trunk to the crown.
+// Saplings have their own profiles. Thin saplings grow into quite different crowns.
+type Tier = [number, number, number];
+type Profile = Tier[];
+const profiles: Record<Species, [Profile, Profile][]> = {
+  pine: [
+    [[[1,2,1],[3,1,3],[5,3,3],[3,2,3]], [[1,1,1],[3,1,1],[1,2,1]]],
+    [[[1,3,1],[3,1,3],[5,2,5],[3,1,5]], [[1,1,1],[3,1,3],[3,1,1]]],
+    [[[1,1,1],[3,2,3],[3,3,3],[1,2,1]], [[1,1,1],[1,2,3],[1,1,1]]],
+    [[[1,3,1],[3,1,1],[5,2,3],[3,1,3]], [[1,2,1],[3,1,1],[1,1,1]]],
+    [[[1,2,1],[3,3,3],[3,2,1],[1,2,1]], [[1,1,1],[1,3,1],[1,1,1]]],
+    [[[1,1,1],[3,1,3],[5,2,3],[3,1,1]], [[1,1,1],[3,2,1],[1,1,1]]],
+    [[[1,1,1],[5,2,5],[3,3,3],[1,2,1]], [[1,1,1],[3,1,3],[1,2,1]]],
+    [[[1,2,1],[3,2,5],[3,3,3],[1,1,3]], [[1,1,1],[1,2,3],[1,2,1]]],
+    [[[1,1,1],[5,1,3],[5,2,5],[3,1,3]], [[1,1,1],[3,1,3],[3,1,3]]],
+    [[[1,2,1],[5,1,5],[3,2,3],[3,2,1]], [[1,1,1],[3,2,3],[1,1,3]]],
+  ],
+  broadleaf: [
+    [[[1,2,1],[3,1,5],[5,2,5],[5,1,3]], [[1,2,1],[3,1,1],[1,1,3]]],
+    [[[1,2,1],[3,1,3],[5,2,3],[3,1,3]], [[1,1,1],[3,1,3],[3,1,1]]],
+    [[[1,3,1],[3,2,1],[3,2,3],[1,1,3]], [[1,2,1],[1,2,3],[1,1,1]]],
+    [[[1,1,1],[3,2,3],[3,3,5],[3,1,3]], [[1,1,1],[1,2,3],[3,1,3]]],
+    [[[1,2,1],[3,2,3],[5,2,5],[3,2,3]], [[1,1,1],[3,2,3],[1,1,1]]],
+    [[[1,2,1],[3,1,3],[3,3,3],[1,1,3]], [[1,2,1],[3,1,3],[1,1,1]]],
+    [[[1,3,1],[3,1,3],[5,2,5],[5,1,5]], [[1,2,1],[3,1,1],[3,1,3]]],
+    [[[1,2,1],[5,1,3],[5,3,5],[3,1,5]], [[1,1,1],[3,1,3],[1,2,3]]],
+    [[[1,1,1],[3,1,3],[5,2,3],[3,1,5]], [[1,1,1],[3,1,1],[3,1,3]]],
+    [[[1,1,1],[5,2,5],[5,2,3],[3,1,3]], [[1,1,1],[3,2,3],[3,1,1]]],
+  ],
 };
 
-// Dimensions count whole voxels. Odd widths keep each box centered on the trunk.
-const trees: Record<"pine" | "broadleaf", { adult: TreeBox[]; sapling: TreeBox[] }> = {
-  pine: {
-    adult: [
-      { width: 1, height: 2, depth: 1, part: "trunk" },
-      { width: 3, height: 1, depth: 3, part: "leaf" },
-      { width: 5, height: 3, depth: 3, part: "leaf" },
-      { width: 3, height: 2, depth: 3, part: "tip" },
-    ],
-    sapling: [
-      { width: 1, height: 1, depth: 1, part: "trunk" },
-      { width: 3, height: 1, depth: 1, part: "leaf" },
-      { width: 1, height: 2, depth: 1, part: "tip" },
-    ],
-  },
-  broadleaf: {
-    adult: [
-      { width: 1, height: 2, depth: 1, part: "trunk" },
-      { width: 3, height: 1, depth: 5, part: "leaf" },
-      { width: 5, height: 2, depth: 5, part: "leaf" },
-      { width: 5, height: 1, depth: 3, part: "tip" },
-    ],
-    sapling: [
-      { width: 1, height: 2, depth: 1, part: "trunk" },
-      { width: 3, height: 1, depth: 1, part: "leaf" },
-      { width: 1, height: 1, depth: 3, part: "tip" },
-    ],
-  },
-};
-
-export function treePlanter(box: Box, voxel: number) {
+export function treePlanter(box: Box, voxel: number, designs = defaultDesigns) {
   const occupied = new Set<string>();
   const adultRoots = new Set<string>();
-  return (x: number, ground: number, z: number, species: keyof typeof trees, sapling: boolean) => {
-    const model = trees[species][sapling ? "sapling" : "adult"];
+  return (x: number, ground: number, z: number, species: Species, sapling: boolean) => {
+    const model = profiles[species][designs[species]][sapling ? 1 : 0];
     const gx = Math.round(x / voxel);
     const gy = Math.round(ground / voxel);
     const gz = Math.round(z / voxel);
@@ -67,11 +63,12 @@ export function treePlanter(box: Box, voxel: number) {
       : { trunk: palette.wood, leaf: palette.green.leaf, tip: palette.green.leafTip };
     const keys: string[] = [];
     let base = 0;
-    const parts = model.map(part => {
-      const height = part.height + (part.part === "trunk" && crowded ? 1 : 0);
+    const parts = model.map(([width, layers, depth], i) => {
+      const part = i === 0 ? "trunk" : i === model.length - 1 ? "tip" : "leaf";
+      const height = layers + (i === 0 && crowded ? 1 : 0);
       const bottom = base;
       base += height;
-      return { ...part, height, bottom };
+      return { width, depth, height, bottom, color: foliage[part] };
     });
     for (const part of parts) {
       const rx = (part.width - 1) / 2;
@@ -91,7 +88,7 @@ export function treePlanter(box: Box, voxel: number) {
     for (const part of parts) {
       const y = ground + (part.bottom + part.height / 2) * voxel;
       box(x, y, z,
-        part.width * voxel, part.height * voxel, part.depth * voxel, foliage[part.part]);
+        part.width * voxel, part.height * voxel, part.depth * voxel, part.color);
     }
   };
 }
