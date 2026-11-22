@@ -1,0 +1,48 @@
+import { palette } from "./palette";
+
+export const weather = {
+  clear: {
+    position: [-26, 21, 18],
+    sunlight: palette.light.sun,
+    sun: 1.9,
+    ambient: 1.8,
+    sky: palette.light.forestSky,
+    horizon: palette.light.horizon,
+    zenith: palette.light.zenith,
+    ripple: 1,
+    haze: 0.005,
+  },
+  morning: {
+    position: [-30, 14, 10],
+    sunlight: 0xffddb1,
+    sun: 1.85,
+    ambient: 1.6,
+    sky: 0xf1d1b2,
+    horizon: 0xffdcbb,
+    zenith: 0x9cbbd1,
+    ripple: 0.65,
+    haze: 0.0055,
+  },
+  overcast: {
+    position: [-18, 29, 15],
+    sunlight: 0xe6eced,
+    sun: 0.62,
+    ambient: 2.55,
+    sky: 0xd4dcdb,
+    horizon: 0xd6dedd,
+    zenith: 0xb3c3c9,
+    ripple: 0.8,
+    haze: 0.006,
+  },
+  clearing: {
+    position: [20, 25, 15],
+    sunlight: 0xffe5c0,
+    sun: 1.75,
+    ambient: 1.65,
+    sky: 0xb8cbd1,
+    horizon: 0xe6dcc5,
+    zenith: 0x879fae,
+    ripple: 1.65,
+    haze: 0.0065,
+  },
+};

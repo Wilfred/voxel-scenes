@@ -24,14 +24,18 @@ export function createWater() {
     sky: { value: new THREE.Color() },
     sun: { value: new THREE.Vector3() },
     eye: { value: new THREE.Vector3() },
+    horizon: { value: new THREE.Color(palette.light.horizon) },
+    zenith: { value: new THREE.Color(palette.light.zenith) },
+    ripple: { value: 1 },
+    rain: { value: 0 },
     grid: { value: 1 },
     phase: { value: 0 },
   };
   const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, {
-      horizonTint: { value: new THREE.Color(palette.light.horizon) },
-      zenithTint: { value: new THREE.Color(palette.light.zenith) },
+      horizonTint: surface.horizon,
+      zenithTint: surface.zenith, ripple: surface.ripple, rain: surface.rain,
       glintTint: { value: new THREE.Color(palette.light.sunGlint) },
       seabed: surface.depth, deepWater: surface.deep, skyTint: surface.sky,
       gridScale: surface.grid, sunlight: surface.sun, viewDirection: surface.eye, wavePhase: surface.phase,
@@ -45,7 +49,7 @@ export function createWater() {
       uniform sampler2D seabed;
       uniform vec3 horizonTint, zenithTint, glintTint;
       uniform vec3 deepWater, skyTint, sunlight, viewDirection;
-      uniform float wavePhase, gridScale;
+      uniform float wavePhase, gridScale, ripple, rain;
       float hashWave(vec2 cell) {
         vec3 q = fract(vec3(cell.xyx) * 0.1031);
         q += dot(q, q.yzx + 33.33);
@@ -75,7 +79,15 @@ export function createWater() {
                  + 0.049 * waveSlope(uv + 12.1, vec2(1.4, 3.8))
                  + 0.014 * waveSlope(uv - 7.2, vec2(3.7, 8.8));
       vec2 tilt = (slope.x * wind + slope.y * across) * mix(0.20, 0.58, depthFraction);
-      vec3 waveNormal = normalize(vec3(tilt.x, 1.0, tilt.y));
+      if (rain > 0.0) {
+        vec2 rainCell = p * 0.65;
+        float age = hashWave(floor(rainCell) + wavePhase);
+        vec2 offset = fract(rainCell) - 0.5;
+        float ring = length(offset) - 0.34 * age;
+        tilt += 0.035 * normalize(offset + 0.00001) * sin(ring * 95.0) *
+          exp(-ring * ring * 620.0) * (1.0 - age);
+      }
+      vec3 waveNormal = normalize(vec3(tilt.x * ripple, 1.0, tilt.y * ripple));
       diffuseColor.rgb = deepWater;
     `).replace('#include <opaque_fragment>', `
       vec3 reflected = reflect(-viewDirection, waveNormal);

@@ -1,3 +1,7 @@
+import { dailySeed, orchardSeason } from "./day";
+import { buildMillpond } from "./millpond";
+import { weather } from "./weather";
+import { contactRays } from "./contact-rays";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { lightScene } from "./lighting";
 import { designGallery } from "./gallery";
@@ -36,11 +40,15 @@ if (!context) {
     polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
   });
   const sun = lightScene(scene);
-  const sunOffset = sun.position.clone();
+  const skyLight = scene.children.find(light => light instanceof THREE.HemisphereLight)!;
+  const weatherSelect = document.querySelector<HTMLSelectElement>("#weather")!;
+  const tracing = document.querySelector<HTMLInputElement>("#ray-trace")!;
+  let clearRays: (() => void) | undefined;
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.normalBias = 0.035;
-  let seed = 1846;
+  const today = new Date();
+  let seed = dailySeed(today);
   const sceneSelect = document.querySelector<HTMLSelectElement>("#scene")!;
   const designs = { ...defaultDesigns };
   const resolution = document.querySelector<HTMLInputElement>("#resolution")!;
@@ -84,6 +92,30 @@ if (!context) {
     renderer.setSize(width, Math.round(width * 9 / 16), false);
     renderer.render(scene, camera);
   }
+  function updateRays() {
+    clearRays?.();
+    clearRays = tracing.checked && mesh ? contactRays(mesh, surface.grid.value) : undefined;
+  }
+  function applyWeather() {
+    const preset = weather[weatherSelect.value as keyof typeof weather];
+    const coastal = sceneSelect.value === "island";
+    const sky = coastal && weatherSelect.value === "clear" ? palette.light.coastalSky : preset.sky;
+    const grid = surface.grid.value;
+    scene.background = new THREE.Color(framing.value === "model" ? palette.light.backdrop : sky);
+    scene.fog = new THREE.FogExp2(sky, preset.haze / grid);
+    sun.color.setHex(preset.sunlight);
+    sun.intensity = preset.sun;
+    skyLight.intensity = preset.ambient;
+    skyLight.color.setHex(weatherSelect.value === "clear" ? palette.light.skyLight : preset.horizon);
+    sun.position.set(preset.position[0],preset.position[1],preset.position[2]).multiplyScalar(grid);
+    surface.sun.value.copy(sun.position).normalize();
+    surface.sky.value.setHex(sky);
+    surface.horizon.value.setHex(preset.horizon);
+    surface.zenith.value.setHex(preset.zenith);
+    surface.ripple.value = preset.ripple;
+    surface.rain.value = weatherSelect.value === "clearing" ? 1 : 0;
+    renderer.shadowMap.needsUpdate = true;
+  }
   function update() {
     window.clearTimeout(pendingGrid);
     if (hillsideWater) {
@@ -107,6 +139,8 @@ if (!context) {
       island.depth.dispose();
       island = undefined;
     }
+    clearRays?.();
+    clearRays = undefined;
     if (mesh) {
       scene.remove(mesh);
       mesh.dispose();
@@ -119,8 +153,8 @@ if (!context) {
     const hill = sceneSelect.value === "hillside";
     const woodland = sceneSelect.value === "woods";
     const model = framing.value === "model";
-    const inland = hill || woodland;
-    const sky = inland ? palette.light.forestSky : palette.light.coastalSky;
+    const pond = sceneSelect.value === "millpond";
+    const inland = hill || woodland || pond;
     sea.visible = !hill;
     sea.position.set(0, 0, 0);
     sea.scale.set(grid, grid, 1);
@@ -136,6 +170,13 @@ if (!context) {
       foam = hillside.foam;
       scene.add(foam);
       cameraTarget.set(-1, model ? 3 : 5, model ? -2 : -5);
+      camera.top = 13;
+    } else if (pond) {
+      const millpond = buildMillpond(seed, model, grid, designs, orchardSeason(today));
+      mesh = millpond.mesh;
+      riverDepth = millpond.depth;
+      waterBounds = millpond.bounds;
+      cameraTarget.set(0, 1, 0);
       camera.top = 13;
     } else if (woodland) {
       const woods = buildWoods(seed, model, grid, designs);
@@ -174,26 +215,23 @@ if (!context) {
     camera.position.setFromSpherical(new THREE.Spherical(home.radius, home.phi + tilt, home.theta + yaw)).add(cameraTarget);
     orbit.update();
     renderer.shadowMap.needsUpdate = true;
-    scene.background = new THREE.Color(model ? palette.light.backdrop : sky);
-    scene.fog = new THREE.FogExp2(sky, 0.005 / grid);
-    sun.position.copy(sunOffset).multiplyScalar(grid);
     Object.assign(sun.shadow.camera, { left: -28 * grid, right: 28 * grid, top: 24 * grid, bottom: -24 * grid, far: 100 * grid });
     sun.shadow.camera.updateProjectionMatrix();
     surface.grid.value = grid;
     surface.depth.value = riverDepth ?? island?.depth ?? null;
     surface.deep.value.setHex(inland ? palette.water.river : palette.water.sea);
-    surface.sky.value.setHex(sky);
-    surface.sun.value.copy(sun.position).normalize();
+    applyWeather();
+    updateRays();
     surface.phase.value = (seed % 997) / 53;
     scene.add(mesh);
-    canvas.setAttribute("aria-label", hill ? "A hillside cottage overlooking a waterfall and its winding river" : woodland ? "A stream winding through woodland with a timber footbridge" : islandDescription);
-    generate.textContent = hill ? "New hillside" : woodland ? "New woods" : "New island";
+    canvas.setAttribute("aria-label", pond ? "An orchard track leading to a watermill beside a duck pond" : hill ? "A hillside cottage overlooking a waterfall and its winding river" : woodland ? "A stream winding through woodland with a timber footbridge" : islandDescription);
+    generate.textContent = pond ? "New millpond" : hill ? "New hillside" : woodland ? "New woods" : "New island";
     camera.lookAt(cameraTarget);
     camera.bottom = -camera.top;
     camera.right = camera.top * 16 / 9;
     camera.left = -camera.right;
     camera.updateProjectionMatrix();
-    document.querySelector("#seed")!.textContent = (hill ? "Hillside " : woodland ? "Woods " : "Island ") + seed;
+    document.querySelector("#seed")!.textContent = (pond ? "Millpond " : hill ? "Hillside " : woodland ? "Woods " : "Island ") + seed;
     preview();
   }
 
@@ -205,13 +243,15 @@ if (!context) {
     pendingGrid = window.setTimeout(update, 150);
   };
   framing.onchange = sceneSelect.onchange = update;
+  weatherSelect.onchange = () => { applyWeather(); preview(); };
+  tracing.onchange = () => { updateRays(); preview(); };
   generate.onclick = () => {
     seed = crypto.getRandomValues(new Uint32Array(1))[0];
     update();
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
     if (surface.grid.value !== Number(resolution.value) * 2) update();
-    const variant = `-${framing.value}-${resolution.value}x-p${designs.pine + 1}-b${designs.broadleaf + 1}-c${designs.cottage + 1}`;
+    const variant = `-${framing.value}-${resolution.value}x-p${designs.pine + 1}-b${designs.broadleaf + 1}-c${designs.cottage + 1}-${weatherSelect.value}${tracing.checked ? "-rays" : ""}`;
     const filename = `${sceneSelect.value}-${seed}-graphic${variant}.png`;
     renderer.setSize(2560, 1440, false);
     renderer.render(scene, camera);
@@ -229,7 +269,7 @@ if (!context) {
     preview();
   };
   const requested = new URLSearchParams(location.search).get("scene");
-  if (requested === "woods" || requested === "hillside") sceneSelect.value = requested;
+  if (requested === "millpond" || requested === "woods" || requested === "hillside") sceneSelect.value = requested;
   if (requested === "mountains") sceneSelect.value = "hillside";
   update();
   let idleTimer = 0;

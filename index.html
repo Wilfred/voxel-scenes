@@ -14,6 +14,7 @@
         <label>Scene <select id="scene">
           <option value="island">Crescent bay</option>
           <option value="woods">Woodland stream</option>
+          <option value="millpond">Orchard millpond</option>
           <option value="hillside">Hillside falls</option>
         </select></label>
         <label>Framing <select id="framing">
@@ -22,6 +23,8 @@
         </select></label>
         <label>Grid resolution <input id="resolution" type="range" min="0.75" max="5" step="0.25" value="1">
           <output id="grid-value" for="resolution">1×</output></label>
+        <label>Weather <select id="weather"><option value="clear">Clear daylight</option><option value="morning">Morning sun</option><option value="overcast">Bright overcast</option><option value="clearing">Clearing rain</option></select></label>
+        <label><input type="checkbox" id="ray-trace"> Ray-traced contact shading</label>
         <button id="generate">New island</button>
         <button id="save">Save PNG</button>
       </div>
