@@ -58,7 +58,7 @@ export const scenes: Record<string, Scene> = {
         waterBounds: island.bounds, sea: true, deepWater: palette.water.sea,
         focus: model ? new THREE.Vector3() : new THREE.Vector3(0, 1, 0),
         facade: island.facadeAngle, frontOnly: true,
-        modelTarget: new THREE.Vector3(0, -3, 0), modelHeight: 12.5, modelRise: 27, thirds: false,
+        modelTarget: new THREE.Vector3(0, -3, 0), modelHeight: 14, modelRise: 27, thirds: false,
       };
     },
   },
