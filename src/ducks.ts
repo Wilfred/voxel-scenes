@@ -2,18 +2,18 @@ import { findSite, type Elevation } from "./sites";
 import { palette } from "./palette";
 import type { Box } from "./voxels";
 
-function addBird(box: Box, x: number, z: number, heading: number, species: "gull" | "drake" | "hen") {
+export function addBird(box: Box, x: number, z: number, heading: number, species: "gull" | "drake" | "hen") {
   // The body sits partly below the waterline. Each part follows the same local X axis.
   function part(forward: number, y: number, length: number, height: number, width: number, color: number) {
     box(x + forward * Math.cos(heading), y, z - forward * Math.sin(heading),
       length, height, width, color, heading);
   }
   if (species === "gull") {
-    part(0, 0.0625, 0.875, 0.25, 0.375, palette.gull.white);
-    part(-0.1875, 0.1875, 0.625, 0.125, 0.375, palette.gull.wing);
-    part(-0.5, 0.1875, 0.125, 0.125, 0.25, palette.gull.tip);
-    part(0.3125, 0.3125, 0.25, 0.25, 0.25, palette.gull.white);
-    part(0.5, 0.3125, 0.125, 0.125, 0.125, palette.duck.bill);
+    part(0, 0.0625, 0.75, 0.25, 0.375, palette.gull.white);
+    part(-0.0625, 0.1875, 0.375, 0.125, 0.375, palette.gull.wing);
+    part(-0.3125, 0.1875, 0.125, 0.125, 0.25, palette.gull.tip);
+    part(0.25, 0.3125, 0.25, 0.25, 0.25, palette.gull.white);
+    part(0.4375, 0.3125, 0.125, 0.125, 0.125, palette.duck.bill);
     return;
   }
   const drake = species === "drake";

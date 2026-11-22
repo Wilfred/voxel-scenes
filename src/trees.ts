@@ -9,9 +9,9 @@ type Tier = [number, number, number];
 type Profile = Tier[];
 const profiles: Record<Species, [Profile, Profile][]> = {
   pine: [
-    [[[1,2,1],[3,1,3],[5,3,3],[3,2,3]], [[1,1,1],[3,1,1],[1,2,1]]],
-    [[[1,3,1],[3,1,3],[5,2,5],[3,1,5]], [[1,1,1],[3,1,3],[3,1,1]]],
-    [[[1,1,1],[3,2,3],[3,3,3],[1,2,1]], [[1,1,1],[1,2,3],[1,1,1]]],
+    [[[1,1,1],[3,2,3],[5,2,5],[3,2,3]], [[1,1,1],[3,2,1],[1,1,1]]],
+    [[[1,2,1],[3,1,3],[5,2,5],[3,1,3]], [[1,1,1],[3,1,3],[3,1,1]]],
+    [[[1,1,1],[3,2,3],[3,3,3],[1,1,1]], [[1,1,1],[1,2,3],[1,1,1]]],
     [[[1,3,1],[3,1,1],[5,2,3],[3,1,3]], [[1,2,1],[3,1,1],[1,1,1]]],
     [[[1,2,1],[3,3,3],[3,2,1],[1,2,1]], [[1,1,1],[1,3,1],[1,1,1]]],
     [[[1,1,1],[3,1,3],[5,2,3],[3,1,1]], [[1,1,1],[3,2,1],[1,1,1]]],
@@ -21,8 +21,8 @@ const profiles: Record<Species, [Profile, Profile][]> = {
     [[[1,2,1],[5,1,5],[3,2,3],[3,2,1]], [[1,1,1],[3,2,3],[1,1,3]]],
   ],
   broadleaf: [
-    [[[1,2,1],[3,1,5],[5,2,5],[5,1,3]], [[1,2,1],[3,1,1],[1,1,3]]],
-    [[[1,2,1],[3,1,3],[5,2,3],[3,1,3]], [[1,1,1],[3,1,3],[3,1,1]]],
+    [[[1,1,1],[3,1,3],[5,3,5],[3,1,3]], [[1,1,1],[3,2,3],[1,1,3]]],
+    [[[1,1,1],[3,2,3],[5,2,3],[3,2,3]], [[1,1,1],[3,1,3],[3,1,1]]],
     [[[1,3,1],[3,2,1],[3,2,3],[1,1,3]], [[1,2,1],[1,2,3],[1,1,1]]],
     [[[1,1,1],[3,2,3],[3,3,5],[3,1,3]], [[1,1,1],[1,2,3],[3,1,3]]],
     [[[1,2,1],[3,2,3],[5,2,5],[3,2,3]], [[1,1,1],[3,2,3],[1,1,1]]],
@@ -92,8 +92,15 @@ export function treePlanter(box: Box, voxel: number, designs = defaultDesigns) {
     if (!sapling) adultRoots.add(patchX + "," + patchZ);
     for (const part of parts) {
       const y = ground + (part.bottom + part.height / 2) * voxel;
-      box(x, y, z,
-        part.width * voxel, part.height * voxel, part.depth * voxel, part.color);
+      if (part.width === 5 && part.depth === 5) {
+        // Clip one leaf voxel from each corner of the widest boughs.
+        box(x, y, z, 5 * voxel, part.height * voxel, 3 * voxel, part.color);
+        for (const side of [-2, 2]) {
+          box(x, y, z + side * voxel, 3 * voxel, part.height * voxel, voxel, part.color);
+        }
+      } else {
+        box(x, y, z, part.width * voxel, part.height * voxel, part.depth * voxel, part.color);
+      }
     }
   };
 }
