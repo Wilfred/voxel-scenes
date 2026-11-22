@@ -36,14 +36,15 @@ export function buildIsland(seed: number) {
   let cottageZ = landingZ - 1.5;
   while (naturalHeight(cottageX, cottageZ) < 1.75) cottageZ -= 0.5;
   const terrace = naturalHeight(cottageX, cottageZ);
-  const cottageScale = 0.68;
-  const foundationTop = terrace + 0.16 + 0.4 * cottageScale;
-  const dockTop = 0.30;
-  const stairStart = cottageZ + 1.0;
-  const risers = Math.ceil((foundationTop - dockTop) / 0.14);
-  const stairEnd = Math.max(landingZ + 0.25, stairStart + risers * 0.21);
-  const treadDepth = (stairEnd - stairStart) / risers;
-  const rise = (foundationTop - dockTop) / risers;
+  const unit = 0.25;
+  const cottageScale = 0.75;
+  const foundationTop = terrace + 2 * unit;
+  const dockTop = unit;
+  const stairStart = cottageZ + 1;
+  const risers = (foundationTop - dockTop) / unit;
+  // Whole voxel runs reach the shoreline; every tread drops exactly one voxel.
+  const treadDepth = unit * Math.max(1, Math.ceil((landingZ + unit - stairStart) / (risers * unit)));
+  const stairEnd = stairStart + risers * treadDepth;
   function height(x: number, z: number) {
     if (Math.abs(x - cottageX) <= 1 && Math.abs(z - cottageZ) <= 0.5) return terrace;
     return naturalHeight(x, z);
@@ -61,41 +62,45 @@ export function buildIsland(seed: number) {
         && z + 0.25 >= stairStart && z - 0.25 <= stairEnd;
       if (stairCorridor) {
         const step = Math.min(risers, Math.floor((z + 0.25 - stairStart) / treadDepth) + 1);
-        h = Math.min(h, foundationTop - step * rise - 0.16);
+        h = Math.min(h, foundationTop - (step + 2) * unit);
       }
-      const top = h + 0.09;
-      box(x, (top - 0.25) / 2, z, 0.5, top + 0.25, 0.5, h < 1 ? p.beach : p.rock);
+      const top = h + unit;
+      const soilTop = h >= 1 && !stairCorridor ? h : top;
+      box(x, (soilTop - unit) / 2, z, 0.5, soilTop + unit, 0.5, h < 1 ? p.beach : p.rock);
       if (stairCorridor) continue;
       if (h < 1) continue;
-      box(x, top, z, 0.5, 0.12, 0.5, p.turf);
+      box(x, top - unit / 2, z, 0.5, unit, 0.5, p.turf);
       const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
       const density = (x < -6 ? 0.26 : 0.14) * grove;
       if (Math.hypot(x - cottageX, z - cottageZ) < 2 || random() > density) continue;
-      plantTree(x, top + 0.06, z, "pine", random() < 0.25);
+      plantTree(x, top, z, "pine", random() < 0.25);
     }
   }
 
   function cottageBox(x: number, y: number, z: number, w: number, h: number, d: number, color: number) {
-    box(cottageX + x * cottageScale, terrace + 0.16 + y * cottageScale, cottageZ + z * cottageScale,
+    box(cottageX + x * cottageScale, foundationTop + (y - 0.4) * cottageScale, cottageZ + z * cottageScale,
       w * cottageScale, h * cottageScale, d * cottageScale, color);
   }
   buildCottage(cottageBox, p.rock);
 
   const doorZ = cottageZ + cottageScale;
-  box(cottageX, foundationTop - 0.06, (doorZ + stairStart) / 2,
-    0.72, 0.12, stairStart - doorZ, 0xa7835b);
+  box(cottageX, foundationTop - unit / 2, (doorZ + stairStart) / 2,
+    1, unit, stairStart - doorZ, 0xa7835b);
   for (let i = 0; i < risers; i++) {
     const z = stairStart + (i + 0.5) * treadDepth;
-    const top = foundationTop - (i + 1) * rise;
-    box(cottageX, (top - 0.17) / 2, z, 0.62, top + 0.03, treadDepth, p.rock);
-    box(cottageX, top - 0.035, z, 0.72, 0.07, treadDepth, 0xad865a);
+    const top = foundationTop - (i + 1) * unit;
+    const stoneTop = top - unit;
+    box(cottageX, (stoneTop - unit) / 2, z, 1, stoneTop + unit, treadDepth, p.rock);
+    box(cottageX, top - unit / 2, z, 1, unit, treadDepth, 0xad865a);
   }
-  const dockLength = 1.7;
-  box(cottageX, dockTop - 0.08, stairEnd + dockLength / 2, 0.72, 0.16, dockLength, 0x926a47);
-  for (const side of [-0.29, 0.29]) {
-    const z = stairEnd + dockLength - 0.16;
-    const foot = Math.min(-0.25, naturalHeight(cottageX + side, z) - 0.3);
-    box(cottageX + side, (0.48 + foot) / 2, z, 0.13, 0.48 - foot, 0.13, 0x624832);
+  const dockLength = 1.75;
+  box(cottageX, dockTop - unit / 2, stairEnd + dockLength / 2, 1, unit, dockLength, 0x926a47);
+  for (const side of [-1, 1]) {
+    const x = cottageX + side * (0.5 + unit / 2);
+    const z = stairEnd + dockLength - unit / 2;
+    const foot = Math.min(-unit, naturalHeight(x, z) - unit);
+    const postTop = dockTop + unit;
+    box(x, (postTop + foot) / 2, z, unit, postTop - foot, unit, 0x624832);
   }
 
   // The floor mesh and the water's absorption map use the same soundings.
