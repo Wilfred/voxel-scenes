@@ -44,6 +44,9 @@ export const palette = {
     groundLight: 0xadb9bb,
   },
   harvest: { apple: 0xac5142, blossom: 0xe8cec1 },
+  // Coats and feathers of farm and woodland animals.
+  animal: { fleece: 0xe4ddd0, fur: 0x886f58, pale: 0xb9ab92, dark: 0x766048, beak: 0xb89052, comb: 0xac5142 },
+  cloth: { canvas: 0xb9ab92, dyed: 0x5a7f4e },
   gull: { white: 0xf1efe3, wing: 0xabb6b8, tip: 0x4d5657 },
   duck: {
     breast: 0xb6ac90,
