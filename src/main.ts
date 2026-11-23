@@ -9,6 +9,7 @@ import { createWater } from "./water";
 import { createSmoke } from "./smoke";
 import { createShower } from "./rain";
 import { createSky } from "./sky";
+import { islandFramingPoints, zoomToFit } from "./framing";
 import { disposeLandscape, scenes, type Landscape } from "./scenes";
 
 const canvas = document.querySelector("canvas")!;
@@ -68,6 +69,7 @@ if (!context) {
   let started = 0;
   let frame = 0;
   let cameraMoved = false;
+  let framingPoints: THREE.Vector3[] = [];
   function draw(now: number) {
     frame = 0;
     const elapsed = Math.max(0, now - started) / 1000;
@@ -81,6 +83,7 @@ if (!context) {
   }
   orbit.addEventListener("change", () => {
     cameraMoved = true;
+    if (framingPoints.length) applyZoom();
     surface.eye.value.copy(camera.position).sub(orbit.target).normalize();
     if (!frame) frame = requestAnimationFrame(draw);
   });
@@ -90,13 +93,27 @@ if (!context) {
   const zoomIn = document.querySelector<HTMLButtonElement>("#zoom-in")!;
   const zoomOut = document.querySelector<HTMLButtonElement>("#zoom-out")!;
   const zoomValue = document.querySelector<HTMLOutputElement>("#zoom-value")!;
+  function applyZoom() {
+    let fit = Infinity;
+    if (framingPoints.length) {
+      camera.zoom = 1;
+      camera.updateProjectionMatrix();
+      fit = zoomToFit(camera, framingPoints);
+    }
+    const maximum = Math.max(1, fit);
+    const last = zoomLevels.findIndex(level => level >= maximum);
+    const lastIndex = last < 0 ? zoomLevels.length - 1 : last;
+    zoomIndex = Math.min(zoomIndex, lastIndex);
+    const zoom = Math.min(zoomLevels[zoomIndex], maximum);
+    camera.zoom = zoom * Math.min(1, fit);
+    camera.updateProjectionMatrix();
+    zoomValue.value = Math.round(zoom * 100) + "%";
+    zoomIn.disabled = zoomIndex === lastIndex;
+    zoomOut.disabled = zoomIndex === 0;
+  }
   function setZoom(index: number) {
     zoomIndex = index;
-    camera.zoom = zoomLevels[index];
-    camera.updateProjectionMatrix();
-    zoomValue.value = Math.round(camera.zoom * 100) + "%";
-    zoomIn.disabled = index === zoomLevels.length - 1;
-    zoomOut.disabled = index === 0;
+    applyZoom();
     preview();
   }
   zoomIn.onclick = () => setZoom(zoomIndex + 1);
@@ -222,6 +239,7 @@ if (!context) {
     const yaw = home.radius > 0 ? orbit.getAzimuthalAngle() - home.theta : 0;
     const tilt = home.radius > 0 ? orbit.getPolarAngle() - home.phi : 0;
     landscape = entry.build({ seed, model, grid, season: orchardSeason(today), water: sea.material });
+    framingPoints = [];
     scene.add(landscape.mesh, ...landscape.extras);
     started = performance.now();
     surface.coastal.value = sceneSelect.value === "island";
@@ -292,8 +310,8 @@ if (!context) {
     orbit.saveState();
     camera.position.setFromSpherical(new THREE.Spherical(home.radius, home.phi + tilt, home.theta + yaw)).add(target);
     orbit.update();
-    camera.zoom = zoomLevels[zoomIndex];
-    camera.updateProjectionMatrix();
+    if (sceneSelect.value === "island") framingPoints = islandFramingPoints(landscape.mesh, grid, model);
+    applyZoom();
     surface.eye.value.copy(camera.position).sub(target).normalize();
 
     surface.grid.value = grid;
@@ -331,7 +349,7 @@ if (!context) {
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
     if (surface.grid.value !== Number(resolution.value) * 2) update();
     const variant = `-${framing.value}-${resolution.value}x-${weatherSelect.value}`;
-    const zoomSuffix = camera.zoom === 1 ? "" : `-zoom${Math.round(camera.zoom * 100)}`;
+    const zoomSuffix = zoomIndex === defaultZoom ? "" : `-zoom${parseInt(zoomValue.value, 10)}`;
     const filename = `${sceneSelect.value}-${seed}${variant}${zoomSuffix}.png`;
     renderer.setSize(2560, 1440, false);
     render();

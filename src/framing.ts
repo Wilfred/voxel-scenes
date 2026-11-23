@@ -1,0 +1,50 @@
+import * as THREE from "three";
+
+// Use small bounds so empty corners of the crescent don't dictate the framing.
+// Include the model's base and let the deeper seabed fade out around the Vista.
+export function islandFramingPoints(mesh: THREE.InstancedMesh, grid: number, model: boolean) {
+  const tiles = new Map<string, THREE.Box3>();
+  const unit = new THREE.Box3(new THREE.Vector3(-0.5, -0.5, -0.5), new THREE.Vector3(0.5, 0.5, 0.5));
+  const bounds = new THREE.Box3();
+  const matrix = new THREE.Matrix4();
+  const tileSize = 2 * grid;
+  const framingFloor = model ? -Infinity : -1.5;
+  mesh.traverse(batch => {
+    if (!(batch instanceof THREE.InstancedMesh)) return;
+    for (let i = 0; i < batch.count; i++) {
+      batch.getMatrixAt(i, matrix);
+      const x = matrix.elements[12];
+      const y = matrix.elements[13];
+      const z = matrix.elements[14];
+      bounds.copy(unit).applyMatrix4(matrix);
+      if (bounds.max.y < framingFloor) continue;
+      bounds.min.y = Math.max(bounds.min.y, framingFloor);
+      const key = `${Math.floor(x / tileSize)},${Math.floor(y / tileSize)},${Math.floor(z / tileSize)}`;
+      const tile = tiles.get(key);
+      if (tile) tile.union(bounds);
+      else tiles.set(key, bounds.clone());
+    }
+  });
+  const points: THREE.Vector3[] = [];
+  for (const { min, max } of tiles.values()) {
+    for (const x of [min.x, max.x]) {
+      for (const y of [min.y, max.y]) {
+        for (const z of [min.z, max.z]) points.push(new THREE.Vector3(x, y, z));
+      }
+    }
+  }
+  return points;
+}
+
+export function zoomToFit(camera: THREE.Camera, points: readonly THREE.Vector3[]) {
+  camera.updateMatrixWorld();
+  const viewProjection = new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+  const projected = new THREE.Vector3();
+  let extent = 0;
+  for (const point of points) {
+    projected.copy(point).applyMatrix4(viewProjection);
+    extent = Math.max(extent, Math.abs(projected.x), Math.abs(projected.y));
+  }
+  // Leave six percent of the image on each edge.
+  return 0.88 / extent;
+}
