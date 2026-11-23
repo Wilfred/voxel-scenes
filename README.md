@@ -23,14 +23,14 @@ The range is 0.75× to 5× in quarter steps. At 5×, five times as many cells fi
 across the wallpaper. The export remains 2560 × 1440.
 Each landscape draws from four cottages, ten pines and ten broadleaves using its seed, so
 every design appears across the days. The asset library shows them all, each
-tree with its adult and sapling. Use the − and + buttons to frame
-the current landscape at 50% to 300%. Double-click the canvas or press Home
-while it has focus to restore the opening camera angle and zoom.
+tree with its adult and sapling. Scroll over the preview or use the − and +
+buttons to zoom from 50% to 300%. Click Reset camera, double-click the preview,
+or press Home while the preview has focus to restore the opening view.
 The controls fade after a few idle seconds and return when you move. Press ×
-to keep them hidden for a minute while you turn the scene.
+to hide them for a minute, or press Space to bring them back sooner.
 
 The opening seed comes from the local calendar date. Reload to revisit today's
-landscape, or use the New button beside Save PNG for a random seed. The `scene`,
+landscape, or use the New button in the top bar for a random seed. The `scene`,
 `framing`, `weather` and `seed` URL parameters open a particular composition,
 for example `?scene=woods&framing=model&weather=overcast&seed=123`. In Orchard millpond, follow
 the headrace past the waterwheel to the duck pond and the cart track to the

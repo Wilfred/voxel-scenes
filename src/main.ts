@@ -25,6 +25,7 @@ const vistaFov = 36;
 if (!context) {
   canvas.hidden = true;
   canvas.style.display = "none";
+  document.querySelector<HTMLElement>(".scene-controls")!.hidden = true;
   toolbox.hidden = true;
   toolbox.style.display = "none";
   status.textContent = "This preview requires WebGL 2. Check that hardware acceleration is enabled in your browser.";
@@ -93,6 +94,17 @@ if (!context) {
     orbit.reset();
     setZoom(defaultZoom);
   }
+  document.querySelector<HTMLButtonElement>("#reset-camera")!.onclick = resetView;
+  canvas.addEventListener(
+    "wheel",
+    event => {
+      if (event.ctrlKey || event.deltaY === 0) return;
+      event.preventDefault();
+      const next = zoomIndex - Math.sign(event.deltaY);
+      if (next >= 0 && next < zoomLevels.length) setZoom(next);
+    },
+    { passive: false },
+  );
   canvas.ondblclick = resetView;
   canvas.onkeydown = event => {
     switch (event.key) {
@@ -338,6 +350,12 @@ if (!context) {
     document.body.classList.add("idle");
     canvas.focus();
   };
+  document.addEventListener("keydown", event => {
+    if (event.code !== "Space" || event.defaultPrevented || performance.now() >= quietUntil) return;
+    event.preventDefault();
+    quietUntil = 0;
+    wakeControls();
+  });
   for (const event of ["pointermove", "pointerdown", "keydown", "focusin", "input", "change", "wheel"]) {
     document.addEventListener(event, wakeControls, { passive: true });
   }
