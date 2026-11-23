@@ -9,19 +9,38 @@ export function at(box: Box, x: number, y: number, z: number, turn = false): Box
     box(x + (turn ? c : a), y + b, z + (turn ? -a : c), w, h, d, color, yaw + (turn ? Math.PI / 2 : 0));
 }
 
+// Lay out a small model on its own lattice of `unit`-sized cells, giving the
+// opposite corners of each block in cells. One lattice keeps one detail scale.
+function lattice(box: Box, unit: number) {
+  return (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, color: number) =>
+    box(
+      ((x0 + x1) / 2) * unit,
+      ((y0 + y1) / 2) * unit,
+      ((z0 + z1) / 2) * unit,
+      (x1 - x0) * unit,
+      (y1 - y0) * unit,
+      (z1 - z0) * unit,
+      color,
+    );
+}
+
+// Farm and woodland animals face +x. Sheep and deer use eighth-metre cells.
 export const sheep: Model = box => {
-  for (const x of [-0.2, 0.2]) for (const z of [-0.125, 0.125]) box(x, 0.09, z, 0.09, 0.18, 0.09, p.animal.dark);
-  box(0, 0.3, 0, 0.65, 0.35, 0.38, p.animal.fleece);
-  box(0.32, 0.36, 0, 0.22, 0.22, 0.2, p.animal.dark);
-  box(0.28, 0.445, 0, 0.125, 0.07, 0.32, p.animal.dark);
+  const cell = lattice(box, 1 / 16);
+  for (const x of [-3.5, 2.5]) for (const z of [-1, 1]) cell(x - 0.5, 0, z - 0.5, x + 0.5, 2, z + 0.5, p.animal.dark);
+  cell(-5, 2, -2.5, 4, 7, 2.5, p.animal.fleece);
+  cell(4, 3, -1.5, 7, 6, 1.5, p.animal.dark);
+  for (const z of [-2, 2]) cell(4, 5, z - 0.5, 5, 6, z + 0.5, p.animal.dark);
 };
+// A roe deer: long legs, an upright neck, large ears and a pale rump.
 export const deer: Model = box => {
-  for (const x of [-0.23, 0.23]) for (const z of [-0.09, 0.09]) box(x, 0.17, z, 0.08, 0.34, 0.08, p.animal.dark);
-  box(0, 0.45, 0, 0.66, 0.27, 0.24, p.animal.fur);
-  box(0.27, 0.64, 0, 0.16, 0.26, 0.16, p.animal.fur);
-  box(0.37, 0.79, 0, 0.25, 0.15, 0.16, p.animal.fur);
-  for (const z of [-0.09, 0.09]) box(0.29, 0.9, z, 0.09, 0.16, 0.07, p.animal.dark);
-  box(-0.31, 0.5, 0, 0.12, 0.16, 0.18, p.animal.pale);
+  const cell = lattice(box, 1 / 16);
+  for (const x of [-3.5, 2.5]) for (const z of [-1, 1]) cell(x - 0.5, 0, z - 0.5, x + 0.5, 4, z + 0.5, p.animal.dark);
+  cell(-4, 4, -1.5, 4, 7, 1.5, p.animal.fur);
+  cell(3, 7, -0.5, 4, 9, 0.5, p.animal.fur);
+  cell(3, 9, -0.5, 6, 11, 0.5, p.animal.fur);
+  for (const z of [-1, 1]) cell(3, 11, z - 0.5, 4, 12, z + 0.5, p.animal.dark);
+  cell(-5, 5, -0.5, -4, 7, 0.5, p.animal.pale);
 };
 export const creel: Model = box => {
   for (const x of [-0.21, 0.21]) box(x, 0.14, 0, 0.08, 0.28, 0.36, p.wood);
@@ -29,19 +48,23 @@ export const creel: Model = box => {
   box(0, 0.04, 0, 0.36, 0.08, 0.24, p.ground.soil);
   box(0, 0.31, 0, 0.08, 0.06, 0.36, p.cloth.canvas);
 };
+// Rabbits and hens use sixteenth-metre cells.
 export const rabbit: Model = box => {
-  box(0, 0.1, 0, 0.26, 0.2, 0.16, p.animal.fur);
-  box(0.13, 0.19, 0, 0.13, 0.13, 0.13, p.animal.fur);
-  for (const z of [-0.045, 0.045]) box(0.1, 0.32, z, 0.06, 0.16, 0.045, p.animal.fur);
-  box(-0.14, 0.13, 0, 0.075, 0.08, 0.08, p.animal.pale);
+  const cell = lattice(box, 1 / 32);
+  cell(-3, 0, -1.5, 2, 3, 1.5, p.animal.fur);
+  cell(2, 2, -1.5, 5, 5, 1.5, p.animal.fur);
+  for (const z of [-1, 1]) cell(2, 5, z - 0.5, 3, 9, z + 0.5, p.animal.fur);
+  cell(-4, 1, -0.5, -3, 3, 0.5, p.animal.pale);
 };
 export const chicken: Model = box => {
-  box(0, 0.055, 0, 0.09, 0.11, 0.12, p.animal.beak);
-  box(0, 0.18, 0, 0.28, 0.19, 0.18, p.animal.pale);
-  box(-0.145, 0.24, 0, 0.09, 0.18, 0.14, p.animal.dark);
-  box(0.12, 0.3, 0, 0.14, 0.18, 0.13, p.animal.pale);
-  box(0.12, 0.405, 0, 0.09, 0.04, 0.06, p.animal.comb);
-  box(0.207, 0.31, 0, 0.045, 0.05, 0.07, p.animal.beak);
+  const cell = lattice(box, 1 / 32);
+  for (const z of [-1, 1]) cell(-0.5, 0, z - 0.5, 0.5, 2, z + 0.5, p.animal.beak);
+  cell(-2.5, 2, -1.5, 2.5, 6, 1.5, p.animal.pale);
+  cell(-3.5, 4, -1.5, -2.5, 8, 1.5, p.animal.dark);
+  cell(-2.5, 6, -1.5, -1.5, 8, 1.5, p.animal.dark);
+  cell(1.5, 6, -0.5, 3.5, 9, 0.5, p.animal.pale);
+  cell(1.5, 9, -0.5, 3.5, 10, 0.5, p.animal.comb);
+  cell(3.5, 7, -0.5, 4.5, 8, 0.5, p.animal.beak);
 };
 
 export const crate: Model = box => {
