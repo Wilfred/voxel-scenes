@@ -11,16 +11,14 @@
       <header>
         <h1>Voxel Scenes</h1>
         <span id="seed"></span><a href="./assets.html">Asset library</a>
-        <button id="hide-controls" aria-label="Hide controls" title="Hide controls for a minute">×</button>
-      </header>
-      <canvas
-        tabindex="0"
-        title="Drag or use the arrow keys to rotate. Double-click or press Home to reset."
-        role="img"
-        aria-label="A crescent bay with a wooded ridge and a cottage above the beach"
-      ></canvas>
-      <div class="toolbox">
-        <div class="controls">
+        <button
+          id="hide-controls"
+          aria-label="Hide controls"
+          title="Hide controls for a minute. Press Space to show them."
+        >
+          ×
+        </button>
+        <div class="scene-controls">
           <label
             >Scene
             <select id="scene">
@@ -29,22 +27,6 @@
               <option value="millpond">Orchard millpond</option>
               <option value="hillside">Hillside falls</option>
             </select></label
-          >
-          <label
-            >Framing
-            <select id="framing">
-              <option value="vista">Vista</option>
-              <option value="model">Rectangular model</option>
-            </select></label
-          >
-          <div class="zoom" role="group" aria-label="Camera zoom">
-            <button id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
-            <output id="zoom-value" aria-label="Zoom level">100%</output>
-            <button id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
-          </div>
-          <label
-            >Grid resolution <input id="resolution" type="range" min="0.75" max="5" step="0.25" value="1" />
-            <output id="grid-value" for="resolution">1×</output></label
           >
           <label
             >Weather
@@ -59,6 +41,33 @@
             </select></label
           >
           <button id="generate">New island</button>
+        </div>
+      </header>
+      <canvas
+        tabindex="0"
+        title="Drag or use the arrow keys to rotate. Scroll to zoom. Double-click or press Home to reset."
+        role="img"
+        aria-label="A crescent bay with a wooded ridge and a cottage above the beach"
+      ></canvas>
+      <div class="toolbox">
+        <div class="controls">
+          <label
+            >Framing
+            <select id="framing">
+              <option value="vista">Vista</option>
+              <option value="model">Rectangular model</option>
+            </select></label
+          >
+          <div class="zoom" role="group" aria-label="Camera zoom">
+            <button id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+            <output id="zoom-value" aria-label="Zoom level">100%</output>
+            <button id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+          </div>
+          <button id="reset-camera">Reset camera</button>
+          <label
+            >Grid resolution <input id="resolution" type="range" min="0.75" max="5" step="0.25" value="1" />
+            <output id="grid-value" for="resolution">1×</output></label
+          >
           <button id="save">Save PNG</button>
         </div>
       </div>
