@@ -26,8 +26,9 @@ every design appears across the days. The asset library shows them all, each
 tree with its adult and sapling. Scroll over the preview or use the − and +
 buttons to zoom from 50% to 300%. Click Reset camera, double-click the preview,
 or press Home while the preview has focus to restore the opening view.
-The controls fade after a few idle seconds and return when you move. Press ×
-to hide them for a minute, or press Space to bring them back sooner.
+The controls fade after a few idle seconds and return when you move. Press Space
+to toggle them at any time. Hiding them with Space or × keeps them out of the
+way for a minute while you move around.
 
 The opening seed comes from the local calendar date. Reload to revisit today's
 landscape, or use the New button in the top bar for a random seed. The `scene`,

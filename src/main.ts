@@ -376,19 +376,29 @@ if (!context) {
     clearTimeout(idleTimer);
     idleTimer = window.setTimeout(() => document.body.classList.add("idle"), 3200);
   }
-  document.querySelector<HTMLButtonElement>("#hide-controls")!.onclick = () => {
+  function hideControls() {
     quietUntil = performance.now() + quietPeriod;
     clearTimeout(idleTimer);
     document.body.classList.add("idle");
     canvas.focus();
-  };
+  }
+  document.querySelector<HTMLButtonElement>("#hide-controls")!.onclick = hideControls;
   document.addEventListener("keydown", event => {
-    if (event.code !== "Space" || event.defaultPrevented || performance.now() >= quietUntil) return;
+    if (event.code !== "Space") {
+      wakeControls(event);
+      return;
+    }
+    if (event.defaultPrevented) return;
     event.preventDefault();
-    quietUntil = 0;
-    wakeControls();
+    if (event.repeat) return;
+    if (document.body.classList.contains("idle")) {
+      quietUntil = 0;
+      wakeControls();
+    } else {
+      hideControls();
+    }
   });
-  for (const event of ["pointermove", "pointerdown", "keydown", "focusin", "input", "change", "wheel"]) {
+  for (const event of ["pointermove", "pointerdown", "focusin", "input", "change", "wheel"]) {
     document.addEventListener(event, wakeControls, { passive: true });
   }
   wakeControls();
