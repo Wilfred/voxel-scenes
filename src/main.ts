@@ -18,9 +18,8 @@ const context = canvas.getContext("webgl2", { antialias: true });
 
 // The vista camera stands back from its focus in proportion to the scene's
 // model frame and the grid, so a larger grid shows more land at the same
-// apparent size. It looks down at this pitch through a narrow lens.
+// apparent size. It uses the model's viewing direction through a narrow lens.
 const vistaDistance = 3.1;
-const vistaPitch = THREE.MathUtils.degToRad(13);
 const vistaFov = 36;
 
 if (!context) {
@@ -38,8 +37,8 @@ if (!context) {
   renderer.shadowMap.type = THREE.PCFShadowMap;
   const scene = new THREE.Scene();
   const target = new THREE.Vector3();
-  // A rectangular model reads as a miniature in parallel projection. A vista
-  // needs perspective so the land can recede into haze under an open sky.
+  // A rectangular model reads as a miniature in parallel projection. Vista
+  // uses perspective so the land can recede into haze.
   const modelCamera = new THREE.OrthographicCamera();
   const vistaCamera = new THREE.PerspectiveCamera(vistaFov, 16 / 9);
   let camera: THREE.OrthographicCamera | THREE.PerspectiveCamera = vistaCamera;
@@ -252,13 +251,13 @@ if (!context) {
     // Orbit the front and both front corners while keeping the door joined to its path.
     orbit.minAzimuthAngle = landscape.frontOnly ? facade - Math.PI * 0.38 : -Infinity;
     orbit.maxAzimuthAngle = landscape.frontOnly ? facade + Math.PI * 0.38 : Infinity;
-    const offset = new THREE.Vector3(16, model ? (landscape.modelRise ?? 30) : 0, 40).applyAxisAngle(
+    const offset = new THREE.Vector3(16, landscape.modelRise ?? 30, 40).applyAxisAngle(
       new THREE.Vector3(0, 1, 0),
       facade,
     );
+    orbit.minPolarAngle = 0.3;
     if (model) {
       target.copy(landscape.modelTarget);
-      orbit.minPolarAngle = 0.3;
       orbit.maxPolarAngle = 1.02;
       const top = landscape.modelHeight * grid;
       Object.assign(modelCamera, {
@@ -273,8 +272,7 @@ if (!context) {
     } else {
       const distance = vistaDistance * landscape.modelHeight * grid;
       const azimuth = Math.atan2(offset.x, offset.z);
-      offset.setFromSphericalCoords(distance, Math.PI / 2 - vistaPitch, azimuth);
-      orbit.minPolarAngle = Math.PI / 2 - THREE.MathUtils.degToRad(34);
+      offset.setLength(distance);
       orbit.maxPolarAngle = Math.PI / 2 - THREE.MathUtils.degToRad(12);
       target.copy(landscape.focus);
       if (landscape.thirds) {
