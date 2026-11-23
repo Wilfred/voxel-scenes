@@ -1,3 +1,4 @@
+import { Vector3 } from "three";
 import { casement, masonryCourses, pitchedRoof, type Roof } from "./building";
 import { masonry } from "./scale";
 import { palette } from "./palette";
@@ -19,7 +20,7 @@ export function cottageDoor(design: number) {
 
 export function buildCottage(box: Box, design = 0) {
   const house = houses[design];
-  const { plaster, tile, smoke } = palette.cottage;
+  const { plaster, tile } = palette.cottage;
   const wood = palette.wood;
   const stone = palette.ground.stone;
   const bricks = masonryCourses(box);
@@ -60,7 +61,5 @@ export function buildCottage(box: Box, design = 0) {
   }
   pitchedRoof(bricks, house.roof, 8, 6, 6, house.tiers + 1, wall);
   bricks(house.chimney, 8, -2, 2, 5, 2, stone);
-  for (let i = 0; i < 3; i++) bricks(house.chimney + i, 14 + i * 2, -2, 1, 1, 1, smoke);
-  // A smaller, higher puff drifts downwind as the smoke thins.
-  bricks(house.chimney + 3.25, 20.25, -1.75, 0.5, 0.5, 0.5, smoke);
+  return new Vector3((house.chimney + 1) * masonry, 13 * masonry, -masonry);
 }

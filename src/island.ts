@@ -257,7 +257,12 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
       color,
     );
   }
-  buildCottage(cottageBox, designs.cottage);
+  const outlet = buildCottage(cottageBox, designs.cottage);
+  const chimney = new THREE.Vector3(
+    centreX + outlet.x * sideX + outlet.z * forwardX,
+    foundationTop + outlet.y,
+    centreZ + outlet.x * sideZ + outlet.z * forwardZ,
+  );
   shoreStairs(box, route, foundationTop, risers);
   const end = route[route.length - 1];
   // Prefer a straight pier, provided its entire deck is over open water.
@@ -348,6 +353,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   }));
   return {
     mesh,
+    chimney,
     routes: [steps],
     floor,
     depth,

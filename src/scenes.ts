@@ -19,6 +19,7 @@ export type Options = {
 export type Landscape = {
   mesh: ReturnType<typeof buildWoods>["mesh"];
   depth: DepthMap;
+  chimney?: THREE.Vector3;
   // Shown alongside the voxels and disposed with them.
   extras: THREE.Mesh[];
   // The bounded water surface of a rectangular model, when it has one.
@@ -53,6 +54,7 @@ export const scenes: Record<string, Scene> = {
       const island = buildIsland(seed, model, grid);
       return {
         mesh: island.mesh,
+        chimney: island.chimney,
         depth: island.depth,
         extras: [island.floor],
         waterBounds: island.bounds,
@@ -120,6 +122,7 @@ export const scenes: Record<string, Scene> = {
       surface.receiveShadow = true;
       return {
         mesh: hillside.mesh,
+        chimney: hillside.chimney,
         depth: hillside.depth,
         extras: [surface, hillside.foam],
         sea: false,

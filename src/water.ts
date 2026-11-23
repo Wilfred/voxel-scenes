@@ -36,6 +36,7 @@ export function createWater(skyMap: THREE.CubeTexture) {
     ripple: { value: 1 },
     rain: { value: 0 },
     grid: { value: 1 },
+    drift: { value: 0 },
     phase: { value: 0 },
   };
   const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
@@ -51,6 +52,7 @@ export function createWater(skyMap: THREE.CubeTexture) {
       gridScale: surface.grid,
       sunlight: surface.sun,
       viewDirection: surface.eye,
+      waveDrift: surface.drift,
       wavePhase: surface.phase,
     });
     shader.vertexShader =
@@ -69,7 +71,7 @@ export function createWater(skyMap: THREE.CubeTexture) {
       uniform sampler2D seabed;
       uniform vec3 glintTint;
       uniform vec3 deepWater, sunlight, viewDirection;
-      uniform float wavePhase, gridScale, ripple, rain, depthExtent;
+      uniform float waveDrift, wavePhase, gridScale, ripple, rain, depthExtent;
       float hashWave(vec2 cell) {
         vec3 q = fract(vec3(cell.xyx) * 0.1031);
         q += dot(q, q.yzx + 33.33);
@@ -102,7 +104,7 @@ export function createWater(skyMap: THREE.CubeTexture) {
       float depthFraction = texture2D(seabed, p / depthExtent + 0.5).r;
       vec2 wind = vec2(0.92, 0.392);
       vec2 across = vec2(-wind.y, wind.x);
-      vec2 uv = vec2(dot(p, wind), dot(p, across)) + wavePhase;
+      vec2 uv = vec2(dot(p, wind), dot(p, across)) + wavePhase - vec2(waveDrift, 0.0);
       // Fade each octave before its wavelength approaches two pixels.
       vec2 footprint = fwidth(uv);
       vec2 slope = 0.16 * waveOctave(uv, vec2(0.35, 0.6), footprint)

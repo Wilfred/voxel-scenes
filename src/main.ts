@@ -6,6 +6,7 @@ import { lightScene } from "./lighting";
 import { palette } from "./palette";
 import * as THREE from "three";
 import { createWater } from "./water";
+import { createSmoke } from "./smoke";
 import { createShower } from "./rain";
 import { createSky } from "./sky";
 import { disposeLandscape, scenes, type Landscape } from "./scenes";
@@ -45,7 +46,8 @@ if (!context) {
   const sky = createSky(renderer);
   const { sea, surface, rays } = createWater(sky.texture);
   const rain = createShower();
-  scene.add(sea, rain.drops);
+  const smoke = createSmoke();
+  scene.add(sea, rain.drops, smoke.plume);
 
   const sun = lightScene(scene);
   const skyLight = scene.children.find(light => light instanceof THREE.HemisphereLight)!;
@@ -64,14 +66,20 @@ if (!context) {
   const home = new THREE.Spherical(0);
   const orbit = new OrbitControls<THREE.Camera>(camera, canvas);
   orbit.enableZoom = orbit.enablePan = false;
+  let started = 0;
   let frame = 0;
+  function draw(now: number) {
+    frame = 0;
+    const elapsed = Math.max(0, now - started) / 1000;
+    const coastal = sceneSelect.value === "island";
+    surface.drift.value = coastal ? elapsed * 0.18 : 0;
+    if (smoke.plume.visible) smoke.update(elapsed);
+    renderer.render(scene, camera);
+    if (coastal || smoke.plume.visible) frame = requestAnimationFrame(draw);
+  }
   orbit.addEventListener("change", () => {
     surface.eye.value.copy(camera.position).sub(orbit.target).normalize();
-    if (!frame)
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        renderer.render(scene, camera);
-      });
+    if (!frame) frame = requestAnimationFrame(draw);
   });
   const zoomLevels = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 2.5, 3];
   const defaultZoom = zoomLevels.indexOf(1);
@@ -204,6 +212,14 @@ if (!context) {
     const tilt = home.radius > 0 ? orbit.getPolarAngle() - home.phi : 0;
     landscape = entry.build({ seed, model, grid, season: orchardSeason(today), water: sea.material });
     scene.add(landscape.mesh, ...landscape.extras);
+    started = performance.now();
+    surface.drift.value = 0;
+    smoke.plume.visible = !!landscape.chimney;
+    if (landscape.chimney) {
+      smoke.plume.position.copy(landscape.chimney);
+      smoke.update(0);
+    }
+    if (!frame) frame = requestAnimationFrame(draw);
     sea.visible = landscape.sea;
     sea.position.set(0, 0, 0);
     sea.scale.set(grid, grid, 1);

@@ -85,9 +85,9 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
     [pathX, cabinZ + 2],
     [landingX, landingZ],
   ]);
-  buildCottage((x, y, z, w, h, d, color) => {
+  const chimney = buildCottage((x, y, z, w, h, d, color) => {
     box(cabinX + x, floor + y, cabinZ + z, w, h, d, color);
-  }, designs.cottage);
+  }, designs.cottage).add(new THREE.Vector3(cabinX, floor, cabinZ));
   // The stack spans exactly two cells. Both must support the cut ends,
   // outside the cottage walls and away from the walked route.
   const stack = findSite(cabinX - 3.5, cabinX + 3.5, cabinZ - 3, cabinZ + 3, 1, (x, z) => {
@@ -296,6 +296,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
   foam.renderOrder = 2;
   return {
     mesh: buildMesh(),
+    chimney,
     routes: trail.routes,
     focus: new THREE.Vector3(cabinX, floor, cabinZ),
     water,
