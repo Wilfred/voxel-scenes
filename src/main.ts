@@ -68,16 +68,20 @@ if (!context) {
   orbit.enableZoom = orbit.enablePan = false;
   let started = 0;
   let frame = 0;
+  let cameraMoved = false;
   function draw(now: number) {
     frame = 0;
     const elapsed = Math.max(0, now - started) / 1000;
     const coastal = sceneSelect.value === "island";
-    surface.drift.value = coastal ? elapsed * 0.18 : 0;
+    surface.drift.value = coastal ? elapsed * 0.65 : 0;
     if (smoke.plume.visible) smoke.update(elapsed);
-    renderer.render(scene, camera);
-    if (coastal || smoke.plume.visible) frame = requestAnimationFrame(draw);
+    const cloudsMoved = sky.drift(elapsed);
+    if (cloudsMoved || coastal || smoke.plume.visible || cameraMoved) renderer.render(scene, camera);
+    cameraMoved = false;
+    frame = requestAnimationFrame(draw);
   }
   orbit.addEventListener("change", () => {
+    cameraMoved = true;
     surface.eye.value.copy(camera.position).sub(orbit.target).normalize();
     if (!frame) frame = requestAnimationFrame(draw);
   });
@@ -213,6 +217,7 @@ if (!context) {
     landscape = entry.build({ seed, model, grid, season: orchardSeason(today), water: sea.material });
     scene.add(landscape.mesh, ...landscape.extras);
     started = performance.now();
+    surface.coastal.value = sceneSelect.value === "island";
     surface.drift.value = 0;
     smoke.plume.visible = !!landscape.chimney;
     if (landscape.chimney) {

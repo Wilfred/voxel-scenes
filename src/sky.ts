@@ -43,6 +43,16 @@ export function createSky(renderer: THREE.WebGLRenderer) {
   const matrix = new THREE.Matrix4();
   scene.add(clouds);
   let previous = "";
+  let lastCloudFrame = -1;
+  // The distant layer moves less than a pixel between cube map updates.
+  function drift(seconds: number) {
+    const frame = Math.floor(seconds);
+    if (frame === lastCloudFrame) return false;
+    lastCloudFrame = frame;
+    clouds.rotation.y = frame * 0.00009;
+    camera.update(renderer, scene);
+    return true;
+  }
   function update(seed: number, preset: (typeof weather)[keyof typeof weather], horizon: number) {
     const key = [seed, preset.sky, horizon].join(",");
     if (key === previous) return;
@@ -81,7 +91,8 @@ export function createSky(renderer: THREE.WebGLRenderer) {
     clouds.count = count;
     clouds.instanceMatrix.needsUpdate = true;
     clouds.computeBoundingSphere();
-    camera.update(renderer, scene);
+    lastCloudFrame = -1;
+    drift(0);
   }
-  return { texture: target.texture, update };
+  return { texture: target.texture, update, drift };
 }

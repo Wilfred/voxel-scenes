@@ -16,7 +16,7 @@ export function createSmoke() {
   plume.add(...puffs);
   function update(seconds: number) {
     puffs.forEach((puff, i) => {
-      const age = (seconds / 5 + i / puffs.length) % 1;
+      const age = (seconds / 7 + i / puffs.length) % 1;
       puff.position.set(1.2 * age * age, 2.2 * age, 0.16 * Math.sin(age * 5));
       puff.scale.setScalar(0.7 + 0.8 * age);
       puff.material.opacity = 0.85 * Math.min(age * 12, 1) * (1 - age * age);

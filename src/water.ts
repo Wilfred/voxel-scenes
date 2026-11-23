@@ -36,6 +36,7 @@ export function createWater(skyMap: THREE.CubeTexture) {
     ripple: { value: 1 },
     rain: { value: 0 },
     grid: { value: 1 },
+    coastal: { value: false },
     drift: { value: 0 },
     phase: { value: 0 },
   };
@@ -52,6 +53,7 @@ export function createWater(skyMap: THREE.CubeTexture) {
       gridScale: surface.grid,
       sunlight: surface.sun,
       viewDirection: surface.eye,
+      coastal: surface.coastal,
       waveDrift: surface.drift,
       wavePhase: surface.phase,
     });
@@ -66,7 +68,7 @@ export function createWater(skyMap: THREE.CubeTexture) {
       `
       uniform samplerCube skyMap;
       uniform sampler2D rayColors;
-      uniform bool tracingEnabled;
+      uniform bool tracingEnabled, coastal;
       varying vec3 waterPoint, waterNormal;
       uniform sampler2D seabed;
       uniform vec3 glintTint;
@@ -111,6 +113,15 @@ export function createWater(skyMap: THREE.CubeTexture) {
                  + 0.049 * waveOctave(uv + 12.1, vec2(1.1, 2.0), footprint)
                  + 0.014 * waveOctave(uv - 7.2, vec2(3.7, 8.8), footprint);
       vec2 tilt = (slope.x * wind + slope.y * across) * mix(0.10, 0.30, depthFraction);
+      // Short, broken crests catch light even where the sky reflection is uniform.
+      float crest = 0.0;
+      if (coastal) {
+        float phase = 2.6 * uv.x + 1.8 * sin(0.76 * uv.y + 0.28 * uv.x);
+        float resolved = 1.0 - smoothstep(0.5, 2.4, fwidth(phase));
+        float crestMask = smoothstep(-0.45, 0.8, sin(0.91 * uv.y + sin(0.48 * uv.x)));
+        crest = resolved * crestMask * pow(0.5 + 0.5 * cos(phase), 5.0);
+        tilt += wind * (0.032 * resolved * sin(phase));
+      }
       if (rain > 0.0) {
         vec2 rainCell = p * 0.65;
         float age = hashWave(floor(rainCell) + wavePhase);
@@ -150,6 +161,7 @@ export function createWater(skyMap: THREE.CubeTexture) {
       diffuseColor.a = fresnel + (1.0 - fresnel) * body;
       outgoingLight = (outgoingLight * body * (1.0 - fresnel) + skyLight * fresnel + glintTint * sparkle)
                     / max(diffuseColor.a, 0.001);
+      outgoingLight += glintTint * (0.045 * crest * ripple);
       #include <opaque_fragment>
     `,
         );
