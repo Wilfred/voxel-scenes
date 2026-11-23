@@ -73,7 +73,7 @@ if (!context) {
   function draw(now: number) {
     frame = 0;
     const elapsed = Math.max(0, now - started) / 1000;
-    const coastal = sceneSelect.value === "island";
+    const coastal = landscape?.coastal ?? false;
     surface.drift.value = coastal ? elapsed * 0.24 : 0;
     if (smoke.plume.visible) smoke.update(elapsed);
     const cloudsMoved = sky.drift(elapsed);
@@ -181,7 +181,7 @@ if (!context) {
   }
   function applyWeather() {
     const preset = weather[weatherSelect.value as keyof typeof weather];
-    const coastal = sceneSelect.value === "island";
+    const coastal = landscape?.coastal ?? false;
     const horizon = coastal && weatherSelect.value === "clear" ? palette.light.coastalSky : preset.sky;
     const grid = surface.grid.value;
     const model = camera === modelCamera;
@@ -248,7 +248,7 @@ if (!context) {
     framingPoints = [];
     scene.add(landscape.mesh, ...landscape.extras);
     started = performance.now();
-    surface.coastal.value = sceneSelect.value === "island";
+    surface.coastal.value = landscape.coastal ?? false;
     surface.drift.value = 0;
     smoke.plume.visible = !!landscape.chimney;
     if (landscape.chimney) {

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { buildHillside } from "./hillside";
 import { buildIsland } from "./island";
+import type { IslandKind } from "./islands";
 import { buildMillpond } from "./millpond";
 import type { orchardSeason } from "./day";
 import { palette } from "./palette";
@@ -26,6 +27,8 @@ export type Landscape = {
   waterBounds?: { x: number; z: number; width: number; depth: number };
   vistaSeaExtent?: number;
   sea: boolean;
+  // Open sea under a coastal sky.
+  coastal?: boolean;
   deepWater: number;
   // The building or crossing the eye should settle on.
   focus: THREE.Vector3;
@@ -47,12 +50,12 @@ type Scene = {
   build: (options: Options) => Landscape;
 };
 
-export const scenes: Record<string, Scene> = {
-  island: {
-    name: "Island",
-    description: "A palm-fringed crescent bay with a wooded ridge and a cottage above the beach",
+function islandScene(name: string, description: string, kind: IslandKind): Scene {
+  return {
+    name,
+    description,
     build({ seed, model, grid }) {
-      const island = buildIsland(seed, model, grid);
+      const island = buildIsland(seed, model, grid, undefined, kind);
       return {
         mesh: island.mesh,
         chimney: island.chimney,
@@ -61,6 +64,7 @@ export const scenes: Record<string, Scene> = {
         waterBounds: island.bounds,
         vistaSeaExtent: island.seaExtent,
         sea: true,
+        coastal: true,
         deepWater: palette.water.sea,
         focus: model ? new THREE.Vector3() : new THREE.Vector3(0, 1, 0),
         facade: island.facadeAngle,
@@ -71,7 +75,21 @@ export const scenes: Record<string, Scene> = {
         thirds: false,
       };
     },
-  },
+  };
+}
+
+export const scenes: Record<string, Scene> = {
+  island: islandScene(
+    "Island",
+    "A palm-fringed crescent bay with a wooded ridge and a cottage above the beach",
+    "crescent",
+  ),
+  lagoon: islandScene(
+    "Lagoon",
+    "A ring of palms and sand around a shallow lagoon, with a cottage on its knoll",
+    "lagoon",
+  ),
+  isles: islandScene("Isles", "A chain of wooded islets joined by a sand spit, with a cottage on the largest", "isles"),
   woods: {
     name: "Woods",
     description: "A stream winding through woodland with a timber footbridge",

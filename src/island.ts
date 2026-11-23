@@ -9,12 +9,19 @@ import { gullsInFlight, waterfowl } from "./ducks";
 import { dinghyOffshore, mooredBoat } from "./boats";
 import { grassShade, palette } from "./palette";
 import { depthTexture } from "./water";
-import { treePlanter, tropicalGrove } from "./trees";
+import { treePlanter } from "./trees";
+import { islandShape, type IslandKind } from "./islands";
 import { seededRandom, voxelBatch } from "./voxels";
 import { buildCottage, cottageDoor } from "./cottage";
 import * as THREE from "three";
 
-export function buildIsland(seed: number, model: boolean, grid = 1, designs = designsFor(seed)) {
+export function buildIsland(
+  seed: number,
+  model: boolean,
+  grid = 1,
+  designs = designsFor(seed),
+  kind: IslandKind = "crescent",
+) {
   const bounds = { x: 0, z: 0, width: 38 * grid, depth: 28 * grid };
   const depthExtent = 64 * grid;
   const oceanDepth = 7;
@@ -24,30 +31,14 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   const relief = terrainField(seed);
 
   const wildlife = seededRandom(seed ^ 0x67ab39);
-  const phase = random() * Math.PI * 2;
-  const bayX = 1 + random() * 2;
-  const bayZ = 5 + random() * 1.5;
-  const bayWidth = 8 + random() * 2;
-  const ridgeX = -10 - random() * 2;
-
+  const shape = islandShape(kind, random, grid, relief);
   const unit = 0.5;
+  // Let offshore shallows grade into the deep floor before the depth map ends.
   function naturalHeight(worldX: number, worldZ: number) {
-    const x = worldX / grid,
-      z = worldZ / grid;
-    // Offset the bay toward the eastern tip to leave a longer western arm.
-    const angle = Math.atan2(z / 12, x / 17);
-    const edge = 1 + 0.055 * Math.sin(3 * angle + phase) + 0.04 * Math.cos(5 * angle - phase);
-    const outer = (edge - Math.hypot(x / 17, (z + 0.2 * x) / 12)) * 12;
-    const inner = (Math.hypot((x - bayX) / bayWidth, (z - bayZ) / 10) - 1) * 9;
-    const inland = Math.min(outer, inner);
-    const ridge = Math.exp(-((x - ridgeX) ** 2 / 36 + (z + 1) ** 2 / 68));
-    let elevation = inland * (0.7 + 1.55 * ridge + 0.6 * relief(worldX, worldZ));
-    // Let offshore shallows grade into the deep floor before the depth map ends.
-    const radius = Math.hypot(x, z);
-    if (!model && radius > 22) {
-      elevation = Math.min(elevation, -oceanDepth * THREE.MathUtils.smoothstep(radius, 22, 31));
-    }
-    return Math.floor(elevation / unit) * unit;
+    const height = shape.height(worldX, worldZ);
+    const radius = Math.hypot(worldX, worldZ) / grid;
+    if (model || radius <= 22) return height;
+    return Math.min(height, Math.floor((-oceanDepth * THREE.MathUtils.smoothstep(radius, 22, 31)) / unit) * unit);
   }
 
   // Survey water cells touching dry land. Ranking the nearest one for each
@@ -80,12 +71,12 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     }
     return closest;
   }
-  const headlandX = Math.round((bayX - bayWidth * 0.9) * grid);
+  const { search, cove } = shape;
   const cottage = findSite(
-    headlandX - 4 * grid,
-    headlandX + 3 * grid,
-    -Math.ceil(10 * grid),
-    5 * grid,
+    Math.round(search.left / unit) * unit,
+    Math.round(search.right / unit) * unit,
+    Math.round(search.back / unit) * unit,
+    Math.round(search.front / unit) * unit,
     unit,
     (x, z) => {
       const h = naturalHeight(x, z);
@@ -95,14 +86,14 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
         dz = shore.z - z;
       const corners = [-1, 1].flatMap(ox => [-0.5, 0.5].map(oz => naturalHeight(x + ox, z + oz)));
       const shelf = Math.max(...corners) - Math.min(...corners);
-      const bayDistance = Math.hypot(shore.x / grid - bayX, shore.z / grid - bayZ);
+      const bayDistance = Math.hypot(shore.x / grid - cove.x, shore.z / grid - cove.z);
       const facesAway = Math.abs(dx) > Math.abs(dz) ? dx < 0 : dz < 0;
       return (
         shelf +
         Math.abs(h - 2.5) +
         bayDistance * 0.7 +
         (facesAway ? 8 : 0) +
-        Math.abs(x - headlandX) * 0.15 +
+        shape.siteBias(x, z) +
         Math.hypot(dx, dz) * 0.25
       );
     },
@@ -155,13 +146,12 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   const wetSand = new THREE.Color(palette.ground.sand);
   const silt = new THREE.Color(palette.ground.silt);
   const bedColor = new THREE.Color();
-  const patches = (x: number, z: number) => Math.sin(x * 0.8 + phase) * Math.sin(z * 0.64 + x * 0.24);
+  const patches = (x: number, z: number) => Math.sin(x * 0.8 + shape.phase) * Math.sin(z * 0.64 + x * 0.24);
   function bedTint(x: number, z: number, y: number, steps = 0) {
     const t = THREE.MathUtils.clamp(-y / 7 + patches(x, z) * 0.13, 0, 1);
     return bedColor.copy(wetSand).lerp(silt, steps ? Math.round(t * steps) / steps : t);
   }
   const plantTree = treePlanter(box, treeVoxel, designs, seed);
-  const tree = tropicalGrove(relief);
 
   // Follow a walkable contour inland from the shore stairs before looking
   // for a loft site. The selected approach becomes the path to its door.
@@ -242,8 +232,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
         unit,
         h < 1 ? (yards.paths.has(x + "," + z) ? palette.ground.path : palette.ground.sand) : palette.ground.stone,
       );
-      // Palms also grow from the dry beach above the waterline.
-      if (h <= 0) continue;
+      if (h < 1 && !(shape.beachTrees && h > 0)) continue;
       if (h >= 1)
         ground(
           x,
@@ -254,9 +243,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
           unit,
           yards.paths.has(x + "," + z) ? palette.ground.path : grassShade(h / 8 + 0.25 * relief(x - 29, z + 47)),
         );
-      const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
-      // Palms stand more sparsely along the beach than in the woods above it.
-      const density = (x < -6 ? 0.1 : 0.055) * grove * (h < 1 ? 0.5 : 1);
+      const density = shape.density(x, z, h);
       if (
         yard.near(x, z, 1.25) ||
         yards.near(x, z) ||
@@ -265,7 +252,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
         random() > density
       )
         continue;
-      const { species, design } = tree(x, z, h, Math.hypot(x - centreX, z - centreZ));
+      const { species, design } = shape.tree(x, z, h, Math.hypot(x - centreX, z - centreZ));
       plantTree(x, top, z, species, random() < 0.25, design);
     }
   }

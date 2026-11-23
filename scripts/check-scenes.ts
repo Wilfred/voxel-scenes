@@ -19,6 +19,8 @@ const { Matrix4, Color } = await load("three");
 
 const scenes: Record<string, (seed: number, model: boolean, grid: number) => Built> = {
   island: (seed, model, grid) => buildIsland(seed, model, grid),
+  lagoon: (seed, model, grid) => buildIsland(seed, model, grid, undefined, "lagoon"),
+  isles: (seed, model, grid) => buildIsland(seed, model, grid, undefined, "isles"),
   woods: (seed, model, grid) => buildWoods(seed, model, grid),
   millpond: (seed, model, grid) => buildMillpond(seed, model, grid),
   hillside: (seed, model, grid) => buildHillside(seed, model, grid),
