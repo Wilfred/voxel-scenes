@@ -24,9 +24,12 @@ function lattice(box: Box, unit: number) {
     );
 }
 
-// Farm and woodland animals face +x. Sheep and deer use eighth-metre cells.
+// Farm and woodland animals face +x. Smaller animals are drawn larger than
+// life, keeping their order of size, so the shapes that identify them read
+// from the wallpaper camera. The deer uses eighth-metre cells and the sheep
+// cells two fifths larger.
 export const sheep: Model = box => {
-  const cell = lattice(box, 1 / 16);
+  const cell = lattice(box, 7 / 80);
   for (const x of [-3.5, 2.5]) for (const z of [-1, 1]) cell(x - 0.5, 0, z - 0.5, x + 0.5, 2, z + 0.5, p.animal.dark);
   cell(-5, 2, -2.5, 4, 7, 2.5, p.animal.fleece);
   cell(4, 3, -1.5, 7, 6, 1.5, p.animal.dark);
@@ -51,16 +54,17 @@ export const creel: Model = box => {
   for (const z of [-3, 3]) cell(-4, 1, z - 0.5, 4, 5, z + 0.5, p.wood);
   cell(-0.5, 5, -3.5, 0.5, 6, 3.5, p.cloth.canvas);
 };
-// Rabbits and hens use sixteenth-metre cells.
+// Rabbits and hens use cells of about eleven centimetres, three quarters
+// larger than life, so the rabbit's ears and the hen's comb and tail read.
 export const rabbit: Model = box => {
-  const cell = lattice(box, 1 / 32);
+  const cell = lattice(box, 7 / 128);
   cell(-3, 0, -1.5, 2, 3, 1.5, p.animal.fur);
   cell(2, 2, -1.5, 5, 5, 1.5, p.animal.fur);
   for (const z of [-1, 1]) cell(2, 5, z - 0.5, 3, 9, z + 0.5, p.animal.fur);
   cell(-4, 1, -0.5, -3, 3, 0.5, p.animal.pale);
 };
 export const chicken: Model = box => {
-  const cell = lattice(box, 1 / 32);
+  const cell = lattice(box, 7 / 128);
   for (const z of [-1, 1]) cell(-0.5, 0, z - 0.5, 0.5, 2, z + 0.5, p.animal.beak);
   cell(-2.5, 2, -1.5, 2.5, 6, 1.5, p.animal.pale);
   cell(-3.5, 4, -1.5, -2.5, 8, 1.5, p.animal.dark);

@@ -5,7 +5,7 @@ import type { Box } from "./voxels";
 export function addBird(box: Box, x: number, z: number, heading: number, species: "gull" | "drake" | "hen") {
   // The body sits partly below the waterline. Each part follows the same local X axis.
   function part(forward: number, y: number, length: number, height: number, width: number, color: number) {
-    const scale = 0.375;
+    const scale = 0.5;
     box(
       x + scale * forward * Math.cos(heading),
       scale * y,
@@ -52,9 +52,9 @@ export function waterfowl(box: Box, x: number, z: number, heading: number, depth
     const tx = x + dx,
       tz = z + dz;
     const site = findSite(tx - 2, tx + 2, tz - 2, tz + 2, 0.5, (cx, cz) => {
-      if (placed.some(p => Math.hypot(cx - p.x, cz - p.z) < 0.8)) return Infinity;
-      for (const ox of [-0.2, 0.2])
-        for (const oz of [-0.2, 0.2]) {
+      if (placed.some(p => Math.hypot(cx - p.x, cz - p.z) < 1.05)) return Infinity;
+      for (const ox of [-0.25, 0.25])
+        for (const oz of [-0.25, 0.25]) {
           if (depth(cx + ox, cz + oz) < 0.25) return Infinity;
         }
       return Math.hypot(cx - tx, cz - tz);

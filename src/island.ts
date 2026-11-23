@@ -197,7 +197,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     (x, z) => Math.hypot(x - centreX, z - centreZ) > 2.5 && !stairs.has(snap(x) + "," + snap(z)) && !yards.near(x, z),
   );
   yard.place(creel, shore.x, shore.z, 0.32);
-  yard.place(chicken, centreX + 2, centreZ + 2, 0.2);
+  yard.place(chicken, centreX + 2, centreZ + 2, 0.4);
   for (let z = -Math.ceil(14 * grid); z <= Math.ceil(14 * grid); z += 0.5) {
     for (let x = -Math.ceil(21 * grid); x <= Math.ceil(21 * grid); x += 0.5) {
       const h = height(x, z);

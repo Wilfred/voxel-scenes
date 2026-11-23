@@ -79,8 +79,8 @@ export function buildMillpond(
   yard.place(crate, doorX + 2, wheelZ + 2, 0.4);
   yard.place(stall, orchardX, orchardZ + 2, 1.1);
   yard.place(hive, orchardX - 3, orchardZ - 3, 0.5);
-  yard.place(chicken, doorX + 1, wheelZ + 3, 0.2);
-  yard.place(rabbit, orchardX - 2, orchardZ + 3, 0.25, true);
+  yard.place(chicken, doorX + 1, wheelZ + 3, 0.4);
+  yard.place(rabbit, orchardX - 2, orchardZ + 3, 0.45, true);
   // Reserve a small grazing field beside the cart track. Its gate occupies
   // the bay nearest the track, and the whole enclosure must fit on dry ground.
   const paddock = findSite(orchardX - 8, orchardX + 8, orchardZ + 2, orchardZ + 9, 1, (x, z) => {
