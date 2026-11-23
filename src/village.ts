@@ -67,31 +67,53 @@ export const chicken: Model = box => {
   cell(3.5, 7, -0.5, 4.5, 8, 0.5, p.animal.beak);
 };
 
+// An apple crate about half a metre long, heaped with fruit, on eighth-metre cells.
 export const crate: Model = box => {
-  box(0, 0.15, 0, 0.55, 0.3, 0.42, p.wood);
-  for (const x of [-0.16, 0, 0.16]) for (const z of [-0.09, 0.09]) box(x, 0.31, z, 0.13, 0.13, 0.13, p.harvest.apple);
-};
-export const hive: Model = box => {
-  box(0, 0.12, 0, 0.45, 0.24, 0.45, p.wood);
-  box(0, 0.42, 0, 0.5, 0.38, 0.5, p.cottage.plaster);
-  box(0, 0.67, 0, 0.62, 0.12, 0.62, p.cottage.tile);
-  box(0, 0.28, 0.27, 0.24, 0.06, 0.12, p.wood);
-};
-export const cart: Model = box => {
-  for (const x of [-0.39, 0.39]) {
-    box(x, 0.26, 0, 0.12, 0.5, 0.28, p.wood);
-    box(x, 0.26, 0, 0.12, 0.28, 0.5, p.wood);
-    box(x * 0.7, 0.31, 0.67, 0.09, 0.1, 1.15, p.wood);
+  const cell = lattice(box, 1 / 16);
+  cell(-2, 0, -1.5, 2, 2, 1.5, p.wood);
+  for (const [x, z] of [
+    [-1.5, -1],
+    [0.5, -1],
+    [-0.5, 0],
+    [1.5, 0],
+    [-1.5, 1],
+    [0.5, 1],
+  ]) {
+    cell(x - 0.5, 2, z - 0.5, x + 0.5, 3, z + 0.5, p.harvest.apple);
   }
-  box(0, 0.39, 0, 0.7, 0.14, 0.95, p.wood);
-  for (const x of [-0.31, 0.31]) box(x, 0.57, 0, 0.08, 0.24, 0.95, p.wood);
-  crate(at(box, 0, 0.46, -0.1));
+};
+// A hive a metre tall on a post, with an overhanging roof, on quarter-metre cells.
+export const hive: Model = box => {
+  const cell = lattice(box, 1 / 8);
+  cell(-0.5, 0, -0.5, 0.5, 1, 0.5, p.wood);
+  cell(-1, 1, -1, 1, 3, 1, p.cottage.plaster);
+  cell(-1.5, 3, -1.5, 1.5, 4, 1.5, p.cottage.tile);
+};
+// A two-metre handcart on eighth-metre cells. The wheels stand clear of the
+// bed on the ground, and a pair of legs props the handles.
+export const cart: Model = box => {
+  const cell = lattice(box, 1 / 16);
+  cell(-3, 4, -4, 3, 5, 4, p.wood);
+  for (const side of [-1, 1]) {
+    const [inner, outer] = side > 0 ? [2, 3] : [-3, -2];
+    cell(inner, 5, -4, outer, 7, 4, p.wood);
+    cell(inner, 4, 4, outer, 5, 12, p.wood);
+    cell(inner, 0, 10, outer, 4, 11, p.wood);
+    const [hub, rim] = side > 0 ? [3, 4] : [-4, -3];
+    cell(hub, 0, -2, rim, 2, 2, p.wood);
+    cell(hub, 2, -4, rim, 6, 4, p.wood);
+    cell(hub, 6, -2, rim, 8, 2, p.wood);
+  }
+  cell(-2, 5, -4, 2, 7, -3, p.wood);
+  crate(at(box, 0, 5 / 16, 0));
 };
 export const stall: Model = box => {
-  for (const x of [-0.875, 0.875]) for (const z of [-0.45, 0.45]) box(x, 0.7, z, 0.125, 1.4, 0.125, p.wood);
-  box(0, 0.55, 0, 1.875, 0.125, 1, p.wood);
-  for (let i = 0; i < 5; i++) box((i - 2) * 0.45, 1.44, 0, 0.45, 0.125, 1.25, i % 2 ? p.cloth.canvas : p.cloth.dyed);
-  crate(at(box, -0.45, 0.6125, 0));
+  for (const x of [-0.875, 0.875]) for (const z of [-0.4375, 0.4375]) box(x, 0.6875, z, 0.125, 1.375, 0.125, p.wood);
+  box(0, 0.5625, 0, 1.875, 0.125, 1, p.wood);
+  // Five stripes of the awning rest on the posts, flush with their outer faces.
+  for (let i = 0; i < 5; i++)
+    box((i - 2) * 0.375, 1.4375, 0, 0.375, 0.125, 1.25, i % 2 ? p.cloth.canvas : p.cloth.dyed);
+  crate(at(box, -0.5, 0.625, 0));
 };
 
 export function appleTree(box: Box, blossom = false) {
