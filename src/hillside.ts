@@ -18,6 +18,7 @@ import { seededRandom, voxelBatch } from "./voxels";
 export function buildHillside(seed: number, model: boolean, grid = 1, designs = designsFor(seed)) {
   const random = seededRandom(seed);
   const relief = terrainField(seed);
+  const wildlife = seededRandom(seed ^ 0x67ab39);
   const phase = random() * Math.PI * 2;
   const drop = 3 + Math.floor(random() * 3) * 0.5;
   const lip = -2;
@@ -138,10 +139,15 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       !trail.tiles.has(Math.round(x) + "," + Math.round(z)) &&
       (!stack || Math.hypot(x - stack.x, z - stack.z) > 1.5),
   );
+  const radius = Math.ceil((grid > 2 ? 36 : 54) * grid);
+  const radiusX = model ? Math.round(15 * grid) : radius,
+    radiusZ = model ? Math.round(10 * grid) : radius;
   const yard = villageYard(
     box,
     (x, z) => elevation(Math.round(x), Math.round(z)),
     (x, z) =>
+      Math.abs(x) <= radiusX &&
+      Math.abs(z) <= radiusZ &&
       bankDistance(x, z) > 0 &&
       Math.hypot(x - cabinX, z - cabinZ) > 2.5 &&
       !yards.near(x, z) &&
@@ -149,20 +155,17 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       (!stack || Math.hypot(x - stack.x, z - stack.z) > 1),
   );
   yard.place(hive, cabinX - 3, cabinZ, 0.5);
-  yard.place(chicken, cabinX + 2, cabinZ + 3, 0.4);
-  yard.place(sheep, cabinX - 4, cabinZ + 5, 0.7);
+  yard.place(chicken, cabinX + 2, cabinZ + 3, 0.4, false, { random: wildlife });
+  yard.place(sheep, cabinX - 4, cabinZ + 5, 0.7, false, { random: wildlife });
   const poolDepth = (x: number, z: number) => {
     const cx = Math.round(x),
       cz = Math.round(z);
-    return shelf(cx, cz) === 0 ? -elevation(cx, cz) : 0;
+    return Math.abs(cx) <= radiusX && Math.abs(cz) <= radiusZ && shelf(cx, cz) === 0 ? -elevation(cx, cz) : 0;
   };
-  waterfowl(box, channel(lip + 6), lip + 6, -0.7, poolDepth);
+  waterfowl(box, channel(lip + 6), lip + 6, -0.7, poolDepth, wildlife);
   const bendZ = lip + Math.max(13, 7 * grid);
-  waterfowl(box, channel(bendZ), bendZ, 0.8, poolDepth);
+  waterfowl(box, channel(bendZ), bendZ, 0.8, poolDepth, wildlife);
 
-  const radius = Math.ceil((grid > 2 ? 36 : 54) * grid);
-  const radiusX = model ? Math.round(15 * grid) : radius,
-    radiusZ = model ? Math.round(10 * grid) : radius;
   const vertices: number[] = [];
   const spray = voxelBatch();
   for (let z = -radius; z <= radius; z++) {

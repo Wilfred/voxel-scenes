@@ -18,6 +18,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   const random = seededRandom(seed);
   const relief = terrainField(seed);
 
+  const wildlife = seededRandom(seed ^ 0x67ab39);
   const phase = random() * Math.PI * 2;
   const bayX = 1 + random() * 2;
   const bayZ = 5 + random() * 1.5;
@@ -197,7 +198,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     (x, z) => Math.hypot(x - centreX, z - centreZ) > 2.5 && !stairs.has(snap(x) + "," + snap(z)) && !yards.near(x, z),
   );
   yard.place(creel, shore.x, shore.z, 0.32);
-  yard.place(chicken, centreX + 2, centreZ + 2, 0.4);
+  yard.place(chicken, centreX + 2, centreZ + 2, 0.4, false, { random: wildlife });
   for (let z = -Math.ceil(14 * grid); z <= Math.ceil(14 * grid); z += 0.5) {
     for (let x = -Math.ceil(21 * grid); x <= Math.ceil(21 * grid); x += 0.5) {
       const h = height(x, z);
@@ -314,7 +315,21 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     const size = 0.22 + random() * 0.52;
     box(x, y, z, size, size * 0.7, size * 0.8, palette.ground.stone);
   }
-  waterfowl(box, bayX * grid - 0.5, bayZ * grid + 0.5, -0.45, (x, z) => -naturalHeight(x, z), true);
+  const landing = { x: end.x + pierX, z: end.z + pierZ };
+  waterfowl(
+    box,
+    landing.x,
+    landing.z,
+    -0.45,
+    (x, z) => {
+      if (Math.abs(x) >= bounds.width / 2 || Math.abs(z) >= bounds.depth / 2 || stairs.has(snap(x) + "," + snap(z)))
+        return 0;
+      return -naturalHeight(snap(x), snap(z));
+    },
+    wildlife,
+    6,
+    landing,
+  );
   const depth = { texture: depthTexture(samples, resolution), extent: 64 * grid };
 
   if (model) {

@@ -17,6 +17,7 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
   const random = seededRandom(seed);
   const relief = terrainField(seed);
 
+  const wildlife = seededRandom(seed ^ 0x67ab39);
   const phase = random() * 2 * Math.PI;
   const radius = Math.round(49 * grid);
   const bends = new Map<number, number>();
@@ -125,9 +126,11 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
   const bendZ = bridgeZ + 5;
   const slope = (riverX(bendZ + 1) - riverX(bendZ - 1)) / 2;
   const waterDepth = (x: number, z: number) => -elevation(Math.round(x), Math.round(z));
-  waterfowl(box, riverX(bendZ) - 0.75, bendZ, Math.atan2(-1, slope), waterDepth);
+  const swimmingDepth = (x: number, z: number) =>
+    Math.abs(z - bridgeZ) < 1 || (model && !inside(x, z)) ? 0 : waterDepth(x, z);
+  waterfowl(box, riverX(bendZ) - 0.75, bendZ, Math.atan2(-1, slope), swimmingDepth, wildlife);
   const upstreamZ = bridgeZ - Math.round(7 * grid);
-  waterfowl(box, riverX(upstreamZ), upstreamZ, 1.2, waterDepth);
+  waterfowl(box, riverX(upstreamZ), upstreamZ, 1.2, swimmingDepth, wildlife);
 
   const tracks = [...trail.tiles.keys()]
     .map(key => {
@@ -151,13 +154,11 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
     box,
     (x, z) => elevation(Math.round(x), Math.round(z)),
     (x, z) =>
+      (!model || inside(x, z)) &&
       !trail.near(Math.round(x), Math.round(z)) &&
       !yards.near(x, z) &&
       signs.every(p => Math.hypot(x - p.x, z - p.z) > 1),
   );
-  yard.place(deer, west - 8, bridgeZ - 6, 0.45, true);
-  yard.place(rabbit, east + 4, bridgeZ + 3, 0.45);
-  yard.place(rabbit, east + 6, bridgeZ + 4, 0.45, true);
   // Seed stands along each bank independently, with gaps between seed sources.
   const groves: { x: number; z: number; radius: number }[] = [];
   for (const side of [-1, 1]) {
@@ -166,6 +167,13 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
       groves.push({ x: riverX(z) + side * (19 + random() * 22), z: z + 5, radius: 5 + random() * 6 });
     }
   }
+  const groveEdge = (x: number, z: number) => {
+    const distance = Math.min(...groves.map(g => Math.abs(Math.hypot(x - g.x, z - g.z) - g.radius)));
+    return 0.05 + 1 / (1 + distance * distance);
+  };
+  yard.place(deer, west - 8, bridgeZ - 6, 0.45, true, { random: wildlife, habitat: groveEdge });
+  yard.place(rabbit, east + 4, bridgeZ + 3, 0.45, false, { random: wildlife, habitat: groveEdge });
+  yard.place(rabbit, east + 6, bridgeZ + 4, 0.45, true, { random: wildlife, habitat: groveEdge });
   const candidates: { x: number; z: number; leafPatch: number }[] = [];
   for (let z = -radius; z <= radius; z++) {
     const nearbyGroves = groves.filter(grove => Math.abs(z - grove.z) < grove.radius);

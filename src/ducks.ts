@@ -1,4 +1,4 @@
-import { findSite, type Elevation } from "./sites";
+import { weightedSite, type Elevation } from "./sites";
 import { palette } from "./palette";
 import type { Box } from "./voxels";
 
@@ -32,35 +32,41 @@ export function addBird(box: Box, x: number, z: number, heading: number, species
   part(0.4375, 0.25, 0.125, 0.125, 0.25, palette.duck.bill);
 }
 
-export function waterfowl(box: Box, x: number, z: number, heading: number, depth: Elevation, coastal = false) {
-  const flock = coastal
-    ? [
-        [0, 0],
-        [1.5, 0.5],
-        [-1, 1],
-        [2.25, -1],
-        [-2, -0.75],
-        [0.75, 2],
-      ]
-    : [
-        [0, 0],
-        [0.75, 1],
-        [-0.75, 1.75],
-      ];
+export function waterfowl(
+  box: Box,
+  x: number,
+  z: number,
+  heading: number,
+  depth: Elevation,
+  random: () => number,
+  radius = 4,
+  pier?: { x: number; z: number },
+) {
   const placed: { x: number; z: number }[] = [];
-  for (const [i, [dx, dz]] of flock.entries()) {
-    const tx = x + dx,
-      tz = z + dz;
-    const site = findSite(tx - 2, tx + 2, tz - 2, tz + 2, 0.5, (cx, cz) => {
-      if (placed.some(p => Math.hypot(cx - p.x, cz - p.z) < 1.05)) return Infinity;
-      for (const ox of [-0.25, 0.25])
-        for (const oz of [-0.25, 0.25]) {
-          if (depth(cx + ox, cz + oz) < 0.25) return Infinity;
-        }
-      return Math.hypot(cx - tx, cz - tz);
-    });
+  for (let i = 0; i < (pier ? 6 : 3); i++) {
+    // Pick the first bird by habitat, then keep companions within swimming
+    // distance. Quiet shallows draw ducks; gulls also gather off the landing.
+    const centre = placed[0] ?? { x, z };
+    const reach = i === 0 ? radius : 3;
+    const site = weightedSite(
+      centre.x - reach,
+      centre.x + reach,
+      centre.z - reach,
+      centre.z + reach,
+      0.5,
+      (cx, cz) => {
+        if (placed.some(p => Math.hypot(cx - p.x, cz - p.z) < 0.85)) return 0;
+        for (const dx of [-0.3, 0.3]) for (const dz of [-0.3, 0.3]) if (depth(cx + dx, cz + dz) < 0.25) return 0;
+        const shallow = 1 / (1 + (depth(cx, cz) - 0.75) ** 2);
+        if (!pier) return 0.02 + shallow * shallow;
+        const distance = Math.hypot(cx - pier.x, cz - pier.z);
+        if (distance < 1.5) return 0;
+        return 0.015 + shallow + 6 / (1 + (distance / 3) ** 2);
+      },
+      random,
+    );
     if (!site) continue;
     placed.push(site);
-    addBird(box, site.x, site.z, heading + 0.45 * Math.cos(i * 2.4), coastal ? "gull" : i % 2 ? "hen" : "drake");
+    addBird(box, site.x, site.z, heading + (random() - 0.5) * 1.5, pier ? "gull" : i % 2 ? "hen" : "drake");
   }
 }

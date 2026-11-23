@@ -22,6 +22,7 @@ export function buildMillpond(
 ) {
   const random = seededRandom(seed),
     relief = terrainField(seed);
+  const wildlife = seededRandom(seed ^ 0x67ab39);
   const phase = random() * Math.PI * 2;
   const pondX = 2 * grid,
     pondZ = grid;
@@ -73,14 +74,18 @@ export function buildMillpond(
   const yard = villageYard(
     box,
     (x, z) => elevation(Math.round(x), Math.round(z)),
-    (x, z) => !millFootprint(x, z) && !trail.tiles.has(Math.round(x) + "," + Math.round(z)),
+    (x, z) =>
+      Math.abs(x) <= radiusX &&
+      Math.abs(z) <= radiusZ &&
+      !millFootprint(x, z) &&
+      !trail.tiles.has(Math.round(x) + "," + Math.round(z)),
   );
   yard.place(cart, doorX - 1, wheelZ + 3, 1.2, true);
   yard.place(crate, doorX + 2, wheelZ + 2, 0.4);
   yard.place(stall, orchardX, orchardZ + 2, 1.1);
   yard.place(hive, orchardX - 3, orchardZ - 3, 0.5);
-  yard.place(chicken, doorX + 1, wheelZ + 3, 0.4);
-  yard.place(rabbit, orchardX - 2, orchardZ + 3, 0.45, true);
+  yard.place(chicken, doorX + 1, wheelZ + 3, 0.4, false, { random: wildlife });
+  yard.place(rabbit, orchardX - 2, orchardZ + 3, 0.45, true, { random: wildlife });
   // Reserve a small grazing field beside the cart track. Its gate occupies
   // the bay nearest the track, and the whole enclosure must fit on dry ground.
   const paddock = findSite(orchardX - 8, orchardX + 8, orchardZ + 2, orchardZ + 9, 1, (x, z) => {
@@ -131,7 +136,12 @@ export function buildMillpond(
       fence.bay(x + a, z + b, x + c, z + d, i === gate);
     });
     fence.finish();
-    for (const dx of [-1, 1]) sheep(at(box, x + dx, elevation(x + dx, z), z, dx > 0));
+    const flock = villageYard(
+      box,
+      (px, pz) => elevation(Math.round(px), Math.round(pz)),
+      (px, pz) => Math.abs(px - x) < 1.9 && Math.abs(pz - z) < 1.9,
+    );
+    for (const dx of [-1, 1]) flock.place(sheep, x + dx, z, 0.65, dx > 0, { random: wildlife });
   }
   const orchard = new Set<string>();
   for (let row = 0; row < Math.min(6, 2 + Math.floor(grid)); row++)
@@ -153,7 +163,15 @@ export function buildMillpond(
           if (dx * dx + dz * dz < 3.5 ** 2) orchard.add(x + dx + "," + (z + dz));
         }
     }
-  waterfowl(box, pondX, pondZ, phase, (x, z) => -elevation(Math.round(x), Math.round(z)));
+  waterfowl(
+    box,
+    pondX,
+    pondZ,
+    phase,
+    (x, z) => -elevation(Math.round(x), Math.round(z)),
+    wildlife,
+    Math.ceil(5 * grid),
+  );
   const plant = treePlanter(box, treeVoxel, designs, seed);
   for (let z = -radiusZ; z <= radiusZ; z++)
     for (let x = -radiusX; x <= radiusX; x++) {

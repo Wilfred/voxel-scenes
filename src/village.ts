@@ -1,6 +1,6 @@
 import { casement, masonryCourses, pitchedRoof } from "./building";
 import { palette as p } from "./palette";
-import { findSite, type Elevation } from "./sites";
+import { weightedSite, findSite, type Elevation } from "./sites";
 import type { Box } from "./voxels";
 
 type Model = (box: Box) => void;
@@ -179,16 +179,38 @@ export function villageYard(box: Box, elevation: Elevation, free: (x: number, z:
   const occupied: { x: number; z: number; radius: number }[] = [];
   const near = (x: number, z: number, margin = 0) =>
     occupied.some(p => Math.hypot(x - p.x, z - p.z) < p.radius + margin);
-  function place(draw: Model, tx: number, tz: number, radius: number, turn = false) {
-    const site = findSite(Math.round(tx) - 3, Math.round(tx) + 3, Math.round(tz) - 3, Math.round(tz) + 3, 1, (x, z) => {
-      if (near(x, z, radius)) return Infinity;
+  function place(
+    draw: Model,
+    tx: number,
+    tz: number,
+    radius: number,
+    turn = false,
+    wildlife?: { random: () => number; habitat?: Elevation },
+  ) {
+    function eligible(x: number, z: number) {
+      if (near(x, z, radius)) return false;
       const h = elevation(x, z);
       for (const dx of [-radius, 0, radius])
-        for (const dz of [-radius, 0, radius]) {
-          if (h <= 0 || !free(x + dx, z + dz) || elevation(x + dx, z + dz) !== h) return Infinity;
-        }
-      return Math.hypot(x - tx, z - tz);
-    });
+        for (const dz of [-radius, 0, radius])
+          if (h <= 0 || !free(x + dx, z + dz) || elevation(x + dx, z + dz) !== h) return false;
+      return true;
+    }
+    const x = Math.round(tx),
+      z = Math.round(tz);
+    const site = wildlife
+      ? weightedSite(
+          x - 5,
+          x + 5,
+          z - 5,
+          z + 5,
+          1,
+          (cx, cz) =>
+            eligible(cx, cz) ? (wildlife.habitat?.(cx, cz) ?? 1) / (1 + ((cx - tx) ** 2 + (cz - tz) ** 2) / 6) : 0,
+          wildlife.random,
+        )
+      : findSite(x - 3, x + 3, z - 3, z + 3, 1, (cx, cz) =>
+          eligible(cx, cz) ? Math.hypot(cx - tx, cz - tz) : Infinity,
+        );
     if (!site) return;
     draw(at(box, site.x, elevation(site.x, site.z), site.z, turn));
     occupied.push({ ...site, radius });
