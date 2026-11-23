@@ -116,11 +116,14 @@ export function createWater(skyMap: THREE.CubeTexture) {
       // Short, broken crests catch light even where the sky reflection is uniform.
       float crest = 0.0;
       if (coastal) {
-        float phase = 2.6 * uv.x + 1.8 * sin(0.76 * uv.y + 0.28 * uv.x);
+        // A second, oblique swell travels more slowly through the wind ripples.
+        float swell = dot(uv, vec2(1.35, -0.58)) + 0.4 * waveDrift;
+        float phase = 2.6 * uv.x + 1.3 * sin(swell * 0.46) + 1.2 * sin(uv.y * 0.68);
         float resolved = 1.0 - smoothstep(0.5, 2.4, fwidth(phase));
-        float crestMask = smoothstep(-0.45, 0.8, sin(0.91 * uv.y + sin(0.48 * uv.x)));
-        crest = resolved * crestMask * pow(0.5 + 0.5 * cos(phase), 5.0);
-        tilt += wind * (0.032 * resolved * sin(phase));
+        float strength = mix(0.35, 1.0, depthFraction);
+        float overlap = 0.65 * cos(phase) + 0.35 * cos(swell);
+        crest = strength * resolved * smoothstep(0.48, 0.97, overlap);
+        tilt += strength * resolved * (0.026 * wind * sin(phase) + 0.017 * (wind - 0.43 * across) * sin(swell));
       }
       if (rain > 0.0) {
         vec2 rainCell = p * 0.65;
@@ -161,7 +164,7 @@ export function createWater(skyMap: THREE.CubeTexture) {
       diffuseColor.a = fresnel + (1.0 - fresnel) * body;
       outgoingLight = (outgoingLight * body * (1.0 - fresnel) + skyLight * fresnel + glintTint * sparkle)
                     / max(diffuseColor.a, 0.001);
-      outgoingLight += glintTint * (0.045 * crest * ripple);
+      outgoingLight += skyLight * (0.075 * crest * ripple);
       #include <opaque_fragment>
     `,
         );

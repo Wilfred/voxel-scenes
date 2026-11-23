@@ -73,7 +73,7 @@ if (!context) {
     frame = 0;
     const elapsed = Math.max(0, now - started) / 1000;
     const coastal = sceneSelect.value === "island";
-    surface.drift.value = coastal ? elapsed * 0.65 : 0;
+    surface.drift.value = coastal ? elapsed * 0.24 : 0;
     if (smoke.plume.visible) smoke.update(elapsed);
     const cloudsMoved = sky.drift(elapsed);
     if (cloudsMoved || coastal || smoke.plume.visible || cameraMoved) renderer.render(scene, camera);

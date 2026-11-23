@@ -2,6 +2,17 @@ import * as THREE from "three";
 import { seededRandom } from "./voxels";
 import type { weather } from "./weather";
 
+const skyShader = `
+  uniform vec3 horizon, zenith, glow, sun;
+  vec3 skyColor(vec3 d) {
+    vec3 color=mix(horizon,zenith,smoothstep(0.0,0.5,d.y));
+    float facing=max(dot(d,sun),0.0);
+    color=mix(color,glow,0.35*pow(facing,9.0)*smoothstep(-0.01,0.02,d.y));
+    color=mix(color,glow,0.92*smoothstep(0.99980,0.99995,facing));
+    return color;
+  }
+`;
+
 // Bake one distant sky for the vista and the reflected rays on the water.
 // Translation and zoom never bring the cloud layer down into the landscape.
 export function createSky(renderer: THREE.WebGLRenderer) {
@@ -20,26 +31,42 @@ export function createSky(renderer: THREE.WebGLRenderer) {
       depthWrite: false,
       vertexShader: `varying vec3 direction;
       void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-      fragmentShader: `uniform vec3 horizon, zenith, glow, sun; varying vec3 direction;
-      void main(){
-        vec3 d=normalize(direction);
-        vec3 color=mix(horizon,zenith,smoothstep(0.0,0.5,d.y));
-        float facing=max(dot(d,sun),0.0);
-        color=mix(color,glow,0.35*pow(facing,9.0)*smoothstep(-0.01,0.02,d.y));
-        color=mix(color,glow,0.92*smoothstep(0.99980,0.99995,facing));
-        gl_FragColor=vec4(color,1.0);
-      }`,
+      fragmentShader:
+        skyShader +
+        `
+      varying vec3 direction;
+      void main(){gl_FragColor=vec4(skyColor(normalize(direction)),1.0);}`,
     }),
   );
   const sun = new THREE.DirectionalLight();
   const fill = new THREE.HemisphereLight();
   scene.add(dome, sun, fill);
-  const target = new THREE.WebGLCubeRenderTarget(512, {
+  const target = new THREE.WebGLCubeRenderTarget(1024, {
     generateMipmaps: true,
+    magFilter: THREE.NearestFilter,
     minFilter: THREE.LinearMipmapLinearFilter,
   });
   const camera = new THREE.CubeCamera(0.1, 230, target);
-  const clouds = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshLambertMaterial(), 24 * 4);
+  // Blend the visible cloud face with its sky ray once. Opaque depth testing
+  // hides the tiers behind that face, so their opacity never accumulates.
+  const cloudMaterial = new THREE.MeshLambertMaterial();
+  cloudMaterial.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader =
+      "varying vec3 skyDirection;\n" +
+      shader.vertexShader.replace(
+        "#include <project_vertex>",
+        "#include <project_vertex>\nskyDirection = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;",
+      );
+    shader.fragmentShader =
+      skyShader +
+      "varying vec3 skyDirection;\n" +
+      shader.fragmentShader.replace(
+        "#include <opaque_fragment>",
+        "outgoingLight = mix(skyColor(normalize(skyDirection)), outgoingLight, 0.56);\n#include <opaque_fragment>",
+      );
+  };
+  const clouds = new THREE.InstancedMesh(new THREE.BoxGeometry(), cloudMaterial, 24 * 4);
   const matrix = new THREE.Matrix4();
   scene.add(clouds);
   let previous = "";
