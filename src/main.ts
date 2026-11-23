@@ -240,6 +240,9 @@ if (!context) {
     if (model && bounds) {
       sea.position.set(bounds.x, 0.002, bounds.z);
       sea.scale.set(bounds.width / sea.geometry.parameters.width, bounds.depth / sea.geometry.parameters.height, 1);
+    } else if (!model && landscape.vistaSeaExtent) {
+      const extent = landscape.vistaSeaExtent;
+      sea.scale.set(extent / sea.geometry.parameters.width, extent / sea.geometry.parameters.height, 1);
     }
 
     camera = model ? modelCamera : vistaCamera;

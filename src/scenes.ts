@@ -24,6 +24,7 @@ export type Landscape = {
   extras: THREE.Mesh[];
   // The bounded water surface of a rectangular model, when it has one.
   waterBounds?: { x: number; z: number; width: number; depth: number };
+  vistaSeaExtent?: number;
   sea: boolean;
   deepWater: number;
   // The building or crossing the eye should settle on.
@@ -58,6 +59,7 @@ export const scenes: Record<string, Scene> = {
         depth: island.depth,
         extras: [island.floor],
         waterBounds: island.bounds,
+        vistaSeaExtent: island.seaExtent,
         sea: true,
         deepWater: palette.water.sea,
         focus: model ? new THREE.Vector3() : new THREE.Vector3(0, 1, 0),

@@ -15,6 +15,10 @@ import * as THREE from "three";
 
 export function buildIsland(seed: number, model: boolean, grid = 1, designs = designsFor(seed)) {
   const bounds = { x: 0, z: 0, width: 38 * grid, depth: 28 * grid };
+  const depthExtent = 64 * grid;
+  const oceanDepth = 7;
+  // Cover the far corners of the vista frustum even at the widest zoom.
+  const seaExtent = 1600 * grid;
   const random = seededRandom(seed);
   const relief = terrainField(seed);
 
@@ -36,7 +40,13 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     const inner = (Math.hypot((x - bayX) / bayWidth, (z - bayZ) / 10) - 1) * 9;
     const inland = Math.min(outer, inner);
     const ridge = Math.exp(-((x - ridgeX) ** 2 / 36 + (z + 1) ** 2 / 68));
-    return Math.floor((inland * (0.7 + 1.55 * ridge + 0.6 * relief(worldX, worldZ))) / unit) * unit;
+    let elevation = inland * (0.7 + 1.55 * ridge + 0.6 * relief(worldX, worldZ));
+    // Let offshore shallows grade into the deep floor before the depth map ends.
+    const radius = Math.hypot(x, z);
+    if (!model && radius > 22) {
+      elevation = Math.min(elevation, -oceanDepth * THREE.MathUtils.smoothstep(radius, 22, 31));
+    }
+    return Math.floor(elevation / unit) * unit;
   }
 
   // Survey water cells touching dry land. Ranking the nearest one for each
@@ -199,8 +209,14 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   );
   yard.place(creel, shore.x, shore.z, 0.32);
   yard.place(chicken, centreX + 2, centreZ + 2, 0.4, false, { random: wildlife });
-  for (let z = -Math.ceil(14 * grid); z <= Math.ceil(14 * grid); z += 0.5) {
-    for (let x = -Math.ceil(21 * grid); x <= Math.ceil(21 * grid); x += 0.5) {
+  const landX = Math.ceil(21 * grid),
+    landZ = Math.ceil(14 * grid);
+  // Survey the shallow shelf across the depth map so its steps
+  // follow the coast all the way into deep water.
+  const bedX = model ? landX : depthExtent / 2;
+  const bedZ = model ? landZ : depthExtent / 2;
+  for (let z = -bedZ; z <= bedZ; z += unit) {
+    for (let x = -bedX; x <= bedX; x += unit) {
       const h = height(x, z);
       if (h < 0) {
         const inside =
@@ -208,6 +224,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
         if (h >= -shelfDepth && inside) seabed(x, h - 0.75, z, unit, 1.5, unit, bedTint(x, z, h, 10).getHex());
         continue;
       }
+      if (Math.abs(x) > landX || Math.abs(z) > landZ) continue;
       // The landing and stairs replace entire columns in the bank. Their
       // supports fill those columns down to the same base as the terrain.
       if (stairs.has(x + "," + z)) continue;
@@ -282,8 +299,8 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
   // The floor mesh and the water's absorption map use the same soundings.
   const resolution = 128;
   const floorGeometry = new THREE.PlaneGeometry(
-    model ? bounds.width : 64 * grid,
-    model ? bounds.depth : 64 * grid,
+    model ? bounds.width : depthExtent,
+    model ? bounds.depth : depthExtent,
     resolution - 1,
     resolution - 1,
   );
@@ -296,14 +313,23 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     const z = positions.getZ(i);
     const natural = naturalHeight(x, z);
     // Sink the smooth floor below the stepped shallows so it never pokes through.
-    const y = natural >= -shelfDepth - unit ? natural - 1.5 : THREE.MathUtils.clamp(natural, -7, -0.14);
+    const y = natural >= -shelfDepth - unit ? natural - 1.5 : THREE.MathUtils.clamp(natural, -oceanDepth, -0.14);
     // The floor and water sample the same world-space footprint at every grid setting.
-    const sampleX = ((i % resolution) / (resolution - 1) - 0.5) * 64 * grid;
-    const sampleZ = (Math.floor(i / resolution) / (resolution - 1) - 0.5) * 64 * grid;
+    const col = i % resolution;
+    const row = Math.floor(i / resolution);
+    const sampleX = (col / (resolution - 1) - 0.5) * depthExtent;
+    const sampleZ = (row / (resolution - 1) - 0.5) * depthExtent;
     samples[i] = Math.round(255 * THREE.MathUtils.clamp(-naturalHeight(sampleX, sampleZ) / 6, 0.14 / 6, 1));
-    // Extend the outer ring under the whole view so the horizon has a bottom.
-    positions.setXYZ(i, Math.abs(x) === 32 * grid ? x * 8 : x, y, Math.abs(z) === 32 * grid ? z * 8 : z);
-    bedTint(x, z, Math.min(natural, -0.14)).toArray(colors, i * 3);
+    // The outer ring is deep ocean and continues beneath the full sea surface.
+    const outerX = !model && (col === 0 || col === resolution - 1);
+    const outerZ = !model && (row === 0 || row === resolution - 1);
+    positions.setXYZ(
+      i,
+      outerX ? (Math.sign(x) * seaExtent) / 2 : x,
+      outerX || outerZ ? -oceanDepth : y,
+      outerZ ? (Math.sign(z) * seaExtent) / 2 : z,
+    );
+    (outerX || outerZ ? silt : bedTint(x, z, Math.min(natural, -0.14))).toArray(colors, i * 3);
   }
   floorGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   floorGeometry.computeVertexNormals();
@@ -335,7 +361,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     6,
     landing,
   );
-  const depth = { texture: depthTexture(samples, resolution), extent: 64 * grid };
+  const depth = { texture: depthTexture(samples, resolution), extent: depthExtent };
 
   if (model) {
     // Enclose the bounded seabed and water on the four exposed cut faces.
@@ -358,6 +384,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     floor,
     depth,
     bounds,
+    seaExtent,
     facadeAngle: Math.atan2(forwardX, forwardZ),
     focus: new THREE.Vector3(centreX, foundationTop, centreZ),
   };
