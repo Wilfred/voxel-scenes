@@ -42,11 +42,14 @@ export const deer: Model = box => {
   for (const z of [-1, 1]) cell(3, 11, z - 0.5, 4, 12, z + 0.5, p.animal.dark);
   cell(-5, 5, -0.5, -4, 7, 0.5, p.animal.pale);
 };
+// A slatted creel about 60 centimetres long with a rope handle, on
+// sixteenth-metre cells.
 export const creel: Model = box => {
-  for (const x of [-0.21, 0.21]) box(x, 0.14, 0, 0.08, 0.28, 0.36, p.wood);
-  for (const z of [-0.15, 0.15]) box(0, 0.14, z, 0.36, 0.28, 0.06, p.wood);
-  box(0, 0.04, 0, 0.36, 0.08, 0.24, p.ground.soil);
-  box(0, 0.31, 0, 0.08, 0.06, 0.36, p.cloth.canvas);
+  const cell = lattice(box, 1 / 32);
+  cell(-5, 0, -3.5, 5, 1, 3.5, p.wood);
+  for (const x of [-4.5, 4.5]) cell(x - 0.5, 1, -3.5, x + 0.5, 5, 3.5, p.wood);
+  for (const z of [-3, 3]) cell(-4, 1, z - 0.5, 4, 5, z + 0.5, p.wood);
+  cell(-0.5, 5, -3.5, 0.5, 6, 3.5, p.cloth.canvas);
 };
 // Rabbits and hens use sixteenth-metre cells.
 export const rabbit: Model = box => {
