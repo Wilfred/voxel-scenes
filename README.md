@@ -1,11 +1,13 @@
 # Voxel Scenes
 
-A simple website for generating scenic voxel images for desktop
-wallpapers.
+Generate a cosy voxel landscape in the browser and save it as a desktop wallpaper.
+Choose Crescent bay, Woodland stream, Hillside falls or Orchard millpond.
+[Open the generator](https://www.wilfred.me.uk/voxel-scenes/) or
+[rotate the models in the asset library](https://www.wilfred.me.uk/voxel-scenes/assets.html).
 
-## Local development
+## Running the generator
 
-With Node.js 22.12 or newer installed, run `npm ci` and `npm run dev`,
+With Node.js 22.12 or newer installed, run `npm ci` and `npm run dev -- --port 5173 --strictPort`,
 then open the local URL printed by Vite. Choose a scene and generate a landscape.
 Vista framing looks across the land in perspective toward a hazy horizon.
 Rectangular model framing shows the whole place as a miniature block. Either
@@ -19,7 +21,7 @@ that each builds and that its paths climb at most one terrain layer per step.
 Grid resolution controls how many terrain cells fit across the wallpaper.
 The range is 0.75× to 5× in quarter steps. At 5×, five times as many cells fit
 across the wallpaper. The export remains 2560 × 1440.
-Each landscape draws its cottage, pine and broadleaf designs from its seed, so
+Each landscape draws from four cottages, ten pines and ten broadleaves using its seed, so
 every design appears across the days. The asset library shows them all, each
 tree with its adult and sapling. Use the − and + buttons to frame
 the current landscape at 50% to 300%. Double-click the canvas or press Home
@@ -40,3 +42,31 @@ opaque surfaces. Ripples on the sea, stream, millpond and waterfall reflect near
 voxel colours, fading into the weather sky beyond the tracing distance. Shallow
 water shows the bed through it. Direct sunlight uses shadow maps. Large landscapes
 use coarser tracing cells.
+
+## Weather studies
+
+The light presets span sunrise, morning sun, clear daylight, evening light
+and sunset. Bright overcast softens shadows. Clearing rain leaves a scattering
+of slanted drops over the land and rings on the water. The wallpaper captures
+a still moment, including the rain. Vista skies and water reflections share a
+cloud map. Rectangular models keep their plain backdrop.
+
+Compare the woodland bridge at seed 123 in [sunrise](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=sunrise&seed=123),
+[sunset](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=sunset&seed=123)
+and [clearing rain](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=clearing&seed=123).
+Change weather in place to keep the camera, animals and buildings fixed.
+
+## Picking up the project
+
+The current milestone is manual PNG generation on the web, with Linux as the
+first desktop target. CI checks formatting, builds the static site and deploys
+`main` to GitHub Pages. Daily operating-system wallpaper installation, wider
+desktop integration and floating-island terrain are future work.
+
+The next visual review is the sky at wallpaper and thumbnail sizes. Compare the
+height and spacing of cloud banks, the visibility of rain over dark trees,
+and how much sky the vista leaves above its focal building. The current study
+uses stepped banks. Two alternatives worth comparing on that same seed are a
+few taller broken cumulus clusters and long thin evening clouds with warm lit
+edges. The art direction and development workflow live in [ART_STYLE.md](ART_STYLE.md)
+and [AGENTS.md](AGENTS.md).

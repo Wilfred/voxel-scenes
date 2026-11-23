@@ -30,7 +30,7 @@ file describes how to work on them.
   so the user sees the same composition.
 - Run `npm run format` before committing; CI rejects unformatted files.
 - Run `npm run build` for code changes and `npm run check` for generator
-  changes. The check builds every scene across a sweep of seeds and fails on
+  changes. Use an explicit seed and weather when checking a saved PNG. The check builds every scene across a sweep of seeds and fails on
   generation errors and routes that climb more than one terrain layer per
   tread. `npm run check -- --hash` fingerprints each landscape, so a refactor
   can show it changes nothing.
@@ -74,3 +74,16 @@ like places in the same game.
   or a bench seat to a stair riser. Check both physical proportions and visible
   voxel size. Free and paid assets are both candidates. Verify the creator's
   link, available 3D formats, and licence before integrating a pack.
+
+## Reproducible rendering
+
+- Keep wildlife sampling on its own seeded random stream. Filter unsuitable
+  footprints first, then use `weightedSite` in `src/sites.ts` for habitat
+  preferences. Use the nearest valid site when a fixed prop needs to serve a
+  particular door, path or landing.
+- Keep weather independent of landscape generation. Set the sun, cloud colours
+  and water response together. Compare the same scene URL in Vista and
+  Rectangular model, rotate the camera, and check the PNG includes the weather.
+- When extending a scene, use the seed-selected models in `src/designs.ts` and
+  expose reusable models in the asset library. Follow the shared lattice and
+  the small-animal scale exceptions in ART_STYLE.md.

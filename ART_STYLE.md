@@ -33,8 +33,8 @@ could fit in one diorama. Vary the shape of the land from day to day.
 
 ## Camera and composition
 
-Frame a vista through a narrow perspective lens, about 30° tall, looking
-down about 20°. Keep the focal building crisp and let haze close in on the
+Frame a vista through a narrow perspective lens, with a 36° vertical field of view, looking
+down about 13° in the current sky study. Keep the focal building crisp and let haze close in on the
 far terrain until it dissolves into the sky. Show some sky above the land.
 Frame a rectangular model in parallel projection from higher up, so it reads
 as a miniature on its plain background, with room around its whole outline.
@@ -72,11 +72,28 @@ from its chimney, two walkers on a mountain saddle, or a few deer peeking
 out between the trees can give the whole scene a sense of scale. Let the
 terrain catch the eye first and leave these details for a second glance.
 
+Give each animal a reason to be there. Gulls can float off a landing or along
+a shallow shore, ducks dabble in sheltered shallows, and deer and rabbits graze
+where woodland opens out. Place hens by the yard and sheep on pasture. Make
+suitable sites more likely while leaving room for variation. Keep flocks loose
+and give pairs enough space for their silhouettes to separate.
+
+Let fences explain land use. At the mill, the paddock gate faces the cart
+track. On steep paths a short guardrail marks the drop. A kitchen-garden fence
+is another direction to explore when a cottage has a cultivated patch to enclose.
+
 ## Weather and seasons
 
 Give the daily views a range of weather and light. Mist can soften the
 farthest ridge while leaving the near slopes crisp. Sun after rain can
 pick out a stream winding through dark pines.
+
+The current sky study uses distant banks with flat bases, stepped outlines
+and a cooler underside, inspired by Minecraft clouds. Leave gaps above the
+horizon and between banks. Use the same sun direction for lit faces, cast
+shadows and water highlights. Sunrise can pick out a cool ridge against a
+peach horizon; late light should catch the opposite faces. Make clearing rain
+visible against the landscape while giving the cottage room to read.
 
 At particular times of year, let the season influence the whole landscape.
 The orchard already blossoms in spring and the mill wears a December wreath.
