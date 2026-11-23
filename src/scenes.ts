@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { buildCoast } from "./coast";
 import { buildHillside } from "./hillside";
 import { buildIsland } from "./island";
 import type { IslandKind } from "./islands";
@@ -138,6 +139,32 @@ export const scenes: Record<string, Scene> = {
         modelHeight: 13,
         thirds: true,
         focusRadius: 12,
+      };
+    },
+  },
+  coast: {
+    name: "Coast",
+    description:
+      "A river from wooded hills past a millpond and watermill, under a footbridge and out to a beach landing",
+    build({ seed, model, grid }) {
+      const coast = buildCoast(seed, model, grid);
+      return {
+        mesh: coast.mesh,
+        depth: coast.depth,
+        extras: [],
+        waterBounds: coast.bounds,
+        sea: true,
+        coastal: true,
+        deepWater: palette.water.sea,
+        focus: coast.focus,
+        chimney: coast.chimney,
+        facade: 0,
+        frontOnly: true,
+        modelTarget: new THREE.Vector3(0, 1, 0),
+        modelHeight: 19,
+        thirds: true,
+        // Take in the mill, bridge, cottage and beach together.
+        focusRadius: 16,
       };
     },
   },
