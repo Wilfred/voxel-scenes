@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import type { defaultDesigns } from "./designs";
 import { buildHillside } from "./hillside";
 import { buildIsland } from "./island";
 import { buildMillpond } from "./millpond";
@@ -12,7 +11,6 @@ export type Options = {
   seed: number;
   model: boolean;
   grid: number;
-  designs: typeof defaultDesigns;
   season: ReturnType<typeof orchardSeason>;
   water: THREE.Material;
 };
@@ -51,8 +49,8 @@ export const scenes: Record<string, Scene> = {
   island: {
     name: "Island",
     description: "A crescent bay with a wooded ridge and a cottage above the beach",
-    build({ seed, model, grid, designs }) {
-      const island = buildIsland(seed, model, grid, designs);
+    build({ seed, model, grid }) {
+      const island = buildIsland(seed, model, grid);
       return {
         mesh: island.mesh,
         depth: island.depth,
@@ -73,8 +71,8 @@ export const scenes: Record<string, Scene> = {
   woods: {
     name: "Woods",
     description: "A stream winding through woodland with a timber footbridge",
-    build({ seed, model, grid, designs }) {
-      const woods = buildWoods(seed, model, grid, designs);
+    build({ seed, model, grid }) {
+      const woods = buildWoods(seed, model, grid);
       return {
         mesh: woods.mesh,
         depth: woods.depth,
@@ -94,8 +92,8 @@ export const scenes: Record<string, Scene> = {
   millpond: {
     name: "Millpond",
     description: "An orchard track leading to a watermill beside a duck pond",
-    build({ seed, model, grid, designs, season }) {
-      const pond = buildMillpond(seed, model, grid, designs, season);
+    build({ seed, model, grid, season }) {
+      const pond = buildMillpond(seed, model, grid, undefined, season);
       return {
         mesh: pond.mesh,
         depth: pond.depth,
@@ -115,8 +113,8 @@ export const scenes: Record<string, Scene> = {
   hillside: {
     name: "Hillside",
     description: "A hillside cottage overlooking a waterfall and its winding river",
-    build({ seed, model, grid, designs, water }) {
-      const hillside = buildHillside(seed, model, grid, designs);
+    build({ seed, model, grid, water }) {
+      const hillside = buildHillside(seed, model, grid);
       const surface = new THREE.Mesh(hillside.water, water);
       surface.renderOrder = 1;
       surface.receiveShadow = true;

@@ -19,9 +19,9 @@ that each builds and that its paths climb at most one terrain layer per step.
 Grid resolution controls how many terrain cells fit across the wallpaper.
 The range is 0.75× to 5× in quarter steps. At 5×, five times as many cells fit
 across the wallpaper. The export remains 2560 × 1440.
-Open **Design studies** to compare ten cottages, ten pines, or ten broadleaf trees.
-Selecting a card applies that model wherever it occurs in the landscape.
-Each tree card includes its adult and sapling. Use the − and + buttons to frame
+Each landscape draws its cottage, pine and broadleaf designs from its seed, so
+every design appears across the days. The asset library shows them all, each
+tree with its adult and sapling. Use the − and + buttons to frame
 the current landscape at 50% to 300%. Double-click the canvas or press Home
 while it has focus to restore the opening camera angle and zoom.
 

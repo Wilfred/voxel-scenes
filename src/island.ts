@@ -3,7 +3,7 @@ import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
 import { treeVoxel } from "./scale";
 import { pier, shoreStairs } from "./trail-details";
-import { defaultDesigns } from "./designs";
+import { designsFor } from "./designs";
 import { findSite } from "./sites";
 import { waterfowl } from "./ducks";
 import { grassShade, palette } from "./palette";
@@ -13,7 +13,7 @@ import { seededRandom, voxelBatch } from "./voxels";
 import { buildCottage, cottageDoor } from "./cottage";
 import * as THREE from "three";
 
-export function buildIsland(seed: number, model: boolean, grid = 1, designs = defaultDesigns) {
+export function buildIsland(seed: number, model: boolean, grid = 1, designs = designsFor(seed)) {
   const bounds = { x: 0, z: 0, width: 38 * grid, depth: 28 * grid };
   const random = seededRandom(seed);
   const relief = terrainField(seed);

@@ -71,41 +71,6 @@ select {
   min-width: 3em;
   font-variant-numeric: tabular-nums;
 }
-#design-gallery {
-  margin: 1rem clamp(1rem, 2vw, 2rem);
-}
-#design-gallery summary {
-  cursor: pointer;
-  width: fit-content;
-  font-weight: 600;
-}
-#design-gallery[open] summary {
-  margin-bottom: 0.75rem;
-}
-#design-gallery p {
-  display: inline-block;
-  margin: 0.5rem 1rem;
-}
-#studies {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: 0.6rem;
-  margin-top: 0.75rem;
-}
-#studies button {
-  padding: 0.3rem 0.3rem 0.5rem;
-  text-align: left;
-}
-#studies img {
-  display: block;
-  width: 100%;
-  border-radius: 0.25rem;
-  margin-bottom: 0.25rem;
-}
-#studies [aria-pressed="true"] {
-  outline: 2px solid #294e40;
-  background: #e0e8db;
-}
 header a,
 .library a {
   color: #294e40;
@@ -193,13 +158,9 @@ header a,
   max-height: 65dvh;
   overflow: auto;
 }
-.toolbox .controls,
-.toolbox #design-gallery {
+.toolbox .controls {
   margin: 0;
   padding: 0;
-}
-.toolbox #design-gallery {
-  margin-top: 0.45rem;
 }
 .wallpaper #status {
   position: absolute;

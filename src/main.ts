@@ -3,8 +3,6 @@ import { weather } from "./weather";
 import { contactRays } from "./contact-rays";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { lightScene } from "./lighting";
-import { designGallery } from "./gallery";
-import { defaultDesigns } from "./designs";
 import { palette } from "./palette";
 import * as THREE from "three";
 import { createWater } from "./water";
@@ -56,7 +54,6 @@ if (!context) {
   const today = new Date();
   let seed = dailySeed(today);
   const sceneSelect = document.querySelector<HTMLSelectElement>("#scene")!;
-  const designs = { ...defaultDesigns };
   const resolution = document.querySelector<HTMLInputElement>("#resolution")!;
   const gridValue = document.querySelector<HTMLOutputElement>("#grid-value")!;
   const framing = document.querySelector<HTMLSelectElement>("#framing")!;
@@ -202,7 +199,7 @@ if (!context) {
     // Keep any orbit the viewer made relative to the opening angle.
     const yaw = home.radius > 0 ? orbit.getAzimuthalAngle() - home.theta : 0;
     const tilt = home.radius > 0 ? orbit.getPolarAngle() - home.phi : 0;
-    landscape = entry.build({ seed, model, grid, designs, season: orchardSeason(today), water: sea.material });
+    landscape = entry.build({ seed, model, grid, season: orchardSeason(today), water: sea.material });
     scene.add(landscape.mesh, ...landscape.extras);
     sea.visible = landscape.sea;
     sea.position.set(0, 0, 0);
@@ -279,7 +276,6 @@ if (!context) {
     preview();
   }
 
-  designGallery(designs, update);
   let pendingGrid = 0;
   resolution.oninput = () => {
     gridValue.value = resolution.value + "×";
@@ -301,7 +297,7 @@ if (!context) {
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
     if (surface.grid.value !== Number(resolution.value) * 2) update();
-    const variant = `-${framing.value}-${resolution.value}x-p${designs.pine + 1}-b${designs.broadleaf + 1}-c${designs.cottage + 1}-${weatherSelect.value}${tracing.checked ? "-rays" : ""}`;
+    const variant = `-${framing.value}-${resolution.value}x-${weatherSelect.value}${tracing.checked ? "-rays" : ""}`;
     const zoomSuffix = camera.zoom === 1 ? "" : `-zoom${Math.round(camera.zoom * 100)}`;
     const filename = `${sceneSelect.value}-${seed}${variant}${zoomSuffix}.png`;
     renderer.setSize(2560, 1440, false);

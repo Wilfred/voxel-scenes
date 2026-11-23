@@ -1,4 +1,6 @@
-// A study number is stable across seeds and between the gallery and the scene.
+import { seededRandom } from "./voxels";
+
+// Each design keeps its number in the asset library and in generated scenes.
 export const designNames = {
   pine: [
     "Woodland pine",
@@ -13,18 +15,14 @@ export const designNames = {
     "Cedar",
   ],
   broadleaf: ["Woodland oak", "Field maple", "Birch", "Hornbeam", "Linden", "Alder", "Elm", "Beech", "Hazel", "Willow"],
-  cottage: [
-    "Original cottage",
-    "Crofter’s cottage",
-    "Net mender’s house",
-    "Stone bothy",
-    "Gardener’s cottage",
-    "Orchard house",
-    "Fisher’s cottage",
-    "Longhouse",
-    "Mill keeper’s house",
-    "Forester’s cottage",
-  ],
+  cottage: ["Stone bothy", "Orchard house", "Net mender’s house", "Crofter’s cottage"],
 };
-export type Family = keyof typeof designNames;
-export const defaultDesigns = { pine: 0, broadleaf: 0, cottage: 3 };
+export type Designs = Record<keyof typeof designNames, number>;
+
+// A landscape draws its cottage and tree designs from its seed, so every
+// design appears across the days. A separate stream leaves the terrain alone.
+export function designsFor(seed: number): Designs {
+  const random = seededRandom(seed ^ 0x5bd1e995);
+  const pick = (names: readonly string[]) => Math.floor(random() * names.length);
+  return { pine: pick(designNames.pine), broadleaf: pick(designNames.broadleaf), cottage: pick(designNames.cottage) };
+}

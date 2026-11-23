@@ -1,7 +1,7 @@
 import { findSite } from "./sites";
 import { fenceBuilder } from "./fences";
 import type { orchardSeason } from "./day";
-import { defaultDesigns } from "./designs";
+import { designsFor } from "./designs";
 import { waterfowl } from "./ducks";
 import { grassShade, palette } from "./palette";
 import { treeVoxel } from "./scale";
@@ -17,7 +17,7 @@ export function buildMillpond(
   seed: number,
   model: boolean,
   grid: number,
-  designs = defaultDesigns,
+  designs = designsFor(seed),
   season: ReturnType<typeof orchardSeason> = "harvest",
 ) {
   const random = seededRandom(seed),

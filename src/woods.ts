@@ -2,7 +2,7 @@ import { deer, rabbit, villageYard } from "./village";
 import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
 import { treeVoxel } from "./scale";
-import { defaultDesigns } from "./designs";
+import { designsFor } from "./designs";
 import { findSite } from "./sites";
 import { riverDepthMap } from "./water";
 import { terrainTrail } from "./trails";
@@ -13,7 +13,7 @@ import { treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import * as THREE from "three";
 
-export function buildWoods(seed: number, model: boolean, grid = 1, designs = defaultDesigns) {
+export function buildWoods(seed: number, model: boolean, grid = 1, designs = designsFor(seed)) {
   const random = seededRandom(seed);
   const relief = terrainField(seed);
 

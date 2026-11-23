@@ -4,7 +4,7 @@ import { chicken, hive, sheep, villageYard } from "./village";
 import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
 import { treeVoxel } from "./scale";
-import { defaultDesigns } from "./designs";
+import { designsFor } from "./designs";
 import { findSite } from "./sites";
 import { waterfowl } from "./ducks";
 import * as THREE from "three";
@@ -15,7 +15,7 @@ import { terrainTrail } from "./trails";
 import { standDensity, treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 
-export function buildHillside(seed: number, model: boolean, grid = 1, designs = defaultDesigns) {
+export function buildHillside(seed: number, model: boolean, grid = 1, designs = designsFor(seed)) {
   const random = seededRandom(seed);
   const relief = terrainField(seed);
   const phase = random() * Math.PI * 2;

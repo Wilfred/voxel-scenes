@@ -5,17 +5,12 @@ import type { Box } from "./voxels";
 
 // Facades are read from left to right. D is the door, W a pane, and | a mullion.
 type House = { front: string; roof: Roof; tiers: number; chimney: number; detail?: "stone" | "bay" };
+// Four houses that differ in roof form and walling, in designNames order.
 const houses: House[] = [
-  { front: ".WW.DD.WW.", roof: "gable", tiers: 4, chimney: 2 },
-  { front: ".DD..WW|WW", roof: "gable", tiers: 4, chimney: -4 },
-  { front: "WW|WW..DD.", roof: "saltbox", tiers: 4, chimney: 2 },
   { front: "WWW.DD.WWW", roof: "hip", tiers: 3, chimney: -4, detail: "stone" },
-  { front: ".DD.WW.WW.", roof: "hip", tiers: 4, chimney: 2 },
   { front: "WWW...DD..", roof: "gable", tiers: 4, chimney: -3, detail: "bay" },
-  { front: "..DD.WW|WW", roof: "saltbox", tiers: 3, chimney: -4 },
-  { front: ".WWW..DD..", roof: "gable", tiers: 3, chimney: 3, detail: "stone" },
-  { front: "WWW|WW.DD.", roof: "hip", tiers: 4, chimney: 0 },
-  { front: ".DD..WW.WW", roof: "saltbox", tiers: 4, chimney: 3 },
+  { front: "WW|WW..DD.", roof: "saltbox", tiers: 4, chimney: 2 },
+  { front: ".WW.DD.WW.", roof: "gable", tiers: 4, chimney: -7 },
 ];
 
 export function cottageDoor(design: number) {

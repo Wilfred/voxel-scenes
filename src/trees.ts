@@ -1,5 +1,5 @@
 import { treeVoxel } from "./scale";
-import { defaultDesigns } from "./designs";
+import type { Designs } from "./designs";
 import { palette } from "./palette";
 import type { Box } from "./voxels";
 
@@ -45,7 +45,7 @@ export function standDensity(cover: number) {
   return cover < edge ? 0.003 : Math.min(0.5, 0.05 + 0.9 * (cover - edge));
 }
 
-export function treePlanter(box: Box, voxel: number, designs = defaultDesigns, seed = 0) {
+export function treePlanter(box: Box, voxel: number, designs: Designs, seed = 0) {
   type CrownBox = { x: number; y: number; z: number; width: number; height: number; depth: number };
   const stands = new Map<string, CrownBox[]>();
   const adultRoots = new Set<string>();
@@ -138,7 +138,7 @@ export function treePlanter(box: Box, voxel: number, designs = defaultDesigns, s
 }
 
 export function treeStudy(box: Box, species: Species, index: number) {
-  const plant = treePlanter(box, treeVoxel, { ...defaultDesigns, [species]: index });
+  const plant = treePlanter(box, treeVoxel, { pine: 0, broadleaf: 0, cottage: 0, [species]: index });
   plant(-0.75, 0, 0, species, false);
   plant(1.5, 0, 0, species, true);
 }
