@@ -1,5 +1,7 @@
 export const palette = {
   wood: 0x766048,
+  // The pale cut face of sawn and split timber.
+  sawnWood: 0xa3845f,
   green: {
     pine: 0x3b6454,
     pineTip: 0x4c7762,

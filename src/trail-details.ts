@@ -3,11 +3,20 @@ import type { Elevation } from "./sites";
 import { palette } from "./palette";
 import type { Box } from "./voxels";
 
+// Metre-long split logs, stacked in tiers across the two cells beside the
+// cottage. Alternate logs show pale sawn ends, so the pile reads as logs.
 export function firewood(box: Box, x: number, h: number, z: number) {
-  for (const offset of [-0.25, 0.25]) {
-    box(x, h + 0.25, z + offset, 1.75, 0.5, 0.5, palette.wood);
+  for (const [tier, count] of [
+    [0, 7],
+    [1, 7],
+    [2, 5],
+  ]) {
+    for (let i = 0; i < count; i++) {
+      const logX = x + (i - (count - 1) / 2) * timber;
+      const color = (i + tier) % 2 ? palette.sawnWood : palette.wood;
+      box(logX, h + (tier + 0.5) * timber, z, timber, timber, 2 * timber, color);
+    }
   }
-  box(x - 0.125, h + 0.625, z, 1.5, 0.25, 0.5, palette.wood);
 }
 
 export function waypost(box: Box, x: number, h: number, z: number, acrossBridge = false) {
