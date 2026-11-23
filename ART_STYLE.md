@@ -90,8 +90,7 @@ the scene at its natural scale.
 
 Use two metres per world unit. A half-metre masonry voxel is 0.25 world units.
 Cottage walls occupy 14 × 10 masonry voxels (7 × 5 metres), and a doorway is
-two voxels wide and four high. Use metre-sized crown blocks for trees in every
-scene. These dimensions describe the depicted landscape. The camera and screen
+two voxels wide and four high. Trees use the same half-metre voxel. These dimensions describe the depicted landscape. The camera and screen
 size determine its apparent miniature scale.
 
 Treat the scale as a guideline. These are decorative images, not accurate
@@ -108,11 +107,15 @@ silhouette clear and align projections such as porches and bays to the brick
 grid. Give the cottage a legible entrance, softly contrasting windows, and its
 familiar chimney smoke.
 
-Give woodland trees short visible trunks and simple, full crowns. Taper
-conifers to a single-voxel leader so they read apart from broadleaves in
-silhouette. Model saplings and adults separately, and use the same voxel
-resolution for trunk and foliage. Grow trees in stands with irregular gaps and
-room for their crowns, separated by open meadows.
+Give woodland trees a trunk one voxel across, with one to one and a half
+metres of it visible below simple, full crowns, except where a long bare trunk
+identifies the tree, as in a Scots or stone pine. Centre every tier on the
+trunk with an odd width, so the crown is symmetric, and round the corners of
+wide tiers in whole voxels. Most adult crowns are three to four and a half
+metres across and six to seven metres tall. Taper conifers to a single-voxel
+leader so they read apart from broadleaves in silhouette. Model saplings and
+adults separately, at about half the adult height. Grow trees in stands with
+irregular gaps and room for their crowns, separated by open meadows.
 
 Give larger landscapes a few working buildings on gentle ground beside a route
 that explains their presence.
@@ -128,15 +131,18 @@ rather than regular bars.
 
 ## When to subdivide a voxel
 
-Terrain, paths and stair rises follow their terrain lattice. For built structures,
-lay out the load-bearing silhouette on a local 0.25-world-unit construction grid
-(half a metre in the landscape). Decks, piles, rails and walls use multiples of
-that unit across scenes. Adapt a structure’s span and width to its job while
-keeping the same thickness for comparable members.
+Terrain, paths and stair rises follow their terrain lattice. Buildings, trees
+and built structures share one 0.25-world-unit construction voxel (half a metre
+in the landscape), so a crown and a wall beside it show blocks of the same
+size. Decks, piles, rails and walls use multiples of that unit across scenes.
+Adapt a structure’s span and width to its job while keeping the same thickness
+for comparable members.
 
-Use a half-course for a small functional detail such as a signboard or sill.
-Small animals can use their own finer grid so their legs and heads read at
-the established body size. Keep a single detail scale within each model.
+The half-course, a quarter of a metre, is the one shared subdivision. Use it for
+a small functional detail such as a signboard, sill or window reveal, in trees
+and buildings alike. Animals and hand-sized props such as crates and creels can
+use their own finer grid so their legs and heads read at the established body
+size. Keep a single detail scale within each model.
 Water, foam and smoke can depart from the solid grid for surface and air effects.
 
 For cottage windows, use the deep reveals and paired lights in the Chedworth
