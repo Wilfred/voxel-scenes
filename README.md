@@ -1,7 +1,9 @@
 # Voxel Scenes
 
 Generate a cosy voxel landscape in the browser and save it as a desktop wallpaper.
-Choose Crescent bay, Woodland stream, Hillside falls or Orchard millpond.
+Choose an island (Crescent bay, Palm lagoon or Island chain), Woodland stream,
+Orchard millpond, Hillside falls, or Coast and valley, which composes a millpond,
+a bridged river and the sea in one diorama.
 [Open the generator](https://www.wilfred.me.uk/voxel-scenes/) or
 [rotate the models in the asset library](https://www.wilfred.me.uk/voxel-scenes/assets.html).
 
