@@ -1,5 +1,5 @@
 import { findSite } from "./sites";
-import { fenceBuilder } from "./fences";
+import { fencedField } from "./fences";
 import type { orchardSeason } from "./day";
 import { designsFor } from "./designs";
 import { waterfowl } from "./ducks";
@@ -8,7 +8,7 @@ import { treeVoxel } from "./scale";
 import { terrainField } from "./terrain";
 import { terrainTrail } from "./trails";
 import { standDensity, treePlanter } from "./trees";
-import { appleTree, at, cart, chicken, crate, hive, mill, rabbit, sheep, stall, villageYard } from "./village";
+import { appleTree, at, cart, chicken, cow, crate, hive, mill, rabbit, sheep, stall, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
 import * as THREE from "three";
@@ -86,63 +86,72 @@ export function buildMillpond(
   yard.place(hive, orchardX - 3, orchardZ - 3, 0.5);
   yard.place(chicken, doorX + 1, wheelZ + 3, 0.4, false, { random: wildlife });
   yard.place(rabbit, orchardX - 2, orchardZ + 3, 0.45, true, { random: wildlife });
-  // Reserve a small grazing field beside the cart track. Its gate occupies
-  // the bay nearest the track, and the whole enclosure must fit on dry ground.
-  const paddock = findSite(orchardX - 8, orchardX + 8, orchardZ + 2, orchardZ + 9, 1, (x, z) => {
-    let low = Infinity,
-      high = -Infinity;
-    for (let dz = -2; dz <= 2; dz++)
-      for (let dx = -2; dx <= 2; dx++) {
-        const px = x + dx,
-          pz = z + dz,
-          h = elevation(px, pz);
-        if (
-          h <= 0 ||
-          Math.abs(px) >= radiusX ||
-          Math.abs(pz) >= radiusZ ||
-          millFootprint(px, pz) ||
-          trail.tiles.has(px + "," + pz) ||
-          yard.near(px, pz, 0.75)
-        )
-          return Infinity;
-        low = Math.min(low, h);
-        high = Math.max(high, h);
-      }
-    return high - low <= 0.5 ? 8 * (high - low) + Math.hypot(x - orchardX + 3, z - orchardZ - 4) : Infinity;
-  });
+  // Reserve grazing fields beside the cart track: a small one for sheep and
+  // a larger one for cattle. Each gate occupies the bay nearest the track,
+  // and the whole enclosure must fit on dry, nearly level ground.
+  const fields: { x: number; z: number; half: number }[] = [];
   const inField = (x: number, z: number, margin: number) =>
-    paddock && Math.abs(x - paddock.x) <= 2 + margin && Math.abs(z - paddock.z) <= 2 + margin;
-  if (paddock) {
-    const { x, z } = paddock;
-    const fence = fenceBuilder(box, (px, pz) => elevation(Math.round(px), Math.round(pz)));
-    const corners = [
-      [-2, -2],
-      [0, -2],
-      [2, -2],
-      [2, 0],
-      [2, 2],
-      [0, 2],
-      [-2, 2],
-      [-2, 0],
-    ];
-    const track = [...trail.tiles.keys()].map(key => key.split(",").map(Number));
-    const distances = corners.map(([a, b], i) => {
-      const [c, d] = corners[(i + 1) % corners.length];
-      return Math.min(...track.map(([px, pz]) => Math.hypot(px - x - (a + c) / 2, pz - z - (b + d) / 2)));
+    fields.some(f => Math.abs(x - f.x) <= f.half + margin && Math.abs(z - f.z) <= f.half + margin);
+  const track = [...trail.tiles.keys()].map(key => {
+    const [x, z] = key.split(",").map(Number);
+    return { x, z };
+  });
+  const level = (px: number, pz: number) => elevation(Math.round(px), Math.round(pz));
+  function field(
+    search: { left: number; right: number; back: number; front: number },
+    half: number,
+    target: { x: number; z: number },
+  ) {
+    const site = findSite(search.left, search.right, search.back, search.front, 1, (x, z) => {
+      let low = Infinity,
+        high = -Infinity;
+      for (let dz = -half; dz <= half; dz++)
+        for (let dx = -half; dx <= half; dx++) {
+          const px = x + dx,
+            pz = z + dz,
+            h = elevation(px, pz);
+          if (
+            h <= 0 ||
+            Math.abs(px) >= radiusX ||
+            Math.abs(pz) >= radiusZ ||
+            millFootprint(px, pz) ||
+            trail.tiles.has(px + "," + pz) ||
+            yard.near(px, pz, 0.75) ||
+            inField(px, pz, 1)
+          )
+            return Infinity;
+          low = Math.min(low, h);
+          high = Math.max(high, h);
+        }
+      return high - low <= 0.5 ? 8 * (high - low) + Math.hypot(x - target.x, z - target.z) : Infinity;
     });
-    const gate = distances.indexOf(Math.min(...distances));
-    corners.forEach(([a, b], i) => {
-      const [c, d] = corners[(i + 1) % corners.length];
-      fence.bay(x + a, z + b, x + c, z + d, i === gate);
-    });
-    fence.finish();
-    const flock = villageYard(
+    if (!site) return;
+    fencedField(box, level, site, half, track);
+    fields.push({ ...site, half });
+    const herd = villageYard(
       box,
-      (px, pz) => elevation(Math.round(px), Math.round(pz)),
-      (px, pz) => Math.abs(px - x) < 1.9 && Math.abs(pz - z) < 1.9,
+      level,
+      (px, pz) => Math.abs(px - site.x) < half - 0.1 && Math.abs(pz - site.z) < half - 0.1,
     );
-    for (const dx of [-1, 1]) flock.place(sheep, x + dx, z, 0.65, dx > 0, { random: wildlife });
+    return { ...site, herd };
   }
+  const flock = field({ left: orchardX - 8, right: orchardX + 8, back: orchardZ + 2, front: orchardZ + 9 }, 2, {
+    x: orchardX - 3,
+    z: orchardZ + 4,
+  });
+  if (flock)
+    for (const dx of [-1, 1]) flock.herd.place(sheep, flock.x + dx, flock.z, 0.65, dx > 0, { random: wildlife });
+  // Cattle draw from their own stream so the rest of the farm stays in place.
+  const cattle = field({ left: orchardX - 10, right: radiusX - 4, back: wheelZ - 4, front: radiusZ - 4 }, 3, {
+    x: doorX + 2,
+    z: wheelZ + 9,
+  });
+  if (cattle) {
+    const herd = seededRandom(seed ^ 0x2545f491);
+    for (const dx of [-1.5, 0, 1.5])
+      cattle.herd.place(cow, cattle.x + dx, cattle.z + dx / 1.5, 0.8, herd() < 0.5, { random: herd });
+  }
+
   const orchard = new Set<string>();
   for (let row = 0; row < Math.min(6, 2 + Math.floor(grid)); row++)
     for (let col = 0; col < 4; col++) {

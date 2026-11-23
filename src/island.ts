@@ -5,7 +5,8 @@ import { treeVoxel } from "./scale";
 import { pier, shoreStairs } from "./trail-details";
 import { designsFor } from "./designs";
 import { findSite } from "./sites";
-import { waterfowl } from "./ducks";
+import { gullsInFlight, waterfowl } from "./ducks";
+import { dinghyOffshore, mooredBoat } from "./boats";
 import { grassShade, palette } from "./palette";
 import { depthTexture } from "./water";
 import { treePlanter, tropicalGrove } from "./trees";
@@ -133,6 +134,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     route.push({ x, z });
   }
   const stairs = new Set(route.map(p => p.x + "," + p.z));
+  const facadeAngle = Math.atan2(forwardX, forwardZ);
   const doorOffset = cottageDoor(designs.cottage);
   const centreX = cottageX - sideX * doorOffset;
   const centreZ = cottageZ - sideZ * doorOffset;
@@ -352,10 +354,27 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     box(x, y, z, size, size * 0.7, size * 0.8, palette.ground.stone);
   }
   const landing = { x: end.x + pierX, z: end.z + pierZ };
+  const home = { x: centreX, z: centreZ };
+  const awayFromHome = (x: number, z: number, distance: number) => Math.hypot(x - home.x, z - home.z) > distance;
+  const inFrame = (x: number, z: number, margin: number) =>
+    Math.abs(x) + margin < bounds.width / 2 && Math.abs(z) + margin < bounds.depth / 2;
+  // The camera looks at the cottage front, so favour the side it sees.
+  const towardX = Math.sin(facadeAngle),
+    towardZ = Math.cos(facadeAngle);
+  const facing = (x: number, z: number) => Math.max(0, (x * towardX + z * towardZ) / Math.hypot(x, z) + 0.2);
+  // Gulls float in the shallows along a stretch of shore away from the
+  // cottage and its landing.
+  let raft = landing,
+    total = 0;
+  for (const cell of shoreline) {
+    const weight = inFrame(cell.x, cell.z, 3) && awayFromHome(cell.x, cell.z, 8 * grid) ? facing(cell.x, cell.z) : 0;
+    total += weight;
+    if (weight > 0 && wildlife() * total < weight) raft = cell;
+  }
   waterfowl(
     box,
-    landing.x,
-    landing.z,
+    raft.x,
+    raft.z,
     -0.45,
     (x, z) => {
       if (Math.abs(x) >= bounds.width / 2 || Math.abs(z) >= bounds.depth / 2 || stairs.has(snap(x) + "," + snap(z)))
@@ -363,8 +382,45 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
       return -naturalHeight(snap(x), snap(z));
     },
     wildlife,
-    6,
-    landing,
+    4,
+    { avoid: [landing, home] },
+  );
+  // Boats and gulls in flight draw from their own stream so they leave
+  // the landscape and the other wildlife in place.
+  const harbour = seededRandom(seed ^ 0x3c6ef372);
+  const sounding = (x: number, z: number) => (model && !inFrame(x, z, 1) ? 0 : -naturalHeight(snap(x), snap(z)));
+  const moored = mooredBoat(box, landing, [pierX, pierZ], sounding);
+  const halfWidth = bounds.width / 2 - 2,
+    halfDepth = bounds.depth / 2 - 2;
+  const frame = { left: -halfWidth, right: halfWidth, back: -halfDepth, front: halfDepth };
+  // The dinghy sails clear of the cottage and landing, heading out to sea.
+  dinghyOffshore(
+    box,
+    frame,
+    sounding,
+    harbour,
+    [
+      { ...home, radius: 14 * grid },
+      { ...landing, radius: 5 * grid },
+      { ...raft, radius: 4 },
+      ...(moored ? [{ ...moored, radius: 4 }] : []),
+    ],
+    (x, z) => [x / Math.hypot(x, z), z / Math.hypot(x, z)],
+    // Further from the cottage spreads the scene's interest.
+    (x, z) => facing(x, z) * Math.min(2, Math.hypot(x - home.x, z - home.z) / (10 * grid)),
+  );
+  // Gulls in flight cross low land away from the cottage, on the side nearer
+  // the camera, so higher ground rather than the sky lies behind them.
+  gullsInFlight(
+    box,
+    frame,
+    (x, z) => naturalHeight(snap(x), snap(z)),
+    (x, z) => {
+      const h = naturalHeight(snap(x), snap(z));
+      return h >= 1 && h <= 3 && awayFromHome(x, z, 6 * grid) ? facing(x, z) ** 2 : 0;
+    },
+    harbour,
+    2,
   );
   const depth = { texture: depthTexture(samples, resolution), extent: depthExtent };
 
@@ -390,7 +446,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     depth,
     bounds,
     seaExtent,
-    facadeAngle: Math.atan2(forwardX, forwardZ),
+    facadeAngle,
     focus: new THREE.Vector3(centreX, foundationTop, centreZ),
   };
 }

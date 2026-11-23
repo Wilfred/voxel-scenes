@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { buildCottage } from "./cottage";
 import { designNames } from "./designs";
 import { addBird } from "./ducks";
+import { boats } from "./boats";
 import { lightScene } from "./lighting";
 import { palette } from "./palette";
 import { firewood, footbridge, pier, shoreStairs, waypost } from "./trail-details";
@@ -151,12 +152,13 @@ function library(renderer: THREE.WebGLRenderer) {
   section(
     "birds",
     "Water birds",
-    (["drake", "hen", "gull"] as const).map((species, i) => ({
-      name: ["Mallard drake", "Mallard hen", "Seagull"][i],
+    (["drake", "hen", "gull", "flying gull"] as const).map((species, i) => ({
+      name: ["Mallard drake", "Mallard hen", "Seagull", "Gull in flight"][i],
       draw: box => addBird(box, 0, 0, 0, species),
     })),
   );
   section("animals", "Land animals", animals);
+  section("boats", "Boats", boats, false);
   section("village", "Village and orchard", village, false);
   section(
     "structures",

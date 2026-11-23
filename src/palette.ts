@@ -53,7 +53,18 @@ export const palette = {
   },
   harvest: { apple: 0xac5142, blossom: 0xe8cec1, coconut: 0x6b5238, banana: 0xb7a24e },
   // Coats and feathers of farm and woodland animals.
-  animal: { fleece: 0xe4ddd0, fur: 0x886f58, pale: 0xb9ab92, dark: 0x766048, beak: 0xb89052, comb: 0xac5142 },
+  animal: {
+    fleece: 0xe4ddd0,
+    fur: 0x886f58,
+    pale: 0xb9ab92,
+    dark: 0x766048,
+    beak: 0xb89052,
+    comb: 0xac5142,
+    hide: 0x3b3833,
+    muzzle: 0x8d7f74,
+  },
+  // A pale hull and a tan sail, light enough to read against the sea.
+  boat: { hull: 0xe3dccb, sail: 0xd9b48a },
   cloth: { canvas: 0xb9ab92, dyed: 0x5a7f4e },
   gull: { white: 0xf1efe3, wing: 0xabb6b8, tip: 0x4d5657 },
   duck: {

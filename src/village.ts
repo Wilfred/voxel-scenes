@@ -35,6 +35,19 @@ export const sheep: Model = box => {
   cell(4, 3, -1.5, 7, 6, 1.5, p.animal.dark);
   for (const z of [-2, 2]) cell(4, 5, z - 0.5, 5, 6, z + 0.5, p.animal.dark);
 };
+// A belted cow at life size on eighth-metre cells: a dark body with a white
+// band round its middle, which reads across a field.
+export const cow: Model = box => {
+  const cell = lattice(box, 1 / 16);
+  for (const x of [-7, 5]) for (const z of [-2, 2]) cell(x - 1, 0, z - 1, x + 1, 5, z + 1, p.animal.hide);
+  cell(-9, 5, -3, -3, 11, 3, p.animal.hide);
+  cell(-3, 5, -3, 1, 11, 3, p.animal.fleece);
+  cell(1, 5, -3, 7, 11, 3, p.animal.hide);
+  cell(7, 7, -1.5, 11, 11, 1.5, p.animal.hide);
+  cell(11, 7, -1.5, 12, 9, 1.5, p.animal.muzzle);
+  for (const z of [-1, 1]) cell(8, 11, z * 2 - 0.5, 9, 12, z * 2 + 0.5, p.animal.hide);
+  cell(-10, 6, -0.5, -9, 10, 0.5, p.animal.hide);
+};
 // A roe deer: long legs, an upright neck, large ears and a pale rump.
 export const deer: Model = box => {
   const cell = lattice(box, 1 / 16);
@@ -161,6 +174,7 @@ export const mill: Model = box => {
 export const animals = [
   { name: "Roe deer", draw: deer },
   { name: "Grazing sheep", draw: sheep },
+  { name: "Belted cow", draw: cow },
   { name: "Field rabbit", draw: rabbit },
   { name: "Farmyard hen", draw: chicken },
 ];

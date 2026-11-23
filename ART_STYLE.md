@@ -76,11 +76,16 @@ from its chimney, two walkers on a mountain saddle, or a few deer peeking
 out between the trees can give the whole scene a sense of scale. Let the
 terrain catch the eye first and leave these details for a second glance.
 
-Give each animal a reason to be there. Gulls can float off a landing or along
-a shallow shore, ducks dabble in sheltered shallows, and deer and rabbits graze
-where woodland opens out. Place hens by the yard and sheep on pasture. Make
-suitable sites more likely while leaving room for variation. Keep flocks loose
-and give pairs enough space for their silhouettes to separate.
+Give each animal a reason to be there. Gulls float in the shallows along a
+quiet shore, all facing into the wind that carries the chimney smoke, and fly
+over land, where they show white against the trees. Ducks swim out on open
+water, clear of the bank, and deer and rabbits graze where woodland opens out.
+Place hens by the yard, and sheep and cattle in fields beside a track. Moor a
+rowing boat beside a pier, since a lone boat elsewhere looks adrift, and sail a
+dinghy out to sea, clear of the landing. Spread these details across the scene
+rather than gathering them by the cottage. Make suitable sites more likely
+while leaving room for variation. Keep flocks loose and give pairs enough space
+for their silhouettes to separate.
 
 Let fences explain land use. At the mill, the paddock gate faces the cart
 track. On steep paths a short guardrail marks the drop. A kitchen-garden fence
@@ -121,7 +126,7 @@ and tail, a duck's head and bill. Keep their order of size, so a hen stays
 smaller than a sheep and a sheep smaller than a deer. As a starting point,
 hens and rabbits are about three quarters larger than life, sheep two
 fifths larger, and swimming ducks and gulls about 0.9 metres from tail to bill.
-The deer, cottage and trees stay at their true scale.
+The deer, cows, boats, cottage and trees stay at their true scale.
 
 Use the Stone bothy and Orchard house as cottage references. Keep the roof
 silhouette clear and align projections such as porches and bays to the brick

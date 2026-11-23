@@ -42,3 +42,31 @@ export function fenceBuilder(box: Box, elevation: Elevation) {
   }
   return { bay, finish };
 }
+
+// Fence a square field reaching `half` cells either side of its centre in
+// two-cell bays, and hang the gate in the bay nearest the track.
+export function fencedField(
+  box: Box,
+  elevation: Elevation,
+  centre: { x: number; z: number },
+  half: number,
+  track: { x: number; z: number }[],
+) {
+  const { x, z } = centre;
+  const corners: [number, number][] = [];
+  for (let i = -half; i < half; i += 2) corners.push([i, -half]);
+  for (let i = -half; i < half; i += 2) corners.push([half, i]);
+  for (let i = half; i > -half; i -= 2) corners.push([i, half]);
+  for (let i = half; i > -half; i -= 2) corners.push([-half, i]);
+  const distances = corners.map(([a, b], i) => {
+    const [c, d] = corners[(i + 1) % corners.length];
+    return Math.min(...track.map(p => Math.hypot(p.x - x - (a + c) / 2, p.z - z - (b + d) / 2)));
+  });
+  const gate = distances.indexOf(Math.min(...distances));
+  const fence = fenceBuilder(box, elevation);
+  corners.forEach(([a, b], i) => {
+    const [c, d] = corners[(i + 1) % corners.length];
+    fence.bay(x + a, z + b, x + c, z + d, i === gate);
+  });
+  fence.finish();
+}
