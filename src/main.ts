@@ -6,6 +6,7 @@ import { lightScene } from "./lighting";
 import { palette } from "./palette";
 import * as THREE from "three";
 import { createWater } from "./water";
+import { createShower } from "./rain";
 import { createSky } from "./sky";
 import { disposeLandscape, scenes, type Landscape } from "./scenes";
 
@@ -18,8 +19,8 @@ const context = canvas.getContext("webgl2", { antialias: true });
 // model frame and the grid, so a larger grid shows more land at the same
 // apparent size. It looks down at this pitch through a narrow lens.
 const vistaDistance = 3.1;
-const vistaPitch = THREE.MathUtils.degToRad(20);
-const vistaFov = 30;
+const vistaPitch = THREE.MathUtils.degToRad(13);
+const vistaFov = 36;
 
 if (!context) {
   canvas.hidden = true;
@@ -40,9 +41,10 @@ if (!context) {
   const modelCamera = new THREE.OrthographicCamera();
   const vistaCamera = new THREE.PerspectiveCamera(vistaFov, 16 / 9);
   let camera: THREE.OrthographicCamera | THREE.PerspectiveCamera = vistaCamera;
-  const { sea, surface, rays } = createWater();
-  const sky = createSky();
-  scene.add(sea, sky.dome);
+  const sky = createSky(renderer);
+  const { sea, surface, rays } = createWater(sky.texture);
+  const rain = createShower();
+  scene.add(sea, rain.drops);
 
   const sun = lightScene(scene);
   const skyLight = scene.children.find(light => light instanceof THREE.HemisphereLight)!;
@@ -129,7 +131,9 @@ if (!context) {
     const horizon = coastal && weatherSelect.value === "clear" ? palette.light.coastalSky : preset.sky;
     const grid = surface.grid.value;
     const model = camera === modelCamera;
-    scene.background = new THREE.Color(model ? palette.light.backdrop : horizon);
+    sky.update(seed, preset, horizon);
+    scene.background = model ? new THREE.Color(palette.light.backdrop) : sky.texture;
+    rain.drops.visible = weatherSelect.value === "clearing";
     // Keep the focus crisp and let the haze close in on the far terrain.
     const reach = distance();
     scene.fog = model
@@ -144,15 +148,8 @@ if (!context) {
     sun.target.position.copy(target);
     sun.target.updateMatrixWorld();
     surface.sun.value.copy(light).normalize();
-    surface.sky.value.setHex(horizon);
-    surface.horizon.value.setHex(preset.horizon);
-    surface.zenith.value.setHex(preset.zenith);
     surface.ripple.value = preset.ripple;
     surface.rain.value = weatherSelect.value === "clearing" ? 1 : 0;
-    sky.uniforms.horizon.value.setHex(horizon);
-    sky.uniforms.zenith.value.setHex(preset.zenith);
-    sky.uniforms.glow.value.setHex(preset.sunlight);
-    sky.uniforms.sun.value.copy(surface.sun.value);
     fitShadow(light.length() * grid);
     renderer.shadowMap.needsUpdate = true;
   }
@@ -206,7 +203,7 @@ if (!context) {
 
     camera = model ? modelCamera : vistaCamera;
     orbit.object = camera;
-    sky.dome.visible = !model;
+
     const facade = landscape.facade;
     // Orbit the front and both front corners while keeping the door joined to its path.
     orbit.minAzimuthAngle = landscape.frontOnly ? facade - Math.PI * 0.38 : -Infinity;
@@ -261,6 +258,7 @@ if (!context) {
     surface.depth.value = landscape.depth.texture;
     surface.depthExtent.value = landscape.depth.extent;
     surface.deep.value.setHex(landscape.deepWater);
+    rain.place(seed, grid, model, landscape.modelTarget, landscape.waterBounds);
     applyWeather();
     clearRays = contactRays(landscape.mesh, grid, rays, volumeLimit);
     surface.phase.value = (seed % 997) / 53;

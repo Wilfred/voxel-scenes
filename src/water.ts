@@ -25,17 +25,14 @@ export function riverDepthMap(depthAt: (x: number, z: number) => number, extent:
 }
 
 // Retain Three's lighting and island shadows underneath the reflected sky.
-export function createWater() {
+export function createWater(skyMap: THREE.CubeTexture) {
   const rays = rayUniforms();
   const surface = {
     depth: { value: null as THREE.Texture | null },
     depthExtent: { value: 64 },
     deep: { value: new THREE.Color() },
-    sky: { value: new THREE.Color() },
     sun: { value: new THREE.Vector3() },
     eye: { value: new THREE.Vector3() },
-    horizon: { value: new THREE.Color(palette.light.horizon) },
-    zenith: { value: new THREE.Color(palette.light.zenith) },
     ripple: { value: 1 },
     rain: { value: 0 },
     grid: { value: 1 },
@@ -44,15 +41,13 @@ export function createWater() {
   const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, rays, {
-      horizonTint: surface.horizon,
-      zenithTint: surface.zenith,
+      skyMap: { value: skyMap },
       ripple: surface.ripple,
       rain: surface.rain,
       glintTint: { value: new THREE.Color(palette.light.sunGlint) },
       seabed: surface.depth,
       depthExtent: surface.depthExtent,
       deepWater: surface.deep,
-      skyTint: surface.sky,
       gridScale: surface.grid,
       sunlight: surface.sun,
       viewDirection: surface.eye,
@@ -67,12 +62,13 @@ export function createWater() {
     shader.fragmentShader =
       voxelTrace +
       `
+      uniform samplerCube skyMap;
       uniform sampler2D rayColors;
       uniform bool tracingEnabled;
       varying vec3 waterPoint, waterNormal;
       uniform sampler2D seabed;
-      uniform vec3 horizonTint, zenithTint, glintTint;
-      uniform vec3 deepWater, skyTint, sunlight, viewDirection;
+      uniform vec3 glintTint;
+      uniform vec3 deepWater, sunlight, viewDirection;
       uniform float wavePhase, gridScale, ripple, rain, depthExtent;
       float hashWave(vec2 cell) {
         vec3 q = fract(vec3(cell.xyx) * 0.1031);
@@ -134,7 +130,7 @@ export function createWater() {
       vec3 reflected = reflect(-eye, waveNormal);
       float facing = clamp(dot(eye, waveNormal), 0.0, 1.0);
       float fresnel = 0.035 + 0.965 * pow(1.0 - facing, 4.0);
-      vec3 skyLight = mix(mix(skyTint, horizonTint, 0.65), zenithTint, smoothstep(0.05, 0.70, reflected.y));
+      vec3 skyLight = textureCube(skyMap, reflected).rgb;
       float sparkle = pow(max(dot(reflected, sunlight), 0.0), 90.0);
       if (tracingEnabled) {
         float travel; vec3 face;
