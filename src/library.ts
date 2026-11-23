@@ -9,12 +9,12 @@ import { addBird } from "./ducks";
 import { lightScene } from "./lighting";
 import { palette } from "./palette";
 import { firewood, footbridge, pier, shoreStairs, waypost } from "./trail-details";
-import { treeStudy } from "./trees";
+import { treeStudy, type Species } from "./trees";
 import { voxelBatch, type Box } from "./voxels";
 
 type Asset = { name: string; draw: (box: Box) => void };
 
-function trees(species: "pine" | "broadleaf"): Asset[] {
+function trees(species: Species): Asset[] {
   return designNames[species].map((name, index) => ({
     name,
     draw(box) {
@@ -133,6 +133,8 @@ function library(renderer: THREE.WebGLRenderer) {
 
   section("pines", "Pines · adult and sapling", trees("pine"));
   section("broadleaf", "Broadleaf trees · adult and sapling", trees("broadleaf"));
+  section("palms", "Palms · adult and sapling", trees("palm"));
+  section("tropical", "Tropical trees · adult and sapling", trees("tropical"));
   section(
     "cottages",
     "Cottages",

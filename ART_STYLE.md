@@ -53,7 +53,11 @@ woods, the water and the sky should separate into distinct masses.
   darker in hollows and warmer on crests, so relief reads before shadows do.
 - Keep conifers darker and bluer than broadleaves, so stands read apart, and
   keep both distinct from the grass. Use restrained greens for ordinary
-  woodland and reserve yellow foliage for a seasonal scene.
+  woodland and reserve yellow foliage for a seasonal scene. Palm fronds are
+  lighter and yellower than temperate leaves, and glossy tropical broadleaves
+  sit between the palms and the pines. Plant tropical trees by their role:
+  sea almonds behind a beach, breadfruit on higher ground and bananas in a
+  cottage garden.
 - Use one wood colour for living trunks and built timber. Let the warm roof
   tile be the main accent in a green landscape.
 - In sunny weather, let direct sun outweigh sky light about two to one so cast

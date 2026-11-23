@@ -21,7 +21,8 @@ that each builds and that its paths climb at most one terrain layer per step.
 Grid resolution controls how many terrain cells fit across the wallpaper.
 The range is 0.75× to 5× in quarter steps. At 5×, five times as many cells fit
 across the wallpaper. The export remains 2560 × 1440.
-Each landscape draws from four cottages, ten pines and ten broadleaves using its seed, so
+Each landscape draws from four cottages, ten pines, ten broadleaves and three
+palms using its seed, so
 every design appears across the days. The asset library shows them all, each
 tree with its adult and sapling. Scroll over the preview or use the − and +
 buttons to zoom from 50% to 300%. Click Reset camera, double-click the preview,

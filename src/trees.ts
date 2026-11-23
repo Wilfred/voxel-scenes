@@ -1,9 +1,9 @@
 import { treeVoxel } from "./scale";
-import type { Designs } from "./designs";
+import { designsFor, type Designs } from "./designs";
 import { palette } from "./palette";
 import type { Box } from "./voxels";
 
-type Species = "pine" | "broadleaf";
+export type Species = "pine" | "broadleaf" | "palm" | "tropical";
 // Trees share the half-metre construction voxel with buildings. Each tier is
 // width, height and depth in voxels, from the trunk up, centred on a trunk
 // one voxel across. Odd widths keep every crown symmetric about its trunk.
@@ -12,7 +12,7 @@ type Species = "pine" | "broadleaf";
 type Tier = [number, number, number];
 type Profile = Tier[];
 // prettier-ignore
-const profiles: Record<Species, [Profile, Profile][]> = {
+const profiles: Record<"pine" | "broadleaf", [Profile, Profile][]> = {
   pine: [
     // Woodland pine: a tiered cone on a short trunk.
     [[[1,3,1],[7,3,7],[5,3,5],[3,2,3],[1,2,1]], [[1,1,1],[5,1,5],[3,2,3],[1,2,1]]],
@@ -59,6 +59,168 @@ const profiles: Record<Species, [Profile, Profile][]> = {
   ],
 };
 
+// A part of a free-form tree, in voxels: the centre offset from the trunk
+// and ground, its size, and whether to round its corners like a crown tier.
+type Part = {
+  x: number;
+  y: number;
+  z: number;
+  width: number;
+  height: number;
+  depth: number;
+  part: "trunk" | "leaf" | "tip" | "fruit";
+  round?: boolean;
+};
+
+// Palm fronds spring from the crown and droop toward their tips. Each step
+// is one voxel out from the crown; `fall` lists the drop at each step.
+function frond(parts: Part[], top: [number, number], y: number, dx: number, dz: number, fall: number[]) {
+  fall.forEach((drop, i) => {
+    const step = i + 2;
+    // Extend each voxel down to the next one's top, so the leaf stays joined
+    // face to face where it bends.
+    const bottom = y - Math.max(drop, fall[i + 1] ?? drop);
+    const upper = y + 1 - drop;
+    const cell = { y: (upper + bottom) / 2, width: 1, height: upper - bottom, depth: 1 };
+    const part = i === fall.length - 1 ? "tip" : "leaf";
+    parts.push({ x: top[0] + dx * step, z: top[1] + dz * step, ...cell, part });
+    // Diagonal fronds fill the inside corner of each step so they read as
+    // one leaf rather than a dotted line.
+    if (dx && dz) parts.push({ x: top[0] + dx * step, z: top[1] + dz * (step - 1), ...cell, part: "leaf" });
+  });
+}
+
+// A trunk of one voxel, stepping sideways at each listed height to lean.
+function palmTrunk(parts: Part[], height: number, lean: number[]): [number, number] {
+  let x = 0,
+    bottom = 0;
+  for (const bend of [...lean, height]) {
+    parts.push({ x, y: (bottom + bend) / 2, z: 0, width: 1, height: bend - bottom, depth: 1, part: "trunk" });
+    // Overlap each bend by one voxel so the leaning trunk stays joined.
+    bottom = bend - 1;
+    if (bend < height) x++;
+  }
+  return [x, 0];
+}
+
+const cardinal = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
+const diagonal = [
+  [1, 1],
+  [1, -1],
+  [-1, 1],
+  [-1, -1],
+];
+
+function palmCrown(parts: Part[], top: [number, number], y: number, long: number[], short: number[], nuts: boolean) {
+  parts.push({ x: top[0], y: y + 0.5, z: top[1], width: 3, height: 1, depth: 3, part: "leaf" });
+  parts.push({ x: top[0], y: y + 1.5, z: top[1], width: 1, height: 1, depth: 1, part: "tip" });
+  for (const [dx, dz] of cardinal) frond(parts, top, y, dx, dz, long);
+  for (const [dx, dz] of diagonal) frond(parts, top, y, dx, dz, short);
+  if (nuts)
+    for (const [dx, dz] of [
+      [1, 0],
+      [0, 1],
+      [-1, 0],
+    ])
+      parts.push({ x: top[0] + dx, y: y - 0.5, z: top[1] + dz, width: 1, height: 1, depth: 1, part: "fruit" });
+}
+
+// Banana leaves are long paddles two voxels wide that arch out and down.
+function bananaLeaves(parts: Part[], y: number, length: number) {
+  for (const [dx, dz] of cardinal) {
+    for (let i = 1; i <= length; i++) {
+      const drop = i <= 1 ? -1 : i - 2;
+      const along = i + 0.5;
+      // Offset each paddle to one side of its rib, so the leaves turn like a pinwheel.
+      parts.push({
+        x: dx * along - dz * 0.5,
+        y: y - drop + 0.5,
+        z: dz * along + dx * 0.5,
+        width: dx ? 1 : 2,
+        height: 1,
+        depth: dz ? 1 : 2,
+        part: i === length ? "tip" : "leaf",
+      });
+    }
+  }
+}
+
+type Builder = (sapling: boolean) => Part[];
+// prettier-ignore
+const freeForms: Record<"palm" | "tropical", (Builder | [Profile, Profile])[]> = {
+  palm: [
+    // Coconut palm: a tall, leaning trunk under drooping fronds and nuts.
+    sapling => {
+      const parts: Part[] = [];
+      const top = palmTrunk(parts, sapling ? 4 : 13, sapling ? [] : [5, 10]);
+      palmCrown(parts, top, sapling ? 4 : 13, sapling ? [0, 1] : [0, 0, 1, 2], sapling ? [1] : [0, 1, 2], !sapling);
+      return parts;
+    },
+    // Royal palm: a straight trunk, a green crownshaft and arching fronds.
+    sapling => {
+      const parts: Part[] = [];
+      const height = sapling ? 4 : 12;
+      palmTrunk(parts, height, []);
+      if (!sapling) parts.push({ x: 0, y: height + 1, z: 0, width: 1, height: 2, depth: 1, part: "leaf" });
+      palmCrown(parts, [0, 0], sapling ? height : height + 2, sapling ? [0, 1] : [-1, 0, 1, 2, 3], sapling ? [1] : [0, 1, 2], false);
+      return parts;
+    },
+    // Fan palm: a short, stout trunk with a full, upright head.
+    sapling => {
+      const parts: Part[] = [];
+      const height = sapling ? 2 : 6;
+      parts.push({ x: 0, y: height / 2, z: 0, width: 1, height, depth: 1, part: "trunk" });
+      parts.push({ x: 0, y: height + 1, z: 0, width: 3, height: 2, depth: 3, part: "leaf" });
+      for (const [dx, dz] of [...cardinal, ...diagonal])
+        frond(parts, [0, 0], height + 2, dx, dz, sapling ? [-1] : [-2, -1, 0]);
+      parts.push({ x: 0, y: height + 2.5, z: 0, width: 1, height: 1, depth: 1, part: "tip" });
+      return parts;
+    },
+  ],
+  tropical: [
+    // Sea almond: flat, widely spaced tiers like a pagoda.
+    [[[1,4,1],[9,1,9],[1,1,1],[7,1,7],[1,1,1],[5,1,5],[3,1,3]], [[1,2,1],[5,1,5],[1,1,1],[3,1,3]]],
+    // Banana plant: a short stem below broad, arching paddle leaves.
+    sapling => {
+      const parts: Part[] = [];
+      const height = sapling ? 2 : 4;
+      parts.push({ x: 0, y: height / 2, z: 0, width: 1, height, depth: 1, part: "leaf" });
+      parts.push({ x: 0, y: height + 1, z: 0, width: 1, height: 2, depth: 1, part: "tip" });
+      bananaLeaves(parts, height, sapling ? 2 : 4);
+      if (!sapling) parts.push({ x: 1, y: height - 1, z: 0, width: 1, height: 2, depth: 1, part: "fruit" });
+      return parts;
+    },
+    // Breadfruit: a dense, glossy dome hung with round green fruit.
+    sapling => {
+      const tiers: Tier[] = sapling ? [[1,2,1],[5,2,5],[3,1,3]] : [[1,3,1],[7,1,7],[9,3,9],[7,1,7],[3,1,3]];
+      const parts = stack(tiers, false);
+      if (!sapling) for (const [x, y, z] of [[5,5.5,1],[-1,6.5,5],[-5,4.5,-2],[2,5.5,-5]]) parts.push({ x, y, z, width: 1, height: 1, depth: 1, part: "fruit" });
+      return parts;
+    },
+  ],
+};
+
+// Tropical designs, in designNames order.
+const [seaAlmond, banana, breadfruit] = [0, 1, 2];
+
+// Plant tropical trees by role: bananas in the cottage garden, sea almonds
+// in patches behind the beach and breadfruit on higher ground, all among
+// palms, which also line the beach. `home` is the distance to the cottage.
+export function tropicalGrove(relief: (x: number, z: number) => number) {
+  return (x: number, z: number, h: number, home: number): { species: Species; design?: number } => {
+    if (home < 7 && h >= 1) return { species: "tropical", design: banana };
+    const patch = relief(x + 61, z - 13);
+    if (h < 1 || (h < 2.5 && patch < 0.2)) return { species: "palm" };
+    if (h < 2.5) return { species: "tropical", design: seaAlmond };
+    return patch < -0.2 ? { species: "palm" } : { species: "tropical", design: breadfruit };
+  };
+}
+
 // Woodland grows in stands separated by open meadows, with the odd lone
 // tree between them. `cover` is a smooth field, roughly -1 to 1, and the
 // result is the chance of planting in one terrain cell.
@@ -72,8 +234,9 @@ export function treePlanter(box: Box, voxel: number, designs: Designs, seed = 0)
   const stands = new Map<string, CrownBox[]>();
   const adultRoots = new Set<string>();
   const patchSize = 8;
-  return (x: number, ground: number, z: number, species: Species, sapling: boolean) => {
-    const model = profiles[species][designs[species]][sapling ? 1 : 0];
+  // Pines, broadleaves and palms take the seed's design unless the caller
+  // names one. Tropical trees fill different roles, so callers always name them.
+  return (x: number, ground: number, z: number, species: Species, sapling: boolean, design?: number) => {
     // Centre the trunk on a construction voxel so every tier edge lies on the grid.
     const gx = Math.floor(x / voxel);
     const gy = Math.round(ground / voxel);
@@ -96,32 +259,20 @@ export function treePlanter(box: Box, voxel: number, designs: Designs, seed = 0)
         }
       }
     }
-    const foliage =
-      species === "pine"
-        ? { trunk: palette.wood, leaf: palette.green.pine, tip: palette.green.pineTip }
-        : { trunk: palette.wood, leaf: palette.green.leaf, tip: palette.green.leafTip };
-
+    const foliage = colours[species];
     const twist = Math.imul(gx ^ seed, 73856093) ^ Math.imul(gz, 19349663);
-    const quarterTurn = ((twist ^ (twist >>> 16)) & 1) === 1;
-    let base = 0;
-    const parts = model.map(([width, layers, depth], i) => {
-      const top = i === model.length - 1;
-      const part = i === 0 || (!top && width === 1 && depth === 1) ? "trunk" : top ? "tip" : "leaf";
-      const height = layers + (i === 0 && crowded ? 2 : 0);
-      const bottom = base;
-      base += height;
-      return {
-        width: quarterTurn ? depth : width,
-        depth: quarterTurn ? width : depth,
-        height,
-        bottom,
-        color: foliage[part],
-      };
+    const turn = (twist ^ (twist >>> 16)) & 3;
+    const index = design ?? (species === "tropical" ? 0 : designs[species]);
+    const parts = treeParts(species, index, sapling, crowded).map(p => {
+      // Turn the model a whole number of quarter turns about its trunk.
+      let { x, z, width, depth } = p;
+      for (let i = 0; i < turn; i++) [x, z, width, depth] = [z, -x, depth, width];
+      return { ...p, x, z, width, depth, color: foliage[p.part] };
     });
     const boxes = parts.map(p => ({
-      x: gx,
-      y: gy + p.bottom + p.height / 2,
-      z: gz,
+      x: gx + p.x,
+      y: gy + p.y,
+      z: gz + p.z,
       width: p.width,
       height: p.height,
       depth: p.depth,
@@ -150,9 +301,42 @@ export function treePlanter(box: Box, voxel: number, designs: Designs, seed = 0)
     else stands.set(key, boxes);
     if (!sapling) adultRoots.add(patchX + "," + patchZ);
     for (const part of parts) {
-      tier(box, cx, ground + (part.bottom + part.height / 2) * voxel, cz, part, voxel);
+      const at = [cx + part.x * voxel, ground + part.y * voxel, cz + part.z * voxel] as const;
+      if (part.round) tier(box, ...at, part, voxel);
+      else box(...at, part.width * voxel, part.height * voxel, part.depth * voxel, part.color);
     }
   };
+}
+
+const colours: Record<Species, Record<Part["part"], number>> = {
+  pine: { trunk: palette.wood, leaf: palette.green.pine, tip: palette.green.pineTip, fruit: palette.wood },
+  broadleaf: { trunk: palette.wood, leaf: palette.green.leaf, tip: palette.green.leafTip, fruit: palette.wood },
+  palm: { trunk: palette.wood, leaf: palette.green.palm, tip: palette.green.palmTip, fruit: palette.harvest.coconut },
+  tropical: {
+    trunk: palette.wood,
+    leaf: palette.green.tropical,
+    tip: palette.green.tropicalTip,
+    fruit: palette.harvest.banana,
+  },
+};
+
+// Stack a profile's tiers from the ground, or draw a free-form model.
+function treeParts(species: Species, index: number, sapling: boolean, crowded: boolean): Part[] {
+  const design = species === "pine" || species === "broadleaf" ? profiles[species][index] : freeForms[species][index];
+  if (typeof design === "function") return design(sapling);
+  return stack(design[sapling ? 1 : 0], crowded);
+}
+
+function stack(model: Profile, crowded: boolean): Part[] {
+  let base = 0;
+  return model.map(([width, layers, depth], i) => {
+    const top = i === model.length - 1;
+    const part = i === 0 || (!top && width === 1 && depth === 1) ? "trunk" : top ? "tip" : "leaf";
+    const height = layers + (i === 0 && crowded ? 2 : 0);
+    const bottom = base;
+    base += height;
+    return { x: 0, y: bottom + height / 2, z: 0, width, height, depth, part, round: true };
+  });
 }
 
 // Round the corners of wide tiers in whole voxels: one step from five
@@ -178,7 +362,7 @@ function tier(
 }
 
 export function treeStudy(box: Box, species: Species, index: number) {
-  const plant = treePlanter(box, treeVoxel, { pine: 0, broadleaf: 0, cottage: 0, [species]: index });
-  plant(-0.75, 0, 0, species, false);
-  plant(1.5, 0, 0, species, true);
+  const plant = treePlanter(box, treeVoxel, designsFor(0));
+  plant(-0.75, 0, 0, species, false, index);
+  plant(species === "palm" ? 2.75 : 1.5, 0, 0, species, true, index);
 }

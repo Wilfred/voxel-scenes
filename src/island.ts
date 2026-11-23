@@ -8,7 +8,7 @@ import { findSite } from "./sites";
 import { waterfowl } from "./ducks";
 import { grassShade, palette } from "./palette";
 import { depthTexture } from "./water";
-import { treePlanter } from "./trees";
+import { treePlanter, tropicalGrove } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import { buildCottage, cottageDoor } from "./cottage";
 import * as THREE from "three";
@@ -159,6 +159,7 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
     return bedColor.copy(wetSand).lerp(silt, steps ? Math.round(t * steps) / steps : t);
   }
   const plantTree = treePlanter(box, treeVoxel, designs, seed);
+  const tree = tropicalGrove(relief);
 
   // Follow a walkable contour inland from the shore stairs before looking
   // for a loft site. The selected approach becomes the path to its door.
@@ -239,18 +240,21 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
         unit,
         h < 1 ? (yards.paths.has(x + "," + z) ? palette.ground.path : palette.ground.sand) : palette.ground.stone,
       );
-      if (h < 1) continue;
-      ground(
-        x,
-        top - unit / 2,
-        z,
-        unit,
-        unit,
-        unit,
-        yards.paths.has(x + "," + z) ? palette.ground.path : grassShade(h / 8 + 0.25 * relief(x - 29, z + 47)),
-      );
+      // Palms also grow from the dry beach above the waterline.
+      if (h <= 0) continue;
+      if (h >= 1)
+        ground(
+          x,
+          top - unit / 2,
+          z,
+          unit,
+          unit,
+          unit,
+          yards.paths.has(x + "," + z) ? palette.ground.path : grassShade(h / 8 + 0.25 * relief(x - 29, z + 47)),
+        );
       const grove = (1 + Math.sin(x * 0.8 + phase) * Math.cos(z * 0.6)) / 2;
-      const density = (x < -6 ? 0.1 : 0.055) * grove;
+      // Palms stand more sparsely along the beach than in the woods above it.
+      const density = (x < -6 ? 0.1 : 0.055) * grove * (h < 1 ? 0.5 : 1);
       if (
         yard.near(x, z, 1.25) ||
         yards.near(x, z) ||
@@ -259,7 +263,8 @@ export function buildIsland(seed: number, model: boolean, grid = 1, designs = de
         random() > density
       )
         continue;
-      plantTree(x, top, z, "pine", random() < 0.25);
+      const { species, design } = tree(x, z, h, Math.hypot(x - centreX, z - centreZ));
+      plantTree(x, top, z, species, random() < 0.25, design);
     }
   }
 

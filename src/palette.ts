@@ -7,6 +7,12 @@ export const palette = {
     pineTip: 0x4c7762,
     leaf: 0x5a7f4e,
     leafTip: 0x6f9157,
+    // Palm fronds are lighter and yellower than temperate leaves.
+    palm: 0x648f45,
+    palmTip: 0x7ea354,
+    // Glossy tropical broadleaves, between the palms and the pines.
+    tropical: 0x46784a,
+    tropicalTip: 0x5a8c52,
     grass: 0x7e8c5d,
     // One grass hue, cooler and darker in hollows and warmer on crests.
     grassShades: [0x6c7f56, 0x76875a, 0x7e8c5d, 0x89935f, 0x959b63],
@@ -45,7 +51,7 @@ export const palette = {
     skyLight: 0xfff7e9,
     groundLight: 0xadb9bb,
   },
-  harvest: { apple: 0xac5142, blossom: 0xe8cec1 },
+  harvest: { apple: 0xac5142, blossom: 0xe8cec1, coconut: 0x6b5238, banana: 0xb7a24e },
   // Coats and feathers of farm and woodland animals.
   animal: { fleece: 0xe4ddd0, fur: 0x886f58, pale: 0xb9ab92, dark: 0x766048, beak: 0xb89052, comb: 0xac5142 },
   cloth: { canvas: 0xb9ab92, dyed: 0x5a7f4e },

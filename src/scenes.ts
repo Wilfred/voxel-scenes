@@ -50,7 +50,7 @@ type Scene = {
 export const scenes: Record<string, Scene> = {
   island: {
     name: "Island",
-    description: "A crescent bay with a wooded ridge and a cottage above the beach",
+    description: "A palm-fringed crescent bay with a wooded ridge and a cottage above the beach",
     build({ seed, model, grid }) {
       const island = buildIsland(seed, model, grid);
       return {
