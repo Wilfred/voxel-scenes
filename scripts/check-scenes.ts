@@ -14,6 +14,7 @@ const { buildIsland } = await load("/src/island.ts");
 const { buildWoods } = await load("/src/woods.ts");
 const { buildMillpond } = await load("/src/millpond.ts");
 const { buildHillside } = await load("/src/hillside.ts");
+const { buildCoast } = await load("/src/coast.ts");
 const { dailySeed } = await load("/src/day.ts");
 const { Matrix4, Color } = await load("three");
 
@@ -24,6 +25,7 @@ const scenes: Record<string, (seed: number, model: boolean, grid: number) => Bui
   woods: (seed, model, grid) => buildWoods(seed, model, grid),
   millpond: (seed, model, grid) => buildMillpond(seed, model, grid),
   hillside: (seed, model, grid) => buildHillside(seed, model, grid),
+  coast: (seed, model, grid) => buildCoast(seed, model, grid),
 };
 
 const hashOnly = process.argv.includes("--hash");

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { buildCoast } from "./coast";
 import { buildHillside } from "./hillside";
 import { buildIsland } from "./island";
 import type { IslandKind } from "./islands";
@@ -138,6 +139,37 @@ export const scenes: Record<string, Scene> = {
         modelHeight: 13,
         thirds: true,
         focusRadius: 12,
+      };
+    },
+  },
+  coast: {
+    name: "Coast",
+    description:
+      "A river from wooded hills past a millpond, watermill and weir, under a footbridge and out to a beach landing",
+    build({ seed, model, grid, water }) {
+      const coast = buildCoast(seed, model, grid);
+      // The millpond and the weir above the tidal reach have their own surfaces.
+      const surfaces = [water(coast.pond, coast.head), water(coast.weir)];
+      for (const surface of surfaces) surface.renderOrder = 1;
+      return {
+        mesh: coast.mesh,
+        depth: coast.depth,
+        extras: [coast.foam],
+        water: surfaces,
+        waterBounds: coast.bounds,
+        sea: true,
+        coastal: true,
+        deepWater: palette.water.sea,
+        focus: coast.focus,
+        chimney: coast.chimney,
+        facade: 0,
+        frontOnly: true,
+        modelTarget: new THREE.Vector3(0, 1, 0),
+        modelHeight: 19,
+        thirds: false,
+        // Come close enough for the valley to fill the frame, with the pond,
+        // mill, bridge and cottage in view.
+        focusRadius: 13,
       };
     },
   },

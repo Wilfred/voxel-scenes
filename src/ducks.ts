@@ -61,6 +61,8 @@ export function waterfowl(
   radius = 4,
   // Gulls float in a loose raft along the shore, clear of these points.
   gulls?: { avoid: { x: number; z: number }[] },
+  // The height of the water surface the birds float on.
+  level = 0,
 ) {
   const placed: { x: number; z: number }[] = [];
   for (let i = 0; i < (gulls ? 6 : 3); i++) {
@@ -102,7 +104,7 @@ export function waterfowl(
     // Resting gulls all face into the wind, which carries the chimney smoke
     // toward +x; ducks paddle about in any direction.
     const turn = (random() - 0.5) * (gulls ? 0.5 : 1.5);
-    addBird(box, site.x, site.z, (gulls ? Math.PI : heading) + turn, gulls ? "gull" : i % 2 ? "hen" : "drake");
+    addBird(box, site.x, site.z, (gulls ? Math.PI : heading) + turn, gulls ? "gull" : i % 2 ? "hen" : "drake", level);
   }
 }
 
