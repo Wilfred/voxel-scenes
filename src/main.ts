@@ -329,12 +329,27 @@ if (!context) {
   const requestedSeed = Number(params.get("seed") ?? NaN);
   if (Number.isInteger(requestedSeed) && requestedSeed >= 0) seed = requestedSeed >>> 0;
   update();
+  // The overlays fade after a few idle seconds and return on movement.
+  // Closing them keeps them away for a minute while the viewer turns the
+  // scene, unless keyboard focus moves into the controls.
+  const quietPeriod = 60_000;
+  const overlays = [document.querySelector("header")!, toolbox];
   let idleTimer = 0;
-  function wakeControls() {
+  let quietUntil = 0;
+  function wakeControls(event?: Event) {
+    const intoControls = event?.type === "focusin" && overlays.some(o => o.contains(event.target as Node));
+    if (intoControls) quietUntil = 0;
+    else if (performance.now() < quietUntil) return;
     document.body.classList.remove("idle");
     clearTimeout(idleTimer);
     idleTimer = window.setTimeout(() => document.body.classList.add("idle"), 3200);
   }
+  document.querySelector<HTMLButtonElement>("#hide-controls")!.onclick = () => {
+    quietUntil = performance.now() + quietPeriod;
+    clearTimeout(idleTimer);
+    document.body.classList.add("idle");
+    canvas.focus();
+  };
   for (const event of ["pointermove", "pointerdown", "keydown", "focusin", "input", "change", "wheel"]) {
     document.addEventListener(event, wakeControls, { passive: true });
   }

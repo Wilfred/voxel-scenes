@@ -24,6 +24,8 @@ every design appears across the days. The asset library shows them all, each
 tree with its adult and sapling. Use the − and + buttons to frame
 the current landscape at 50% to 300%. Double-click the canvas or press Home
 while it has focus to restore the opening camera angle and zoom.
+The controls fade after a few idle seconds and return when you move. Press ×
+to keep them hidden for a minute while you turn the scene.
 
 The opening seed comes from the local calendar date. Reload to revisit today's
 landscape, or use the New button beside Save PNG for a random seed. The `scene`,

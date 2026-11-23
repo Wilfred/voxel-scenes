@@ -79,6 +79,11 @@ header a,
 #seed {
   margin-right: auto;
 }
+#hide-controls {
+  padding: 0.15rem 0.6rem;
+  font-size: 1.25rem;
+  line-height: 1;
+}
 .library {
   max-width: 96rem;
   padding: 1rem clamp(1rem, 3vw, 3rem) 3rem;
