@@ -25,7 +25,7 @@ export function riverDepthMap(depthAt: (x: number, z: number) => number, extent:
 }
 
 // Retain Three's lighting and island shadows underneath the reflected sky.
-export function createWater(skyMap: THREE.CubeTexture) {
+export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (material: THREE.Material) => void) {
   const rays = rayUniforms();
   const surface = {
     depth: { value: null as THREE.Texture | null },
@@ -162,13 +162,14 @@ export function createWater(skyMap: THREE.CubeTexture) {
       float pathLength = 6.0 * depthFraction / max(facing, 0.22);
       float body = abs(n.y) < 0.5 ? 0.43 : 1.0 - exp(-0.30 * pathLength);
       diffuseColor.a = fresnel + (1.0 - fresnel) * body;
-      outgoingLight = (outgoingLight * body * (1.0 - fresnel) + skyLight * fresnel + glintTint * sparkle)
+      outgoingLight = (outgoingLight * body * (1.0 - fresnel) + skyLight * fresnel + glintTint * sparkle * cloudSun)
                     / max(diffuseColor.a, 0.001);
       outgoingLight += skyLight * (0.075 * crest * ripple);
       #include <opaque_fragment>
     `,
         );
   };
+  receiveCloudShadows(material);
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), material);
   sea.rotation.x = -Math.PI / 2;
   sea.receiveShadow = true;

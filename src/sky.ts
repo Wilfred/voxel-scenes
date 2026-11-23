@@ -1,3 +1,4 @@
+import { cloudShadows } from "./cloud-shadows";
 import * as THREE from "three";
 import { seededRandom } from "./voxels";
 import type { weather } from "./weather";
@@ -72,6 +73,9 @@ export function createSky(renderer: THREE.WebGLRenderer) {
   const clouds = new THREE.InstancedMesh(new THREE.BoxGeometry(), cloudMaterial, 24 * 4);
   const matrix = new THREE.Matrix4();
   scene.add(clouds);
+  clouds.layers.enable(1);
+  const shadows = cloudShadows(renderer, scene);
+  let shadowGrid = 1;
   let previous = "";
   let lastCloudFrame = -1;
   // The distant layer moves less than a pixel between cube map updates.
@@ -81,12 +85,14 @@ export function createSky(renderer: THREE.WebGLRenderer) {
     lastCloudFrame = frame;
     clouds.rotation.y = frame * 0.00009;
     camera.update(renderer, scene);
+    shadows.update(uniforms.sun.value, shadowGrid);
     return true;
   }
-  function update(seed: number, preset: (typeof weather)[keyof typeof weather], horizon: number) {
-    const key = [seed, preset.sky, horizon].join(",");
+  function update(seed: number, preset: (typeof weather)[keyof typeof weather], horizon: number, grid: number) {
+    const key = [seed, preset.sky, horizon, grid].join(",");
     if (key === previous) return;
     previous = key;
+    shadowGrid = grid;
     const random = seededRandom(seed ^ 0x1e597c);
     uniforms.horizon.value.setHex(horizon);
     uniforms.zenith.value.setHex(preset.zenith);
@@ -134,5 +140,5 @@ export function createSky(renderer: THREE.WebGLRenderer) {
     skyCamera.updateProjectionMatrix();
     renderer.render(scene, skyCamera);
   }
-  return { texture: target.texture, update, drift, renderVista };
+  return { texture: target.texture, update, drift, renderVista, receiveCloudShadows: shadows.receive };
 }

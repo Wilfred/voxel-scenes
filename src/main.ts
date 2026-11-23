@@ -44,7 +44,7 @@ if (!context) {
   const vistaCamera = new THREE.PerspectiveCamera(vistaFov, 16 / 9);
   let camera: THREE.OrthographicCamera | THREE.PerspectiveCamera = vistaCamera;
   const sky = createSky(renderer);
-  const { sea, surface, rays } = createWater(sky.texture);
+  const { sea, surface, rays } = createWater(sky.texture, sky.receiveCloudShadows);
   const rain = createShower();
   const smoke = createSmoke();
   scene.add(sea, rain.drops, smoke.plume);
@@ -163,7 +163,7 @@ if (!context) {
     const horizon = coastal && weatherSelect.value === "clear" ? palette.light.coastalSky : preset.sky;
     const grid = surface.grid.value;
     const model = camera === modelCamera;
-    sky.update(seed, preset, horizon);
+    sky.update(seed, preset, horizon, grid);
     scene.background = model ? new THREE.Color(palette.light.backdrop) : null;
     rain.drops.visible = weatherSelect.value === "clearing";
     // Keep the focus crisp and let the haze close in on the far terrain.
@@ -302,6 +302,9 @@ if (!context) {
     rain.place(seed, grid, model, landscape.modelTarget, landscape.waterBounds);
     applyWeather();
     clearRays = contactRays(landscape.mesh, grid, rays, volumeLimit);
+    const receivers = new Set([landscape.mesh.material, ...landscape.extras.flatMap(part => part.material)]);
+    receivers.delete(sea.material);
+    for (const material of receivers) sky.receiveCloudShadows(material);
     surface.phase.value = (seed % 997) / 53;
     canvas.setAttribute("aria-label", entry.description);
     generate.textContent = "New " + entry.name.toLowerCase();
