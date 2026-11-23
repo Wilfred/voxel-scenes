@@ -47,7 +47,6 @@ if (!context) {
   const sun = lightScene(scene);
   const skyLight = scene.children.find(light => light instanceof THREE.HemisphereLight)!;
   const weatherSelect = document.querySelector<HTMLSelectElement>("#weather")!;
-  const tracing = document.querySelector<HTMLInputElement>("#ray-trace")!;
   let clearRays: (() => void) | undefined;
   sun.castShadow = true;
   sun.shadow.normalBias = 0.035;
@@ -120,11 +119,6 @@ if (!context) {
     const width = Math.max(1, Math.round(canvas.clientWidth * Math.min(devicePixelRatio, 2)));
     renderer.setSize(width, Math.round((width * 9) / 16), false);
     renderer.render(scene, camera);
-  }
-  function updateRays() {
-    if (tracing.checked && landscape && !clearRays)
-      clearRays = contactRays(landscape.mesh, surface.grid.value, rays, volumeLimit);
-    rays.tracingEnabled.value = tracing.checked;
   }
   function distance() {
     return vistaDistance * (landscape?.modelHeight ?? 13) * surface.grid.value;
@@ -268,7 +262,7 @@ if (!context) {
     surface.depthExtent.value = landscape.depth.extent;
     surface.deep.value.setHex(landscape.deepWater);
     applyWeather();
-    updateRays();
+    clearRays = contactRays(landscape.mesh, grid, rays, volumeLimit);
     surface.phase.value = (seed % 997) / 53;
     canvas.setAttribute("aria-label", entry.description);
     generate.textContent = "New " + entry.name.toLowerCase();
@@ -287,17 +281,13 @@ if (!context) {
     applyWeather();
     preview();
   };
-  tracing.onchange = () => {
-    updateRays();
-    preview();
-  };
   generate.onclick = () => {
     seed = crypto.getRandomValues(new Uint32Array(1))[0];
     update();
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
     if (surface.grid.value !== Number(resolution.value) * 2) update();
-    const variant = `-${framing.value}-${resolution.value}x-${weatherSelect.value}${tracing.checked ? "-rays" : ""}`;
+    const variant = `-${framing.value}-${resolution.value}x-${weatherSelect.value}`;
     const zoomSuffix = camera.zoom === 1 ? "" : `-zoom${Math.round(camera.zoom * 100)}`;
     const filename = `${sceneSelect.value}-${seed}${variant}${zoomSuffix}.png`;
     renderer.setSize(2560, 1440, false);

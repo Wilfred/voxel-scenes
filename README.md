@@ -35,8 +35,8 @@ the headrace past the waterwheel to the duck pond and the cart track to the
 orchard stall. The orchard blossoms in April and May, and a small wreath hangs
 on the mill door in December. Weather changes the lighting and water while preserving the view.
 
-Ray tracing is enabled by default. Four short rays estimate contact shade around
+Every view is ray traced. Four short rays estimate contact shade around
 opaque surfaces. Ripples on the sea, stream, millpond and waterfall reflect nearby
 voxel colours, fading into the weather sky beyond the tracing distance. Shallow
 water shows the bed through it. Direct sunlight uses shadow maps. Large landscapes
-use coarser tracing cells. The checkbox also controls the saved PNG.
+use coarser tracing cells.
