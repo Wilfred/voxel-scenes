@@ -76,7 +76,7 @@ if (!context) {
     surface.drift.value = coastal ? elapsed * 0.24 : 0;
     if (smoke.plume.visible) smoke.update(elapsed);
     const cloudsMoved = sky.drift(elapsed);
-    if (cloudsMoved || coastal || smoke.plume.visible || cameraMoved) renderer.render(scene, camera);
+    if (cloudsMoved || coastal || smoke.plume.visible || cameraMoved) render();
     cameraMoved = false;
     frame = requestAnimationFrame(draw);
   }
@@ -141,10 +141,18 @@ if (!context) {
     event.preventDefault();
     orbit.update();
   };
+  function render() {
+    if (camera === vistaCamera) {
+      sky.renderVista(vistaCamera);
+      renderer.autoClearColor = false;
+    }
+    renderer.render(scene, camera);
+    renderer.autoClearColor = true;
+  }
   function preview() {
     const width = Math.max(1, Math.round(canvas.clientWidth * Math.min(devicePixelRatio, 2)));
     renderer.setSize(width, Math.round((width * 9) / 16), false);
-    renderer.render(scene, camera);
+    render();
   }
   function distance() {
     return vistaDistance * (landscape?.modelHeight ?? 13) * surface.grid.value;
@@ -156,7 +164,7 @@ if (!context) {
     const grid = surface.grid.value;
     const model = camera === modelCamera;
     sky.update(seed, preset, horizon);
-    scene.background = model ? new THREE.Color(palette.light.backdrop) : sky.texture;
+    scene.background = model ? new THREE.Color(palette.light.backdrop) : null;
     rain.drops.visible = weatherSelect.value === "clearing";
     // Keep the focus crisp and let the haze close in on the far terrain.
     const reach = distance();
@@ -322,7 +330,7 @@ if (!context) {
     const zoomSuffix = camera.zoom === 1 ? "" : `-zoom${Math.round(camera.zoom * 100)}`;
     const filename = `${sceneSelect.value}-${seed}${variant}${zoomSuffix}.png`;
     renderer.setSize(2560, 1440, false);
-    renderer.render(scene, camera);
+    render();
     canvas.toBlob(blob => {
       if (!blob) {
         status.textContent = "The browser could not export this image.";

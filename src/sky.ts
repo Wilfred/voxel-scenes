@@ -13,7 +13,7 @@ const skyShader = `
   }
 `;
 
-// Bake one distant sky for the vista and the reflected rays on the water.
+// Draw the vista sky at screen resolution and bake its reflection for the water.
 // Translation and zoom never bring the cloud layer down into the landscape.
 export function createSky(renderer: THREE.WebGLRenderer) {
   const scene = new THREE.Scene();
@@ -35,7 +35,10 @@ export function createSky(renderer: THREE.WebGLRenderer) {
         skyShader +
         `
       varying vec3 direction;
-      void main(){gl_FragColor=vec4(skyColor(normalize(direction)),1.0);}`,
+      void main(){
+        gl_FragColor=vec4(skyColor(normalize(direction)),1.0);
+        #include <colorspace_fragment>
+      }`,
     }),
   );
   const sun = new THREE.DirectionalLight();
@@ -121,5 +124,15 @@ export function createSky(renderer: THREE.WebGLRenderer) {
     lastCloudFrame = -1;
     drift(0);
   }
-  return { texture: target.texture, update, drift };
+  const skyCamera = new THREE.PerspectiveCamera();
+  skyCamera.far = 230;
+  function renderVista(view: THREE.PerspectiveCamera) {
+    skyCamera.quaternion.copy(view.quaternion);
+    skyCamera.fov = view.fov;
+    skyCamera.aspect = view.aspect;
+    skyCamera.zoom = view.zoom;
+    skyCamera.updateProjectionMatrix();
+    renderer.render(scene, skyCamera);
+  }
+  return { texture: target.texture, update, drift, renderVista };
 }
