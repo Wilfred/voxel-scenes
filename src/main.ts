@@ -94,19 +94,25 @@ if (!context) {
   const zoomOut = document.querySelector<HTMLButtonElement>("#zoom-out")!;
   const zoomValue = document.querySelector<HTMLOutputElement>("#zoom-value")!;
   function applyZoom() {
-    let fit = Infinity;
+    const centerVertically = camera === vistaCamera && framingPoints.length > 0;
+    let fit = { zoom: Infinity, centerY: 0 };
+    if (camera === vistaCamera && vistaCamera.view?.enabled) vistaCamera.clearViewOffset();
     if (framingPoints.length) {
       camera.zoom = 1;
       camera.updateProjectionMatrix();
-      fit = zoomToFit(camera, framingPoints);
+      fit = zoomToFit(camera, framingPoints, centerVertically);
     }
-    const maximum = Math.max(1, fit);
+    const defaultScale = centerVertically ? fit.zoom : Math.min(1, fit.zoom);
+    const maximum = fit.zoom / defaultScale;
     const last = zoomLevels.findIndex(level => level >= maximum);
     const lastIndex = last < 0 ? zoomLevels.length - 1 : last;
     zoomIndex = Math.min(zoomIndex, lastIndex);
     const zoom = Math.min(zoomLevels[zoomIndex], maximum);
-    camera.zoom = zoom * Math.min(1, fit);
-    camera.updateProjectionMatrix();
+    camera.zoom = zoom * defaultScale;
+    if (centerVertically) {
+      // Move the image vertically while keeping the model's viewing direction.
+      vistaCamera.setViewOffset(vistaCamera.aspect, 1, 0, (-fit.centerY * camera.zoom) / 2, vistaCamera.aspect, 1);
+    } else camera.updateProjectionMatrix();
     zoomValue.value = Math.round(zoom * 100) + "%";
     zoomIn.disabled = zoomIndex === lastIndex;
     zoomOut.disabled = zoomIndex === 0;

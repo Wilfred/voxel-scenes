@@ -36,15 +36,21 @@ export function islandFramingPoints(mesh: THREE.InstancedMesh, grid: number, mod
   return points;
 }
 
-export function zoomToFit(camera: THREE.Camera, points: readonly THREE.Vector3[]) {
+export function zoomToFit(camera: THREE.Camera, points: readonly THREE.Vector3[], centerVertically: boolean) {
   camera.updateMatrixWorld();
   const viewProjection = new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
   const projected = new THREE.Vector3();
-  let extent = 0;
+  let extentX = 0;
+  let minY = Infinity;
+  let maxY = -Infinity;
   for (const point of points) {
     projected.copy(point).applyMatrix4(viewProjection);
-    extent = Math.max(extent, Math.abs(projected.x), Math.abs(projected.y));
+    extentX = Math.max(extentX, Math.abs(projected.x));
+    minY = Math.min(minY, projected.y);
+    maxY = Math.max(maxY, projected.y);
   }
+  const centerY = centerVertically ? (minY + maxY) / 2 : 0;
+  const extent = Math.max(extentX, maxY - centerY, centerY - minY);
   // Leave six percent of the image on each edge.
-  return 0.88 / extent;
+  return { zoom: 0.88 / extent, centerY };
 }

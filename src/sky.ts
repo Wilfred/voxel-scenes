@@ -137,6 +137,7 @@ export function createSky(renderer: THREE.WebGLRenderer) {
     skyCamera.fov = view.fov;
     skyCamera.aspect = view.aspect;
     skyCamera.zoom = view.zoom;
+    skyCamera.view = view.view;
     skyCamera.updateProjectionMatrix();
     renderer.render(scene, skyCamera);
   }
