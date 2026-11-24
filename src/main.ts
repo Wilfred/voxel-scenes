@@ -16,6 +16,7 @@ const canvas = document.querySelector("canvas")!;
 const status = document.querySelector<HTMLElement>("#status")!;
 const toolbox = document.querySelector<HTMLElement>(".toolbox")!;
 const context = canvas.getContext("webgl2", { antialias: true });
+const params = new URLSearchParams(location.search);
 
 // The vista camera stands back from its focus in proportion to the scene's
 // model frame and the grid, so a larger grid shows more land at the same
@@ -44,7 +45,11 @@ if (!context) {
   const vistaCamera = new THREE.PerspectiveCamera(vistaFov, 16 / 9);
   let camera: THREE.OrthographicCamera | THREE.PerspectiveCamera = vistaCamera;
   const sky = createSky(renderer);
-  const { sea, surface, rays } = createWater(sky.texture, sky.receiveCloudShadows);
+  const { sea, surface, rays, renderReflection } = createWater(
+    sky.texture,
+    sky.receiveCloudShadows,
+    params.get("reflection") === "planar",
+  );
   const rain = createShower();
   const smoke = createSmoke();
   scene.add(sea, rain.drops, smoke.plume);
@@ -150,6 +155,7 @@ if (!context) {
     orbit.update();
   };
   function render() {
+    renderReflection(renderer, scene, camera, sceneSelect.value === "millpond");
     if (camera === vistaCamera) {
       sky.renderVista(vistaCamera);
       renderer.autoClearColor = false;
@@ -362,7 +368,6 @@ if (!context) {
     preview();
   };
   // Reproduce a shared composition from ?scene=, &framing=, &weather= and &seed=.
-  const params = new URLSearchParams(location.search);
   for (const [select, key] of [
     [sceneSelect, "scene"],
     [framing, "framing"],

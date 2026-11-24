@@ -1,6 +1,7 @@
 import { rayUniforms, voxelTrace } from "./contact-rays";
 import { palette } from "./palette";
 import * as THREE from "three";
+import { Reflector } from "three/addons/objects/Reflector.js";
 
 // Water depth sampled on a square of side `extent` centred at the origin.
 export type DepthMap = { texture: THREE.DataTexture; extent: number };
@@ -25,8 +26,17 @@ export function riverDepthMap(depthAt: (x: number, z: number) => number, extent:
 }
 
 // Retain Three's lighting and island shadows underneath the reflected sky.
-export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (material: THREE.Material) => void) {
+export function createWater(
+  skyMap: THREE.CubeTexture,
+  receiveCloudShadows: (material: THREE.Material) => void,
+  planar: boolean,
+) {
   const rays = rayUniforms();
+  const geometry = new THREE.PlaneGeometry(400, 400);
+  const reflector = planar ? new Reflector(geometry, { textureWidth: 1280, textureHeight: 720, multisample: 0 }) : null;
+  const reflectorMaterial = reflector?.material as THREE.ShaderMaterial | undefined;
+  const planarDefine = reflector ? "#define PLANAR_REFLECTION\n" : "";
+  const planarEnabled = { value: false };
   const surface = {
     depth: { value: null as THREE.Texture | null },
     depthExtent: { value: 64 },
@@ -57,18 +67,40 @@ export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (mat
       waveDrift: surface.drift,
       wavePhase: surface.phase,
     });
+    if (reflectorMaterial) {
+      shader.uniforms.planarEnabled = planarEnabled;
+      shader.uniforms.planarMap = reflectorMaterial.uniforms.tDiffuse;
+      shader.uniforms.planarMatrix = reflectorMaterial.uniforms.textureMatrix;
+    }
     shader.vertexShader =
-      "varying vec3 waterPoint, waterNormal;\n" +
+      planarDefine +
+      `varying vec3 waterPoint, waterNormal;
+      #ifdef PLANAR_REFLECTION
+        uniform mat4 planarMatrix;
+        varying vec4 planarPoint;
+      #endif
+      ` +
       shader.vertexShader.replace(
         "#include <begin_vertex>",
-        "#include <begin_vertex>\nwaterPoint = (modelMatrix * vec4(position, 1.0)).xyz; waterNormal = normalize(mat3(modelMatrix) * normal);",
+        `#include <begin_vertex>
+        waterPoint = (modelMatrix * vec4(position, 1.0)).xyz;
+        waterNormal = normalize(mat3(modelMatrix) * normal);
+        #ifdef PLANAR_REFLECTION
+          planarPoint = planarMatrix * vec4(position, 1.0);
+        #endif`,
       );
     shader.fragmentShader =
+      planarDefine +
       voxelTrace +
       `
       uniform samplerCube skyMap;
       uniform sampler2D rayColors;
       uniform bool tracingEnabled, coastal;
+      #ifdef PLANAR_REFLECTION
+        uniform bool planarEnabled;
+        uniform sampler2D planarMap;
+        varying vec4 planarPoint;
+      #endif
       varying vec3 waterPoint, waterNormal;
       uniform sampler2D seabed;
       uniform vec3 glintTint;
@@ -148,6 +180,16 @@ export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (mat
       float fresnel = 0.035 + 0.965 * pow(1.0 - facing, 4.0);
       vec3 skyLight = textureCube(skyMap, reflected).rgb;
       float sparkle = pow(max(dot(reflected, sunlight), 0.0), 90.0);
+      #ifdef PLANAR_REFLECTION
+      if (planarEnabled) {
+        vec2 reflectedUv = planarPoint.xy / planarPoint.w + tilt * (0.06 * ripple);
+        if (all(greaterThanEqual(reflectedUv, vec2(0.0))) && all(lessThanEqual(reflectedUv, vec2(1.0)))) {
+          vec4 mirror = texture2D(planarMap, reflectedUv);
+          skyLight = mirror.rgb + skyLight * (1.0 - mirror.a);
+          sparkle *= 1.0 - mirror.a;
+        }
+      } else
+      #endif
       if (tracingEnabled) {
         float travel; vec3 face;
         float reach = min(36.0, 54.0 * cellSize);
@@ -169,9 +211,34 @@ export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (mat
     `,
         );
   };
+  material.customProgramCacheKey = () => (reflector ? "water-planar" : "water-voxel");
   receiveCloudShadows(material);
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), material);
+  const sea = new THREE.Mesh(geometry, material);
   sea.rotation.x = -Math.PI / 2;
   sea.receiveShadow = true;
-  return { sea, surface, rays };
+  function renderReflection(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, enabled: boolean) {
+    planarEnabled.value = !!reflector && enabled && sea.visible && camera.position.y > sea.position.y;
+    if (!reflector || !reflectorMaterial || !planarEnabled.value) return;
+    // Use the same local coordinates for projection and for the visible water mesh.
+    reflector.position.copy(sea.position);
+    reflector.quaternion.copy(sea.quaternion);
+    reflector.scale.copy(sea.scale);
+    reflector.updateMatrixWorld();
+    camera.updateMatrixWorld();
+    const background = scene.background;
+    const clearAlpha = renderer.getClearAlpha();
+    // Transparent pixels let the water shader supply its weather sky cube map.
+    scene.background = null;
+    renderer.setClearAlpha(0);
+    sea.visible = false;
+    try {
+      // Three passes no group when drawing a mesh with one material.
+      reflector.onBeforeRender(renderer, scene, camera, geometry, reflectorMaterial, null!);
+    } finally {
+      sea.visible = true;
+      renderer.setClearAlpha(clearAlpha);
+      scene.background = background;
+    }
+  }
+  return { sea, surface, rays, renderReflection };
 }
