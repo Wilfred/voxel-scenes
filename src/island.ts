@@ -395,6 +395,7 @@ export function buildIsland(
     (x, z) => [x / Math.hypot(x, z), z / Math.hypot(x, z)],
     // Further from the cottage spreads the scene's interest.
     (x, z) => facing(x, z) * Math.min(2, Math.hypot(x - home.x, z - home.z) / (10 * grid)),
+    3 * grid,
   );
   // Gulls in flight keep over the mainland rather than a narrow spit or
   // sand bar, prefer the far side from the cottage, and leave the floating

@@ -104,7 +104,8 @@ export function mooredBoat(box: Box, landing: { x: number; z: number }, along: [
 
 // Sail a dinghy in open water well clear of the landing and buildings, its
 // bow pointing out to sea. `outward` gives the seaward direction at a site,
-// and `view` favours water the camera sees, in front of the land.
+// `view` favours water the camera sees, in front of the land, and the shore
+// stays at least `clearance` away all round.
 export function dinghyOffshore(
   box: Box,
   bounds: { left: number; right: number; back: number; front: number },
@@ -113,6 +114,7 @@ export function dinghyOffshore(
   avoid: { x: number; z: number; radius: number }[],
   outward: (x: number, z: number) => [number, number],
   view: Elevation = () => 1,
+  clearance = 6,
 ) {
   const site = weightedSite(
     bounds.left,
@@ -123,6 +125,10 @@ export function dinghyOffshore(
     (x, z) => {
       if (avoid.some(p => Math.hypot(x - p.x, z - p.z) < p.radius)) return 0;
       for (const dx of [-1.25, 0, 1.25]) for (const dz of [-1.25, 0, 1.25]) if (depth(x + dx, z + dz) < 0.6) return 0;
+      for (let k = 0; k < 12; k++) {
+        const angle = (k / 12) * Math.PI * 2;
+        if (depth(x + clearance * Math.cos(angle), z + clearance * Math.sin(angle)) <= 0) return 0;
+      }
       const d = depth(x, z);
       return view(x, z) / (1 + (d - 2.5) ** 2);
     },
