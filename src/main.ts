@@ -9,7 +9,7 @@ import { createWater } from "./water";
 import { createSmoke } from "./smoke";
 import { createShower } from "./rain";
 import { createSky } from "./sky";
-import { islandFramingPoints, zoomToFit } from "./framing";
+import { framingPoints, zoomToFit } from "./framing";
 import { disposeLandscape, scenes, type Landscape } from "./scenes";
 
 const canvas = document.querySelector("canvas")!;
@@ -69,7 +69,6 @@ if (!context) {
   let started = 0;
   let frame = 0;
   let cameraMoved = false;
-  let framingPoints: THREE.Vector3[] = [];
   function draw(now: number) {
     frame = 0;
     const elapsed = Math.max(0, now - started) / 1000;
@@ -83,7 +82,6 @@ if (!context) {
   }
   orbit.addEventListener("change", () => {
     cameraMoved = true;
-    if (framingPoints.length) applyZoom();
     surface.eye.value.copy(camera.position).sub(orbit.target).normalize();
     if (!frame) frame = requestAnimationFrame(draw);
   });
@@ -93,28 +91,16 @@ if (!context) {
   const zoomIn = document.querySelector<HTMLButtonElement>("#zoom-in")!;
   const zoomOut = document.querySelector<HTMLButtonElement>("#zoom-out")!;
   const zoomValue = document.querySelector<HTMLOutputElement>("#zoom-value")!;
+  // The opening view fits the scene's place in the frame, centring the whole
+  // place or keeping the focus on its third, and zoom scales that.
+  let fit = { zoom: 1, centerY: 0 };
   function applyZoom() {
-    const centerVertically = camera === vistaCamera && framingPoints.length > 0;
-    let fit = { zoom: Infinity, centerY: 0 };
-    if (camera === vistaCamera && vistaCamera.view?.enabled) vistaCamera.clearViewOffset();
-    if (framingPoints.length) {
-      camera.zoom = 1;
-      camera.updateProjectionMatrix();
-      fit = zoomToFit(camera, framingPoints, centerVertically);
-    }
-    const defaultScale = centerVertically ? fit.zoom : Math.min(1, fit.zoom);
-    const maximum = fit.zoom / defaultScale;
-    const last = zoomLevels.findIndex(level => level >= maximum);
-    const lastIndex = last < 0 ? zoomLevels.length - 1 : last;
-    zoomIndex = Math.min(zoomIndex, lastIndex);
-    const zoom = Math.min(zoomLevels[zoomIndex], maximum);
-    camera.zoom = zoom * defaultScale;
-    if (centerVertically) {
-      // Move the image vertically while keeping the model's viewing direction.
-      vistaCamera.setViewOffset(vistaCamera.aspect, 1, 0, (-fit.centerY * camera.zoom) / 2, vistaCamera.aspect, 1);
-    } else camera.updateProjectionMatrix();
+    const zoom = zoomLevels[zoomIndex];
+    camera.zoom = zoom * fit.zoom;
+    // Move the image vertically while keeping the viewing direction.
+    camera.setViewOffset(16 / 9, 1, 0, (-fit.centerY * camera.zoom) / 2, 16 / 9, 1);
     zoomValue.value = Math.round(zoom * 100) + "%";
-    zoomIn.disabled = zoomIndex === lastIndex;
+    zoomIn.disabled = zoomIndex === zoomLevels.length - 1;
     zoomOut.disabled = zoomIndex === 0;
   }
   function setZoom(index: number) {
@@ -245,7 +231,6 @@ if (!context) {
     const yaw = home.radius > 0 ? orbit.getAzimuthalAngle() - home.theta : 0;
     const tilt = home.radius > 0 ? orbit.getPolarAngle() - home.phi : 0;
     landscape = entry.build({ seed, model, grid, season: orchardSeason(today), water: sea.material });
-    framingPoints = [];
     scene.add(landscape.mesh, ...landscape.extras);
     started = performance.now();
     surface.coastal.value = landscape.coastal ?? false;
@@ -314,9 +299,13 @@ if (!context) {
     camera.position.copy(offset).add(target);
     orbit.update();
     orbit.saveState();
+    camera.clearViewOffset();
+    camera.zoom = 1;
+    camera.updateProjectionMatrix();
+    const vista = model ? undefined : { focus: landscape.focus, radius: landscape.focusRadius * grid };
+    fit = zoomToFit(camera, framingPoints(landscape.mesh, grid, vista), model || !landscape.thirds);
     camera.position.setFromSpherical(new THREE.Spherical(home.radius, home.phi + tilt, home.theta + yaw)).add(target);
     orbit.update();
-    if (sceneSelect.value === "island") framingPoints = islandFramingPoints(landscape.mesh, grid, model);
     applyZoom();
     surface.eye.value.copy(camera.position).sub(target).normalize();
 

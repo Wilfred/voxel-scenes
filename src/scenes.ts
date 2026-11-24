@@ -36,12 +36,16 @@ export type Landscape = {
   facade: number;
   // Restrict orbiting to the front and both front corners of the building.
   frontOnly: boolean;
-  // Model framing: the point to centre and the frame half-height per grid unit.
+  // Model framing: the point to aim at and the frame half-height per grid unit,
+  // which also sets the vista's distance. The opening view then fits the place.
   modelTarget: THREE.Vector3;
   modelHeight: number;
   modelRise?: number;
   // Vista framing: whether to place the focus on a third or centre the whole place.
   thirds: boolean;
+  // The radius in grid units of the land around the focus that a vista fits in
+  // its frame. A rectangular model fits the whole model.
+  focusRadius: number;
 };
 
 type Scene = {
@@ -73,6 +77,8 @@ function islandScene(name: string, description: string, kind: IslandKind): Scene
         modelHeight: 14,
         modelRise: 27,
         thirds: false,
+        // Take in the whole island.
+        focusRadius: 22,
       };
     },
   };
@@ -108,6 +114,7 @@ export const scenes: Record<string, Scene> = {
         modelTarget: new THREE.Vector3(woods.bounds.x, 2, woods.bounds.z),
         modelHeight: 19,
         thirds: true,
+        focusRadius: 12,
       };
     },
   },
@@ -129,6 +136,7 @@ export const scenes: Record<string, Scene> = {
         modelTarget: new THREE.Vector3(0, 1, 0),
         modelHeight: 13,
         thirds: true,
+        focusRadius: 12,
       };
     },
   },
@@ -153,6 +161,7 @@ export const scenes: Record<string, Scene> = {
         modelTarget: new THREE.Vector3(-1, 3, -2),
         modelHeight: 13,
         thirds: true,
+        focusRadius: 12,
       };
     },
   },

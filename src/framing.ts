@@ -1,14 +1,19 @@
 import * as THREE from "three";
 
-// Use small bounds so empty corners of the crescent don't dictate the framing.
-// Include the model's base and let the deeper seabed fade out around the Vista.
-export function islandFramingPoints(mesh: THREE.InstancedMesh, grid: number, model: boolean) {
+// Use small bounds so empty corners of an irregular outline don't dictate the
+// framing. A model shows everything down to its base. A vista fits the land
+// within a radius of its focus and lets the deeper beds fade out.
+export function framingPoints(
+  mesh: THREE.InstancedMesh,
+  grid: number,
+  vista?: { focus: THREE.Vector3; radius: number },
+) {
   const tiles = new Map<string, THREE.Box3>();
   const unit = new THREE.Box3(new THREE.Vector3(-0.5, -0.5, -0.5), new THREE.Vector3(0.5, 0.5, 0.5));
   const bounds = new THREE.Box3();
   const matrix = new THREE.Matrix4();
   const tileSize = 2 * grid;
-  const framingFloor = model ? -Infinity : -1.5;
+  const framingFloor = vista ? -1.5 : -Infinity;
   mesh.traverse(batch => {
     if (!(batch instanceof THREE.InstancedMesh)) return;
     for (let i = 0; i < batch.count; i++) {
@@ -16,6 +21,7 @@ export function islandFramingPoints(mesh: THREE.InstancedMesh, grid: number, mod
       const x = matrix.elements[12];
       const y = matrix.elements[13];
       const z = matrix.elements[14];
+      if (vista && Math.hypot(x - vista.focus.x, z - vista.focus.z) > vista.radius) continue;
       bounds.copy(unit).applyMatrix4(matrix);
       if (bounds.max.y < framingFloor) continue;
       bounds.min.y = Math.max(bounds.min.y, framingFloor);
