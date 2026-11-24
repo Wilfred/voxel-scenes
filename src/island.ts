@@ -396,15 +396,27 @@ export function buildIsland(
     // Further from the cottage spreads the scene's interest.
     (x, z) => facing(x, z) * Math.min(2, Math.hypot(x - home.x, z - home.z) / (10 * grid)),
   );
-  // Gulls in flight cross low land away from the cottage, on the side nearer
-  // the camera, so higher ground rather than the sky lies behind them.
+  // Gulls in flight keep over the mainland rather than a narrow spit or
+  // sand bar, prefer the far side from the cottage, and leave the floating
+  // flock to itself.
+  const land = (x: number, z: number) => naturalHeight(snap(x), snap(z)) >= 1;
+  const mainland = (x: number, z: number) => {
+    let around = 0;
+    for (let k = 0; k < 8; k++) {
+      const angle = (k / 8) * Math.PI * 2;
+      if (land(x + 2 * grid * Math.cos(angle), z + 2 * grid * Math.sin(angle))) around++;
+    }
+    return around >= 7;
+  };
   gullsInFlight(
     box,
     frame,
     (x, z) => naturalHeight(snap(x), snap(z)),
     (x, z) => {
-      const h = naturalHeight(snap(x), snap(z));
-      return h >= 1 && h <= 3 && awayFromHome(x, z, 6 * grid) ? facing(x, z) ** 2 : 0;
+      if (!land(x, z) || !awayFromHome(x, z, 5 * grid) || Math.hypot(x - raft.x, z - raft.z) < 8 * grid) return 0;
+      if (!mainland(x, z)) return 0;
+      const distance = Math.min(1, Math.hypot(x - home.x, z - home.z) / (20 * grid));
+      return (0.3 + facing(x, z)) * distance * distance;
     },
     harbour,
     2,

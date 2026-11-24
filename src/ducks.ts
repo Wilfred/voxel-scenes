@@ -130,8 +130,8 @@ export function gullsInFlight(
     );
     if (!site) return;
     placed.push(site);
-    // Fly just above the treetops, so the bird still appears over the land.
-    const altitude = Math.max(0, ground(site.x, site.z)) + 4 + random();
+    // Fly well clear of the tallest crowns.
+    const altitude = Math.max(0, ground(site.x, site.z)) + 6 + random();
     addBird(box, site.x, site.z, random() * Math.PI * 2, "flying gull", altitude);
   }
 }
