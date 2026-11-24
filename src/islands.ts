@@ -80,12 +80,15 @@ function lagoon(
   relief: (x: number, z: number) => number,
 ): IslandShape {
   const ring = 0.84;
-  // The knoll rises on the far side of the ring and the channel opens on
-  // one of the near flanks, so the lagoon shows from the cottage.
+  // The knoll rises on the far side of the ring beside the reef pass, the
+  // one channel to the open sea. The cottage stands on the knoll's flank
+  // overlooking the pass, with its landing on the sheltered lagoon.
   const knollAngle = -Math.PI / 2 + (random() - 0.5) * 1.6;
-  const channelAngle = knollAngle + Math.PI + (random() < 0.5 ? -1 : 1) * (0.5 + random() * 0.7);
+  const channelAngle = knollAngle + (random() < 0.5 ? -1 : 1) * (0.6 + random() * 0.25);
   const knollX = ring * 16 * Math.cos(knollAngle),
     knollZ = ring * 11 * Math.sin(knollAngle);
+  const passX = ring * 16 * Math.cos(channelAngle),
+    passZ = ring * 11 * Math.sin(channelAngle);
   const islet = { angle: channelAngle + Math.PI + (random() - 0.5) * 1.2, size: 1.5 + random() };
   const circular = (a: number, b: number) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
   return {
@@ -108,7 +111,7 @@ function lagoon(
       const motu = Math.exp(-(circular(angle, islet.angle) ** 2) / 0.05) * islet.size;
       const rough = relief(worldX, worldZ);
       const crest = 0.7 + 2.4 * Math.max(0, rim) + 0.6 * motu + 0.3 * rough;
-      let h = Math.max(band * crest + 0.8 * Math.min(0, rim) - 3.5 * channel, knoll * (9 + 3 * rough) - 1.5);
+      let h = Math.max(band * crest + 0.8 * Math.min(0, rim), knoll * (9 + 3 * rough) - 1.5) - 3.5 * channel;
       // Outside the rim the reef falls steeply to the ocean floor, however low
       // the rim, rather than leaving a broad shallow apron.
       if (r > ring) h = Math.min(h, (ring + 0.5 * width - r) * 30);
@@ -121,14 +124,15 @@ function lagoon(
       }
       return Math.floor(h / unit) * unit;
     },
-    cove: { x: 0, z: 0 },
+    // The landing faces the lagoon just inside the pass.
+    cove: { x: 0.6 * passX, z: 0.6 * passZ },
     search: {
-      left: (knollX - 7) * grid,
-      right: (knollX + 7) * grid,
-      back: (knollZ - 6) * grid,
-      front: (knollZ + 6) * grid,
+      left: (Math.min(knollX, passX) - 5) * grid,
+      right: (Math.max(knollX, passX) + 5) * grid,
+      back: (Math.min(knollZ, passZ) - 5) * grid,
+      front: (Math.max(knollZ, passZ) + 5) * grid,
     },
-    siteBias: () => 0,
+    siteBias: (x, z) => 0.5 * Math.hypot(x / grid - passX, z / grid - passZ),
     density(x, z, h) {
       // Palms line the beaches; broadleaves crowd the knoll.
       const grove = (1 + Math.sin(x * 0.7 + phase) * Math.cos(z * 0.55)) / 2;
