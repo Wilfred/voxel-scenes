@@ -39,11 +39,11 @@ the headrace past the waterwheel to the duck pond and the cart track to the
 orchard stall. The orchard blossoms in April and May, and a small wreath hangs
 on the mill door in December. Weather changes the lighting and water while preserving the view.
 
-Every view is ray traced. Four short rays estimate contact shade around
-opaque surfaces. Ripples on the sea, stream, millpond and waterfall reflect nearby
-voxel colours, fading into the weather sky beyond the tracing distance. Shallow
-water shows the bed through it. Direct sunlight uses shadow maps. Large landscapes
-use coarser tracing cells.
+Four short voxel rays estimate contact shade around opaque surfaces. Larger
+landscapes use coarser tracing cells. Three.js Reflector captures the landscape
+for flat water, with the weather sky filling the gaps. The falling faces of the
+waterfall scatter the reflected sky. Shallow water shows the bed through it.
+Direct sunlight uses shadow maps.
 
 ## Weather studies
 

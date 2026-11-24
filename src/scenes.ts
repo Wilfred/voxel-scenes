@@ -13,7 +13,7 @@ export type Options = {
   model: boolean;
   grid: number;
   season: ReturnType<typeof orchardSeason>;
-  water: THREE.Material;
+  water: (geometry: THREE.BufferGeometry, height?: number) => THREE.Mesh;
 };
 
 // What the page needs to show a generated landscape, independent of scene.
@@ -23,6 +23,7 @@ export type Landscape = {
   chimney?: THREE.Vector3;
   // Shown alongside the voxels and disposed with them.
   extras: THREE.Mesh[];
+  water?: THREE.Mesh[];
   // The bounded water surface of a rectangular model, when it has one.
   waterBounds?: { x: number; z: number; width: number; depth: number };
   vistaSeaExtent?: number;
@@ -145,14 +146,15 @@ export const scenes: Record<string, Scene> = {
     description: "A hillside cottage overlooking a waterfall and its winding river",
     build({ seed, model, grid, water }) {
       const hillside = buildHillside(seed, model, grid);
-      const surface = new THREE.Mesh(hillside.water, water);
-      surface.renderOrder = 1;
-      surface.receiveShadow = true;
+      const surfaces = hillside.waterLevels.map(({ geometry, height }) => water(geometry, height));
+      surfaces.push(water(hillside.fallingWater));
+      for (const surface of surfaces) surface.renderOrder = 1;
       return {
         mesh: hillside.mesh,
         chimney: hillside.chimney,
         depth: hillside.depth,
-        extras: [surface, hillside.foam],
+        extras: [hillside.foam],
+        water: surfaces,
         sea: false,
         deepWater: palette.water.river,
         focus: hillside.focus,
@@ -167,12 +169,12 @@ export const scenes: Record<string, Scene> = {
   },
 };
 
-export function disposeLandscape(landscape: Landscape, shared: THREE.Material) {
-  for (const part of [landscape.mesh, ...landscape.extras]) {
+export function disposeLandscape(landscape: Landscape) {
+  for (const part of [landscape.mesh, ...landscape.extras, ...(landscape.water ?? [])]) {
     part.removeFromParent();
     if (part instanceof THREE.InstancedMesh) part.dispose();
     part.geometry.dispose();
-    for (const material of [part.material].flat()) if (material !== shared) material.dispose();
+    for (const material of [part.material].flat()) material.dispose();
   }
   landscape.depth.texture.dispose();
 }

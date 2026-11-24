@@ -166,7 +166,8 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
   const bendZ = lip + Math.max(13, 7 * grid);
   waterfowl(box, channel(bendZ), bendZ, 0.8, poolDepth, wildlife);
 
-  const vertices: number[] = [];
+  const banks = new Map<number, number[]>();
+  const falling: number[] = [];
   const spray = voxelBatch();
   for (let z = -radius; z <= radius; z++) {
     for (let x = -radius; x <= radius; x++) {
@@ -199,8 +200,10 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
           r = x + 0.5,
           b = z - 0.5,
           f = z + 0.5;
+        let level = banks.get(y);
+        if (!level) banks.set(y, (level = []));
         // prettier-ignore
-        vertices.push(l,y,b, l,y,f, r,y,b, r,y,b, l,y,f, r,y,f);
+        level.push(l,0,b, l,0,f, r,0,b, r,0,b, l,0,f, r,0,f);
         // Draw the exposed faces of water blocks, omitting shared faces so
         // transparency does not accumulate between neighboring river cells.
         for (const [dx, dz] of [
@@ -223,7 +226,7 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
             bz = faceZ - dx * 0.5;
           const foot = wet ? shelf(nx, nz) : low;
           // prettier-ignore
-          vertices.push(ax,foot,az, bx,foot,bz, ax,y,az, bx,foot,bz, bx,y,bz, ax,y,az);
+          falling.push(ax,foot,az, bx,foot,bz, ax,y,az, bx,foot,bz, bx,y,bz, ax,y,az);
           if (!wet) continue;
           // Whitewater varies cell by cell without drawing from the seeded
           // sequence that places the rest of the landscape.
@@ -285,9 +288,12 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       if (chance < standDensity(cover)) plantTree(x, h, z, cover > 0.35 ? "pine" : "broadleaf", sapling);
     }
   }
-  const water = new THREE.BufferGeometry();
-  water.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-  water.computeVertexNormals();
+  function waterGeometry(vertices: number[]) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.computeVertexNormals();
+    return geometry;
+  }
   const foam = spray.buildMesh();
   foam.material.transparent = true;
   foam.material.opacity = 0.55;
@@ -299,7 +305,8 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
     chimney,
     routes: trail.routes,
     focus: new THREE.Vector3(cabinX, floor, cabinZ),
-    water,
+    waterLevels: Array.from(banks, ([height, vertices]) => ({ height, geometry: waterGeometry(vertices) })),
+    fallingWater: waterGeometry(falling),
     foam,
     depth: riverDepthMap((x, z) => shelf(x, z) - elevation(x, z), 2 * radius + 1),
   };

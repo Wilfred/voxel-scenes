@@ -45,11 +45,7 @@ if (!context) {
   const vistaCamera = new THREE.PerspectiveCamera(vistaFov, 16 / 9);
   let camera: THREE.OrthographicCamera | THREE.PerspectiveCamera = vistaCamera;
   const sky = createSky(renderer);
-  const { sea, surface, rays, renderReflection } = createWater(
-    sky.texture,
-    sky.receiveCloudShadows,
-    params.get("reflection") === "planar",
-  );
+  const { sea, surface, createSurface, renderReflections } = createWater(sky.texture, sky.receiveCloudShadows);
   const rain = createShower();
   const smoke = createSmoke();
   scene.add(sea, rain.drops, smoke.plume);
@@ -155,7 +151,7 @@ if (!context) {
     orbit.update();
   };
   function render() {
-    renderReflection(renderer, scene, camera, sceneSelect.value === "millpond");
+    renderReflections(renderer, scene, camera);
     if (camera === vistaCamera) {
       sky.renderVista(vistaCamera);
       renderer.autoClearColor = false;
@@ -227,7 +223,7 @@ if (!context) {
     window.clearTimeout(pendingGrid);
     clearRays?.();
     clearRays = undefined;
-    if (landscape) disposeLandscape(landscape, sea.material);
+    if (landscape) disposeLandscape(landscape);
 
     const grid = Number(resolution.value) * 2;
     gridValue.value = resolution.value + "×";
@@ -236,8 +232,8 @@ if (!context) {
     // Keep any orbit the viewer made relative to the opening angle.
     const yaw = home.radius > 0 ? orbit.getAzimuthalAngle() - home.theta : 0;
     const tilt = home.radius > 0 ? orbit.getPolarAngle() - home.phi : 0;
-    landscape = entry.build({ seed, model, grid, season: orchardSeason(today), water: sea.material });
-    scene.add(landscape.mesh, ...landscape.extras);
+    landscape = entry.build({ seed, model, grid, season: orchardSeason(today), water: createSurface });
+    scene.add(landscape.mesh, ...landscape.extras, ...(landscape.water ?? []));
     started = performance.now();
     surface.coastal.value = landscape.coastal ?? false;
     surface.drift.value = 0;
@@ -321,9 +317,8 @@ if (!context) {
     surface.deep.value.setHex(landscape.deepWater);
     rain.place(seed, grid, model, landscape.modelTarget, landscape.waterBounds);
     applyWeather();
-    clearRays = contactRays(landscape.mesh, grid, rays, volumeLimit);
+    clearRays = contactRays(landscape.mesh, grid, volumeLimit);
     const receivers = new Set([landscape.mesh.material, ...landscape.extras.flatMap(part => part.material)]);
-    receivers.delete(sea.material);
     for (const material of receivers) sky.receiveCloudShadows(material);
     surface.phase.value = (seed % 997) / 53;
     canvas.setAttribute("aria-label", entry.description);

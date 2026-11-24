@@ -56,11 +56,9 @@ for (const [name, build] of Object.entries(scenes)) {
         continue;
       }
       const hash = createHash("sha256");
-      const colors = new Set<number>();
       let count = 0;
       instances(scene.mesh, (m, color) => {
         hash.update(new Float64Array([...m, color]));
-        colors.add(color);
         count++;
         if (!m.every(Number.isFinite)) failures.push(`${label}: instance ${count} has a non-finite transform`);
       });
@@ -68,8 +66,6 @@ for (const [name, build] of Object.entries(scenes)) {
         console.log(label, count, hash.digest("hex").slice(0, 16));
         continue;
       }
-      // The ray volume stores colour ids in eight bits.
-      if (colors.size > 255) failures.push(`${label}: ${colors.size} colours exceed the ray palette`);
       // Walkers climb at most one terrain layer between neighbouring treads.
       for (const route of scene.routes) {
         for (let i = 1; i < route.length; i++) {

@@ -1,4 +1,3 @@
-import { rayUniforms, voxelTrace } from "./contact-rays";
 import { palette } from "./palette";
 import * as THREE from "three";
 import { Reflector } from "three/addons/objects/Reflector.js";
@@ -26,17 +25,7 @@ export function riverDepthMap(depthAt: (x: number, z: number) => number, extent:
 }
 
 // Retain Three's lighting and island shadows underneath the reflected sky.
-export function createWater(
-  skyMap: THREE.CubeTexture,
-  receiveCloudShadows: (material: THREE.Material) => void,
-  planar: boolean,
-) {
-  const rays = rayUniforms();
-  const geometry = new THREE.PlaneGeometry(400, 400);
-  const reflector = planar ? new Reflector(geometry, { textureWidth: 1280, textureHeight: 720, multisample: 0 }) : null;
-  const reflectorMaterial = reflector?.material as THREE.ShaderMaterial | undefined;
-  const planarDefine = reflector ? "#define PLANAR_REFLECTION\n" : "";
-  const planarEnabled = { value: false };
+export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (material: THREE.Material) => void) {
   const surface = {
     depth: { value: null as THREE.Texture | null },
     depthExtent: { value: 64 },
@@ -50,52 +39,68 @@ export function createWater(
     drift: { value: 0 },
     phase: { value: 0 },
   };
-  const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
-  material.onBeforeCompile = shader => {
-    Object.assign(shader.uniforms, rays, {
-      skyMap: { value: skyMap },
-      ripple: surface.ripple,
-      rain: surface.rain,
-      glintTint: { value: new THREE.Color(palette.light.sunGlint) },
-      seabed: surface.depth,
-      depthExtent: surface.depthExtent,
-      deepWater: surface.deep,
-      gridScale: surface.grid,
-      sunlight: surface.sun,
-      viewDirection: surface.eye,
-      coastal: surface.coastal,
-      waveDrift: surface.drift,
-      wavePhase: surface.phase,
-    });
-    if (reflectorMaterial) {
-      shader.uniforms.planarEnabled = planarEnabled;
-      shader.uniforms.planarMap = reflectorMaterial.uniforms.tDiffuse;
-      shader.uniforms.planarMatrix = reflectorMaterial.uniforms.textureMatrix;
-    }
-    shader.vertexShader =
-      planarDefine +
-      `varying vec3 waterPoint, waterNormal;
+  const reflectionPlane = new THREE.PlaneGeometry();
+  const frustum = new THREE.Frustum();
+  const viewProjection = new THREE.Matrix4();
+  const waters = new Map<THREE.Mesh, { reflector: Reflector; enabled: { value: boolean } } | null>();
+
+  function createSurface<Geometry extends THREE.BufferGeometry>(geometry: Geometry, height?: number) {
+    const reflector =
+      height === undefined
+        ? null
+        : new Reflector(reflectionPlane, {
+            textureWidth: 1280,
+            textureHeight: 720,
+            multisample: 0,
+          });
+    const reflectorMaterial = reflector?.material as THREE.ShaderMaterial | undefined;
+    const planarDefine = reflector ? "#define PLANAR_REFLECTION\n" : "";
+    const enabled = { value: false };
+    const material = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
+    material.onBeforeCompile = shader => {
+      Object.assign(shader.uniforms, {
+        skyMap: { value: skyMap },
+        ripple: surface.ripple,
+        rain: surface.rain,
+        glintTint: { value: new THREE.Color(palette.light.sunGlint) },
+        seabed: surface.depth,
+        depthExtent: surface.depthExtent,
+        deepWater: surface.deep,
+        gridScale: surface.grid,
+        sunlight: surface.sun,
+        viewDirection: surface.eye,
+        coastal: surface.coastal,
+        waveDrift: surface.drift,
+        wavePhase: surface.phase,
+      });
+      if (reflectorMaterial) {
+        shader.uniforms.planarEnabled = enabled;
+        shader.uniforms.planarMap = reflectorMaterial.uniforms.tDiffuse;
+        shader.uniforms.planarMatrix = reflectorMaterial.uniforms.textureMatrix;
+      }
+      shader.vertexShader =
+        planarDefine +
+        `varying vec3 waterPoint, waterNormal;
       #ifdef PLANAR_REFLECTION
         uniform mat4 planarMatrix;
         varying vec4 planarPoint;
       #endif
       ` +
-      shader.vertexShader.replace(
-        "#include <begin_vertex>",
-        `#include <begin_vertex>
+        shader.vertexShader.replace(
+          "#include <begin_vertex>",
+          `#include <begin_vertex>
         waterPoint = (modelMatrix * vec4(position, 1.0)).xyz;
         waterNormal = normalize(mat3(modelMatrix) * normal);
         #ifdef PLANAR_REFLECTION
-          planarPoint = planarMatrix * vec4(position, 1.0);
+          // The reflector is a horizontal plane with its origin directly below world (0, 0).
+          planarPoint = planarMatrix * vec4(waterPoint.x, -waterPoint.z, 0.0, 1.0);
         #endif`,
-      );
-    shader.fragmentShader =
-      planarDefine +
-      voxelTrace +
-      `
+        );
+      shader.fragmentShader =
+        planarDefine +
+        `
       uniform samplerCube skyMap;
-      uniform sampler2D rayColors;
-      uniform bool tracingEnabled, coastal;
+      uniform bool coastal;
       #ifdef PLANAR_REFLECTION
         uniform bool planarEnabled;
         uniform sampler2D planarMap;
@@ -129,10 +134,10 @@ export function createWater(
         return waveSlope(pos, frequency) * (1.0 - smoothstep(0.15, 0.4, max(cycles.x, cycles.y)));
       }
     ` +
-      shader.fragmentShader
-        .replace(
-          "#include <color_fragment>",
-          `
+        shader.fragmentShader
+          .replace(
+            "#include <color_fragment>",
+            `
       #include <color_fragment>
       vec2 p = waterPoint.xz;
       float depthFraction = texture2D(seabed, p / depthExtent + 0.5).r;
@@ -171,13 +176,15 @@ export function createWater(
       vec3 waveNormal = normalize(n + vec3(tilt.x, 0.0, tilt.y) * ripple);
       diffuseColor.rgb = deepWater;
     `,
-        )
-        .replace(
-          "#include <opaque_fragment>",
-          `
+          )
+          .replace(
+            "#include <opaque_fragment>",
+            `
       vec3 reflected = reflect(-eye, waveNormal);
       float facing = clamp(dot(eye, waveNormal), 0.0, 1.0);
       float fresnel = 0.035 + 0.965 * pow(1.0 - facing, 4.0);
+      // Turbulent falling water scatters the sky reflection.
+      if (abs(n.y) < 0.5) fresnel *= 0.35;
       vec3 skyLight = textureCube(skyMap, reflected).rgb;
       float sparkle = pow(max(dot(reflected, sunlight), 0.0), 90.0);
       #ifdef PLANAR_REFLECTION
@@ -188,19 +195,8 @@ export function createWater(
           skyLight = mirror.rgb + skyLight * (1.0 - mirror.a);
           sparkle *= 1.0 - mirror.a;
         }
-      } else
-      #endif
-      if (tracingEnabled) {
-        float travel; vec3 face;
-        float reach = min(36.0, 54.0 * cellSize);
-        float id = traceVoxel(waterPoint + n * (0.51 * cellSize), reflected, reach, travel, face);
-        if (id > 0.0) {
-          vec3 tint = texelFetch(rayColors, ivec2(int(round(id * 255.0)), 0), 0).rgb;
-          vec3 bankLight = tint * (0.64 + 0.50 * max(dot(face, sunlight), 0.0));
-          skyLight = mix(bankLight, skyLight, smoothstep(reach * 0.65, reach, travel));
-          sparkle *= smoothstep(reach * 0.65, reach, travel);
-        }
       }
+      #endif
       float pathLength = 6.0 * depthFraction / max(facing, 0.22);
       float body = abs(n.y) < 0.5 ? 0.43 : 1.0 - exp(-0.30 * pathLength);
       diffuseColor.a = fresnel + (1.0 - fresnel) * body;
@@ -209,36 +205,57 @@ export function createWater(
       outgoingLight += skyLight * (0.075 * crest * ripple);
       #include <opaque_fragment>
     `,
-        );
-  };
-  material.customProgramCacheKey = () => (reflector ? "water-planar" : "water-voxel");
-  receiveCloudShadows(material);
-  const sea = new THREE.Mesh(geometry, material);
+          );
+    };
+    material.customProgramCacheKey = () => (reflector ? "water-planar" : "water-sky");
+    receiveCloudShadows(material);
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.receiveShadow = true;
+    mesh.position.y = height ?? 0;
+    if (reflector) reflector.rotation.x = -Math.PI / 2;
+    waters.set(mesh, reflector ? { reflector, enabled } : null);
+    material.addEventListener("dispose", () => {
+      waters.delete(mesh);
+      reflector?.dispose();
+    });
+    return mesh;
+  }
+
+  const sea = createSurface(new THREE.PlaneGeometry(400, 400), 0);
   sea.rotation.x = -Math.PI / 2;
-  sea.receiveShadow = true;
-  function renderReflection(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, enabled: boolean) {
-    planarEnabled.value = !!reflector && enabled && sea.visible && camera.position.y > sea.position.y;
-    if (!reflector || !reflectorMaterial || !planarEnabled.value) return;
-    // Use the same local coordinates for projection and for the visible water mesh.
-    reflector.position.copy(sea.position);
-    reflector.quaternion.copy(sea.quaternion);
-    reflector.scale.copy(sea.scale);
-    reflector.updateMatrixWorld();
+
+  function renderReflections(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
     camera.updateMatrixWorld();
+    viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(viewProjection);
+    const visibleWater = [];
+    for (const [mesh, capture] of waters) {
+      if (mesh.visible) visibleWater.push(mesh);
+      if (!capture) continue;
+      mesh.updateMatrixWorld();
+      capture.enabled.value = mesh.visible && camera.position.y > mesh.position.y && frustum.intersectsObject(mesh);
+    }
+
     const background = scene.background;
     const clearAlpha = renderer.getClearAlpha();
-    // Transparent pixels let the water shader supply its weather sky cube map.
+    // Use the sky cube map where the capture contains no landscape.
     scene.background = null;
     renderer.setClearAlpha(0);
-    sea.visible = false;
+    for (const mesh of visibleWater) mesh.visible = false;
     try {
-      // Three passes no group when drawing a mesh with one material.
-      reflector.onBeforeRender(renderer, scene, camera, geometry, reflectorMaterial, null!);
+      for (const [mesh, capture] of waters) {
+        if (!capture?.enabled.value) continue;
+        const { reflector } = capture;
+        reflector.position.y = mesh.position.y;
+        reflector.updateMatrixWorld();
+        // The Reflector callback only uses renderer, scene and camera.
+        Reflect.apply(reflector.onBeforeRender, reflector, [renderer, scene, camera]);
+      }
     } finally {
-      sea.visible = true;
+      for (const mesh of visibleWater) mesh.visible = true;
       renderer.setClearAlpha(clearAlpha);
       scene.background = background;
     }
   }
-  return { sea, surface, rays, renderReflection };
+  return { sea, surface, createSurface, renderReflections };
 }
