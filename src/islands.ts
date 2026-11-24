@@ -101,13 +101,17 @@ function lagoon(
       const along = (offset: number, scale: number) =>
         relief(scale * Math.cos(angle) + offset, scale * Math.sin(angle) - offset);
       const rim = along(311, 40) + 0.35 * along(97, 90);
-      const band = 1 - Math.abs(r - ring) / (0.1 + 0.04 * along(53, 30));
+      const width = 0.1 + 0.04 * along(53, 30);
+      const band = 1 - Math.abs(r - ring) / width;
       const channel = Math.exp(-(circular(angle, channelAngle) ** 2) / 0.02);
       const knoll = Math.exp(-((x - knollX) ** 2 / 34 + (z - knollZ) ** 2 / 22));
       const motu = Math.exp(-(circular(angle, islet.angle) ** 2) / 0.05) * islet.size;
       const rough = relief(worldX, worldZ);
       const crest = 0.7 + 2.4 * Math.max(0, rim) + 0.6 * motu + 0.3 * rough;
       let h = Math.max(band * crest + 0.8 * Math.min(0, rim) - 3.5 * channel, knoll * (9 + 3 * rough) - 1.5);
+      // Outside the rim the reef falls steeply to the ocean floor, however low
+      // the rim, rather than leaving a broad shallow apron.
+      if (r > ring) h = Math.min(h, (ring + 0.5 * width - r) * 30);
       // The lagoon floor is patchy: sand banks and coral heads rise near the
       // surface between deeper holes, and it deepens toward the channel.
       if (h < 0 && r < ring) {
