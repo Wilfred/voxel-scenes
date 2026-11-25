@@ -34,11 +34,9 @@ file describes how to work on them.
   generation errors and routes that climb more than one terrain layer per
   tread. `npm run check -- --hash` fingerprints each landscape, so a refactor
   can show it changes nothing.
-- For visual changes, inspect the actual render at wallpaper size and as a
-  320-pixel-wide thumbnail. At thumbnail size you should still be able to name
-  the scene and find its building. Try a few seeds to catch clipped peaks,
-  overlapping crowns, or paths that miss their destinations. Check the saved
-  PNG when changing framing or rendering.
+- For visual changes, inspect the actual render at wallpaper size. Try a few
+  seeds to catch clipped peaks, overlapping crowns, or paths that miss their
+  destinations. Check the saved PNG when changing framing or rendering.
 
 ## Building scenes
 

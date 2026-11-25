@@ -81,9 +81,9 @@ first desktop target. CI checks formatting, builds the static site and deploys
 `main` to GitHub Pages. Scheduled wallpaper updates, wider
 desktop integration and floating-island terrain are future work.
 
-The next visual review is the sky at wallpaper and thumbnail sizes. Compare the
-height and spacing of cloud banks, the visibility of rain over dark trees,
-and how much sky the vista leaves above its focal building. The current study
+In the next visual review at wallpaper size, compare the height and spacing
+of cloud banks, the visibility of rain over dark trees, and how much sky the
+vista leaves above its focal building. The current study
 uses stepped banks. Two alternatives worth comparing on that same seed are a
 few taller broken cumulus clusters and long thin evening clouds with warm lit
 edges. The art direction and development workflow live in [ART_STYLE.md](ART_STYLE.md)

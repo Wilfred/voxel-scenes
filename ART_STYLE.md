@@ -1,18 +1,12 @@
 # Voxel Scenes art direction
 
 Voxel Scenes generates a fresh landscape for a desktop wallpaper each day.
-Unrailed, Tiny Glade, Woodo, and DeCube are visual references. Aim for
-chunky voxel shapes, tactile surfaces, and terrain with a silhouette that
-reads at thumbnail size. Leave some quieter space, such as an open meadow or
-calm water, for desktop icons.
+Aim for chunky voxel shapes, tactile surfaces, and a clear terrain silhouette.
+Use the whole viewport to compose a calm landscape. Let broad shapes, a
+restrained palette, and sparing detail set the mood.
 
-Use the [Tiny Voxel Nature Pack](https://www.gamedevmarket.net/asset/tiny-voxel-nature-pack)
-as a reference for how coarse the blocks in a woodland prop can be.
-For wildlife, aim for a few shapes that identify the animal from the wallpaper
-camera, as in [Voxel Tiny Animals](https://vox-fox.itch.io/voxel-tiny-animals).
-
-For a sense of miniature scale, look at Four-Plate Fig Scale (1:120) and
-smaller in [ACT Museum's 12 Scales of LEGO](https://actmuseum.org/2025/01/28/12-scales-of-lego/).
+Build woodland props from a few large blocks. Give wildlife a simple shape
+that identifies it from the wallpaper camera, such as a duck's head and bill.
 A walker can read from a head and coat, and a distant cottage from its roof,
 chimney, and doorway. Choose the few features still visible across the valley.
 
@@ -46,8 +40,8 @@ a summit.
 
 ## Colour and light
 
-Plan the image in values before hues. At thumbnail size, the land, the
-woods, the water and the sky should separate into distinct masses.
+Plan the image in values before hues. Give the land, the woods, the water and
+the sky distinct values so their broad shapes read clearly across the wallpaper.
 
 - Use one grass hue across the scenes. Step its value with height, cooler and
   darker in hollows and warmer on crests, so relief reads before shadows do.
@@ -100,9 +94,9 @@ farthest ridge while leaving the near slopes crisp. Sun after rain can
 pick out a stream winding through dark pines.
 
 The current sky study uses distant banks with flat bases, stepped outlines
-and a cooler underside, inspired by Minecraft clouds. Leave gaps above the
-horizon and between banks. Use the same sun direction for lit faces, cast
-shadows and water highlights. Sunrise can pick out a cool ridge against a
+and a cooler underside. Leave gaps above the horizon and between banks.
+Use the same sun direction for lit faces, cast shadows and water highlights.
+Sunrise can pick out a cool ridge against a
 peach horizon; late light should catch the opposite faces. Make clearing rain
 visible against the landscape while giving the cottage room to read.
 
@@ -175,8 +169,6 @@ use their own finer grid so their legs and heads read at the established body
 size. Keep a single detail scale within each model.
 Water, foam and smoke can depart from the solid grid for surface and air effects.
 
-For cottage windows, use the deep reveals and paired lights in the Chedworth
-cottage photographs as a guide. At wallpaper scale one inset pane, or a pair
-with a single mullion, can describe the opening. Let the wall material form
-the sill and jambs. [Village cottage](https://www.geograph.org.uk/photo/223590)
-and [Church Row](https://www.geograph.org.uk/photo/6379744).
+Give cottage windows deep reveals. At wallpaper scale one inset pane, or a
+pair with a single mullion, can describe the opening. Let the wall material
+form the sill and jambs.
