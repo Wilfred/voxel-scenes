@@ -11,7 +11,7 @@ import { findSite, weightedSite } from "./sites";
 import { terrainField } from "./terrain";
 import { footbridge, pier } from "./trail-details";
 import { terrainTrail } from "./trails";
-import { shrubFor, standDensity, treePlanter } from "./trees";
+import { reedbed, shrubFor, standDensity, treePlanter } from "./trees";
 import { appleTree, at, cart, cow, deer, horse, mill, sheep, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
@@ -506,6 +506,24 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
       const top = isWet ? surface(x, z) : h;
       const cut = model && (Math.abs(x) === radiusX || Math.abs(z) === radiusZ);
       if (isWet && cut && top > h) box(x, (h + top) / 2, z, 1, top - h, 1, palette.water.cutFace);
+      // Reeds grow in the fresh shallows beside the bank, clear of the
+      // mill, its weir and the bridge, but not in the sea.
+      if (
+        isWet &&
+        top - h <= 1 &&
+        seaward(x, z) > 2 &&
+        !wheelPit(x, z) &&
+        Math.hypot(x - millX, z - millZ) > 5 &&
+        Math.abs(z - weirZ) > 1 &&
+        Math.abs(z - bridgeZ) > 2 &&
+        [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ].some(([dx, dz]) => dry(x + dx, z + dz))
+      )
+        reedbed(box, x, z, h, top, seed);
       if (isWet && top > 0) {
         // prettier-ignore
         pond.push(x - 0.5,0,z - 0.5, x - 0.5,0,z + 0.5, x + 0.5,0,z - 0.5, x + 0.5,0,z - 0.5, x - 0.5,0,z + 0.5, x + 0.5,0,z + 0.5);

@@ -10,7 +10,7 @@ import { boats } from "./boats";
 import { lightScene } from "./lighting";
 import { palette } from "./palette";
 import { firewood, footbridge, pier, shoreStairs, waypost } from "./trail-details";
-import { treeStudy, type Species } from "./trees";
+import { reedbed, treeStudy, type Species } from "./trees";
 import { voxelBatch, type Box } from "./voxels";
 
 type Asset = { name: string; draw: (box: Box) => void };
@@ -137,6 +137,7 @@ function library(renderer: THREE.WebGLRenderer) {
   section("palms", "Palms · adult and sapling", trees("palm"));
   section("tropical", "Tropical trees · adult and sapling", trees("tropical"));
   section("shrubs", "Shrubs · adult and young", trees("shrub"));
+  section("water-plants", "Water plants", [{ name: "Reed clump", draw: box => reedbed(box, 0, 0, -0.5, 0, 0, 1) }]);
   section(
     "cottages",
     "Cottages",

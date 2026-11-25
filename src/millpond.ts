@@ -7,7 +7,7 @@ import { grassShade, palette } from "./palette";
 import { treeVoxel } from "./scale";
 import { terrainField } from "./terrain";
 import { terrainTrail } from "./trails";
-import { shrubFor, standDensity, treePlanter } from "./trees";
+import { reedbed, shrubFor, standDensity, treePlanter } from "./trees";
 import { appleTree, at, cart, cow, horse, mill, sheep, stall, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
@@ -191,6 +191,15 @@ export function buildMillpond(
     Math.ceil(5 * grid),
   );
   const plant = treePlanter(box, treeVoxel, designs, seed);
+  // Reeds grow in the shallows beside the bank, clear of the mill and its wheel.
+  const beside = (x: number, z: number) =>
+    Math.hypot(x - millX, z - wheelZ) > 5 &&
+    [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ].some(([dx, dz]) => elevation(x + dx, z + dz) > 0);
   for (let z = -radiusZ; z <= radiusZ; z++)
     for (let x = -radiusX; x <= radiusX; x++) {
       const path = trail.tiles.get(x + "," + z),
@@ -200,6 +209,7 @@ export function buildMillpond(
       ground(x, h - 0.25, z, 1, 0.5, 1, path === undefined ? bank : palette.ground.path);
       if (model && h < 0 && (Math.abs(x) === radiusX || Math.abs(z) === radiusZ))
         box(x, h / 2, z, 1, -h, 1, palette.water.cutFace);
+      if (h < 0 && h >= -1 && beside(x, z)) reedbed(box, x, z, h, 0, seed);
       if (
         h <= 0 ||
         Math.abs(x) >= radiusX - 1 ||

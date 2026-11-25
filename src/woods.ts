@@ -9,7 +9,7 @@ import { terrainTrail } from "./trails";
 import { footbridge, waypost } from "./trail-details";
 import { grassShade, palette } from "./palette";
 import { waterfowl } from "./ducks";
-import { shrubFor, treePlanter } from "./trees";
+import { reedbed, shrubFor, treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import * as THREE from "three";
 
@@ -198,6 +198,19 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
         } else {
           ground(x, (h - 4) / 2, z, 1, h + 4, 1, tint);
         }
+        // Reeds grow in the shallows beside the bank, clear of the bridge.
+        if (
+          h < 0 &&
+          h >= -1 &&
+          Math.abs(z - bridgeZ) > 2 &&
+          [
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1],
+          ].some(([dx, dz]) => elevation(x + dx, z + dz) > 0)
+        )
+          reedbed(box, x, z, h, 0, seed);
       }
       if (
         yard.near(x, z, 1.5) ||

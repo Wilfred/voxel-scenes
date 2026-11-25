@@ -391,3 +391,29 @@ export function treeStudy(box: Box, species: Species, index: number) {
   plant(-0.75, 0, 0, species, false, index);
   plant(species === "palm" ? 2.75 : 1.5, 0, 0, species, true, index);
 }
+
+// A reedbed standing in shallow water beside a bank: a dense clump of
+// stalks rising from the bed to clear the surface on the half-course, with
+// the dark heads of bulrushes on a few. They take the broadleaves' light
+// green and the shared timber brown, so the palette gains no colours. Reeds grow along stretches of shore,
+// chosen by smooth positional noise that leaves the seeded sequence alone,
+// with open banks between them; `share` widens or narrows the stretches.
+// Cells are a whole unit across.
+export function reedbed(box: Box, x: number, z: number, bed: number, surface: number, seed = 0, share = 0.45) {
+  const noise = (k: number) => {
+    const v = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719 + seed * 0.0001) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  const stretch = Math.sin(x * 0.41 + (seed % 97)) * Math.sin(z * 0.37 - (seed % 89));
+  if (stretch < 0.5 - 1.1 * share || noise(0) > 0.85) return;
+  const stalk = treeVoxel / 2;
+  for (const ox of [-0.25, 0, 0.25])
+    for (const oz of [-0.25, 0, 0.25]) {
+      const k = ox * 7 + oz * 13;
+      const top = surface + 0.25 + Math.round(noise(k + 1) * 4) * stalk;
+      const head = noise(k + 2) < 0.25;
+      const stem = head ? top - 2 * stalk : top;
+      box(x + ox, (bed + stem) / 2, z + oz, stalk, stem - bed, stalk, palette.green.leafTip);
+      if (head) box(x + ox, stem + stalk, z + oz, stalk, 2 * stalk, stalk, palette.wood);
+    }
+}

@@ -142,7 +142,8 @@ adults separately, at about half the adult height. Grow trees in stands with
 irregular gaps and room for their crowns, separated by open meadows. Let
 shrubs fill the ground the trees leave, by role: hazel in the woods, bramble
 along their edges and the odd gorse bush out on open ground, sparse enough
-that the meadows stay quiet.
+that the meadows stay quiet. Reeds grow in dense beds along stretches of shallow
+fresh water, with open banks between them.
 
 Give larger landscapes a few working buildings on gentle ground beside a route
 that explains their presence.
