@@ -9,7 +9,7 @@ calm water, for desktop icons.
 Use the [Tiny Voxel Nature Pack](https://www.gamedevmarket.net/asset/tiny-voxel-nature-pack)
 as a reference for how coarse the blocks in a woodland prop can be.
 For wildlife, aim for a few shapes that identify the animal from the wallpaper
-camera, as the rabbit's ears do in [Voxel Tiny Animals](https://vox-fox.itch.io/voxel-tiny-animals).
+camera, as in [Voxel Tiny Animals](https://vox-fox.itch.io/voxel-tiny-animals).
 
 For a sense of miniature scale, look at Four-Plate Fig Scale (1:120) and
 smaller in [ACT Museum's 12 Scales of LEGO](https://actmuseum.org/2025/01/28/12-scales-of-lego/).
@@ -79,8 +79,8 @@ terrain catch the eye first and leave these details for a second glance.
 Give each animal a reason to be there. Gulls float in the shallows along a
 quiet shore, all facing into the wind that carries the chimney smoke, and fly
 over land, where they show white against the trees. Ducks swim out on open
-water, clear of the bank, and deer and rabbits graze where woodland opens out.
-Place hens by the yard, and sheep and cattle in fields beside a track. Moor a
+water, clear of the bank, and deer graze where woodland opens out. Sheep and
+cattle graze in fields beside a track. Moor a
 rowing boat beside a pier, since a lone boat elsewhere looks adrift, and sail a
 dinghy out to sea, clear of the landing. Spread these details across the scene
 rather than gathering them by the cottage. Make suitable sites more likely
@@ -121,11 +121,12 @@ size determine its apparent miniature scale.
 
 Treat the scale as a guideline. These are decorative images, not accurate
 simulations, so draw small animals larger than life until the shapes that
-identify them read from the wallpaper camera: a rabbit's ears, a hen's comb
-and tail, a duck's head and bill. Keep their order of size, so a hen stays
-smaller than a sheep and a sheep smaller than a deer. As a starting point,
-hens and rabbits are about three quarters larger than life, sheep two
-fifths larger, and swimming ducks and gulls about 0.9 metres from tail to bill.
+identify them read from the wallpaper camera: a sheep's dark face, a duck's
+head and bill. Keep their order of size, so a sheep stays smaller than a
+deer. As a starting point, sheep are two fifths larger than life, and
+swimming ducks and gulls about 0.9 metres from tail to bill. Leave out
+animals and props that would still be dots at that scale, such as hens,
+rabbits, crates and hives.
 The deer, cows, boats, cottage and trees stay at their true scale.
 
 Use the Stone bothy and Orchard house as cottage references. Keep the roof
@@ -166,7 +167,7 @@ for comparable members.
 
 The half-course, a quarter of a metre, is the one shared subdivision. Use it for
 a small functional detail such as a signboard, sill or window reveal, in trees
-and buildings alike. Animals and hand-sized props such as crates and creels can
+and buildings alike. Animals and hand-sized props such as creels can
 use their own finer grid so their legs and heads read at the established body
 size. Keep a single detail scale within each model.
 Water, foam and smoke can depart from the solid grid for surface and air effects.

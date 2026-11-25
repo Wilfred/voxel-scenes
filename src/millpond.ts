@@ -8,7 +8,7 @@ import { treeVoxel } from "./scale";
 import { terrainField } from "./terrain";
 import { terrainTrail } from "./trails";
 import { standDensity, treePlanter } from "./trees";
-import { appleTree, at, cart, chicken, cow, crate, hive, mill, rabbit, sheep, stall, villageYard } from "./village";
+import { appleTree, at, cart, cow, mill, sheep, stall, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
 import * as THREE from "three";
@@ -81,11 +81,7 @@ export function buildMillpond(
       !trail.tiles.has(Math.round(x) + "," + Math.round(z)),
   );
   yard.place(cart, doorX - 1, wheelZ + 3, 1.2, true);
-  yard.place(crate, doorX + 2, wheelZ + 2, 0.4);
   yard.place(stall, orchardX, orchardZ + 2, 1.1);
-  yard.place(hive, orchardX - 3, orchardZ - 3, 0.5);
-  yard.place(chicken, doorX + 1, wheelZ + 3, 0.4, false, { random: wildlife });
-  yard.place(rabbit, orchardX - 2, orchardZ + 3, 0.45, true, { random: wildlife });
   // Reserve grazing fields beside the cart track: a small one for sheep and
   // a larger one for cattle. Each gate occupies the bay nearest the track,
   // and the whole enclosure must fit on dry, nearly level ground.

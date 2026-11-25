@@ -1,4 +1,4 @@
-import { chicken, creel, villageYard } from "./village";
+import { creel, villageYard } from "./village";
 import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
 import { treeVoxel } from "./scale";
@@ -201,7 +201,6 @@ export function buildIsland(
     (x, z) => Math.hypot(x - centreX, z - centreZ) > 2.5 && !stairs.has(snap(x) + "," + snap(z)) && !yards.near(x, z),
   );
   yard.place(creel, shore.x, shore.z, 0.32);
-  yard.place(chicken, centreX + 2, centreZ + 2, 0.4, false, { random: wildlife });
   const landX = Math.ceil(21 * grid),
     landZ = Math.ceil(14 * grid);
   // Survey the shallow shelf across the depth map so its steps

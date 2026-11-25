@@ -58,8 +58,6 @@ export const palette = {
     fur: 0x886f58,
     pale: 0xb9ab92,
     dark: 0x766048,
-    beak: 0xb89052,
-    comb: 0xac5142,
     hide: 0x3b3833,
     muzzle: 0x8d7f74,
   },

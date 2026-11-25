@@ -1,4 +1,4 @@
-import { deer, rabbit, villageYard } from "./village";
+import { deer, villageYard } from "./village";
 import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
 import { treeVoxel } from "./scale";
@@ -172,8 +172,6 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
     return 0.05 + 1 / (1 + distance * distance);
   };
   yard.place(deer, west - 8, bridgeZ - 6, 0.45, true, { random: wildlife, habitat: groveEdge });
-  yard.place(rabbit, east + 4, bridgeZ + 3, 0.45, false, { random: wildlife, habitat: groveEdge });
-  yard.place(rabbit, east + 6, bridgeZ + 4, 0.45, true, { random: wildlife, habitat: groveEdge });
   const candidates: { x: number; z: number; leafPatch: number }[] = [];
   for (let z = -radius; z <= radius; z++) {
     const nearbyGroves = groves.filter(grove => Math.abs(z - grove.z) < grove.radius);

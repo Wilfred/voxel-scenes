@@ -12,7 +12,7 @@ import { terrainField } from "./terrain";
 import { footbridge, pier } from "./trail-details";
 import { terrainTrail } from "./trails";
 import { standDensity, treePlanter } from "./trees";
-import { appleTree, at, cart, chicken, cow, crate, deer, hive, mill, rabbit, sheep, villageYard } from "./village";
+import { appleTree, at, cart, cow, deer, mill, sheep, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
 
@@ -239,7 +239,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   const cattle = paddock({ x: millX - 8, z: millZ + 5 }, 8, 3);
   const flock = paddock({ x: cabinX + 4, z: cabinZ - 9 }, 8, 2);
 
-  // An orchard of apple trees in rows beside the mill track, with its hives.
+  // An orchard of apple trees in rows beside the mill track.
   const orchardCells = (x: number, z: number) =>
     [0, 1, 2].flatMap(row => [0, 1, 2, 3].map(col => ({ x: x - col * 3, z: z + row * 3 })));
   const plantable = (x: number, z: number, base: number) =>
@@ -262,15 +262,8 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
     (x, z) => elevation(Math.round(x), Math.round(z)),
     (x, z) => free(x, z) && !inField(x, z, 0.5) && !inOrchard(x, z, 0.5),
   );
-  // The mill yard keeps a handcart and apple crates by the door.
+  // The mill yard keeps a handcart by the door.
   yard.place(cart, millDoor.x - 1, millDoor.z + 2, 1.2, true);
-  yard.place(crate, millDoor.x + 2, millDoor.z + 1, 0.4);
-  if (orchardSite) {
-    yard.place(hive, orchardSite.x + 2, orchardSite.z - 2, 0.5);
-    yard.place(hive, orchardSite.x + 2, orchardSite.z, 0.5);
-  }
-  yard.place(chicken, homeDoor.x + 2, homeDoor.z + 1, 0.4, false, { random: wildlife });
-  yard.place(chicken, homeDoor.x - 2, homeDoor.z + 1, 0.4, true, { random: wildlife });
   for (const [field, draw, count, radius] of [
     [cattle, cow, 3, 1.2],
     [flock, sheep, 3, 0.65],
@@ -349,7 +342,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   );
 
   // Woods grow in stands on both sides of the valley, thinning toward the
-  // river, fields, tracks and beach, with deer and rabbits at their edges.
+  // river, fields, tracks and beach, with deer at their edges.
   // Sampling the stands by distance from the river balances the two sides.
   const cover = (x: number, z: number) =>
     relief(Math.abs(x - riverX(z)) + 41, z - 67) +
@@ -358,8 +351,6 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
     0.35;
   const edge = (x: number, z: number) => 0.05 + 1 / (1 + 8 * Math.abs(cover(x, z) - 0.1));
   yard.place(deer, millX - 6, millZ - 8, 0.45, true, { random: wildlife, habitat: edge });
-  yard.place(rabbit, cabinX - 4, cabinZ - 5, 0.45, false, { random: wildlife, habitat: edge });
-  yard.place(rabbit, cabinX - 6, cabinZ - 4, 0.45, true, { random: wildlife, habitat: edge });
 
   // The millpond's surface and the face of the weir sit over the water
   // cells above it; the sea surface serves the tidal river and the sea.

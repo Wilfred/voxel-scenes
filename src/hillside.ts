@@ -1,6 +1,6 @@
 import { fenceBuilder } from "./fences";
 import { riverDepthMap } from "./water";
-import { chicken, hive, sheep, villageYard } from "./village";
+import { sheep, villageYard } from "./village";
 import { terrainField } from "./terrain";
 import { placeOutbuildings } from "./outbuildings";
 import { treeVoxel } from "./scale";
@@ -154,8 +154,6 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
       !trail.near(Math.round(x), Math.round(z)) &&
       (!stack || Math.hypot(x - stack.x, z - stack.z) > 1),
   );
-  yard.place(hive, cabinX - 3, cabinZ, 0.5);
-  yard.place(chicken, cabinX + 2, cabinZ + 3, 0.4, false, { random: wildlife });
   yard.place(sheep, cabinX - 4, cabinZ + 5, 0.7, false, { random: wildlife });
   const poolDepth = (x: number, z: number) => {
     const cx = Math.round(x),

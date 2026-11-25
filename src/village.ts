@@ -67,48 +67,7 @@ export const creel: Model = box => {
   for (const z of [-3, 3]) cell(-4, 1, z - 0.5, 4, 5, z + 0.5, p.wood);
   cell(-0.5, 5, -3.5, 0.5, 6, 3.5, p.cloth.canvas);
 };
-// Rabbits and hens use cells of about eleven centimetres, three quarters
-// larger than life, so the rabbit's ears and the hen's comb and tail read.
-export const rabbit: Model = box => {
-  const cell = lattice(box, 7 / 128);
-  cell(-3, 0, -1.5, 2, 3, 1.5, p.animal.fur);
-  cell(2, 2, -1.5, 5, 5, 1.5, p.animal.fur);
-  for (const z of [-1, 1]) cell(2, 5, z - 0.5, 3, 9, z + 0.5, p.animal.fur);
-  cell(-4, 1, -0.5, -3, 3, 0.5, p.animal.pale);
-};
-export const chicken: Model = box => {
-  const cell = lattice(box, 7 / 128);
-  for (const z of [-1, 1]) cell(-0.5, 0, z - 0.5, 0.5, 2, z + 0.5, p.animal.beak);
-  cell(-2.5, 2, -1.5, 2.5, 6, 1.5, p.animal.pale);
-  cell(-3.5, 4, -1.5, -2.5, 8, 1.5, p.animal.dark);
-  cell(-2.5, 6, -1.5, -1.5, 8, 1.5, p.animal.dark);
-  cell(1.5, 6, -0.5, 3.5, 9, 0.5, p.animal.pale);
-  cell(1.5, 9, -0.5, 3.5, 10, 0.5, p.animal.comb);
-  cell(3.5, 7, -0.5, 4.5, 8, 0.5, p.animal.beak);
-};
 
-// An apple crate about half a metre long, heaped with fruit, on eighth-metre cells.
-export const crate: Model = box => {
-  const cell = lattice(box, 1 / 16);
-  cell(-2, 0, -1.5, 2, 2, 1.5, p.wood);
-  for (const [x, z] of [
-    [-1.5, -1],
-    [0.5, -1],
-    [-0.5, 0],
-    [1.5, 0],
-    [-1.5, 1],
-    [0.5, 1],
-  ]) {
-    cell(x - 0.5, 2, z - 0.5, x + 0.5, 3, z + 0.5, p.harvest.apple);
-  }
-};
-// A hive a metre tall on a post, with an overhanging roof, on quarter-metre cells.
-export const hive: Model = box => {
-  const cell = lattice(box, 1 / 8);
-  cell(-0.5, 0, -0.5, 0.5, 1, 0.5, p.wood);
-  cell(-1, 1, -1, 1, 3, 1, p.cottage.plaster);
-  cell(-1.5, 3, -1.5, 1.5, 4, 1.5, p.cottage.tile);
-};
 // A two-metre handcart on eighth-metre cells. The wheels stand clear of the
 // bed on the ground, and a pair of legs props the handles.
 export const cart: Model = box => {
@@ -125,7 +84,6 @@ export const cart: Model = box => {
     cell(hub, 6, -2, rim, 8, 2, p.wood);
   }
   cell(-2, 5, -4, 2, 7, -3, p.wood);
-  crate(at(box, 0, 5 / 16, 0));
 };
 export const stall: Model = box => {
   for (const x of [-0.875, 0.875]) for (const z of [-0.4375, 0.4375]) box(x, 0.6875, z, 0.125, 1.375, 0.125, p.wood);
@@ -133,7 +91,6 @@ export const stall: Model = box => {
   // Five stripes of the awning rest on the posts, flush with their outer faces.
   for (let i = 0; i < 5; i++)
     box((i - 2) * 0.375, 1.4375, 0, 0.375, 0.125, 1.25, i % 2 ? p.cloth.canvas : p.cloth.dyed);
-  crate(at(box, -0.5, 0.625, 0));
 };
 
 export function appleTree(box: Box, blossom = false) {
@@ -175,8 +132,6 @@ export const animals = [
   { name: "Roe deer", draw: deer },
   { name: "Grazing sheep", draw: sheep },
   { name: "Belted cow", draw: cow },
-  { name: "Field rabbit", draw: rabbit },
-  { name: "Farmyard hen", draw: chicken },
 ];
 export const village = [
   { name: "Fishing creel", draw: creel },
@@ -184,8 +139,6 @@ export const village = [
   { name: "Apple tree", draw: appleTree },
   { name: "Handcart", draw: cart },
   { name: "Produce stall", draw: stall },
-  { name: "Apple crate", draw: crate },
-  { name: "Beehive", draw: hive },
 ];
 
 // Reserve a dry, level footprint near the activity the prop belongs to.
