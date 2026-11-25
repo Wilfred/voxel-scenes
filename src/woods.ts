@@ -171,7 +171,7 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
     const distance = Math.min(...groves.map(g => Math.abs(Math.hypot(x - g.x, z - g.z) - g.radius)));
     return 0.05 + 1 / (1 + distance * distance);
   };
-  yard.place(deer, west - 8, bridgeZ - 6, 0.45, true, { random: wildlife, habitat: groveEdge });
+  yard.place(deer, west - 8, bridgeZ - 6, 0.7, true, { random: wildlife, habitat: groveEdge });
   const candidates: { x: number; z: number; leafPatch: number }[] = [];
   for (let z = -radius; z <= radius; z++) {
     const nearbyGroves = groves.filter(grove => Math.abs(z - grove.z) < grove.radius);

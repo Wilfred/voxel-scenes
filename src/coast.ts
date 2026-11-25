@@ -446,7 +446,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   const threshold = samples[Math.floor(samples.length * 0.6)] ?? 0;
   const cover = (x: number, z: number) => woodland(x, z) - threshold + 0.25;
   const edge = (x: number, z: number) => 0.05 + 1 / (1 + 8 * Math.abs(cover(x, z) - 0.1));
-  yard.place(deer, millX - 6, millZ - 8, 0.45, true, { random: wildlife, habitat: edge });
+  yard.place(deer, millX - 6, millZ - 8, 0.7, true, { random: wildlife, habitat: edge });
 
   // The millpond's surface and the face of the weir sit over the water
   // cells above it; the sea surface serves the tidal river and the sea.

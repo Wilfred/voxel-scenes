@@ -26,8 +26,8 @@ function lattice(box: Box, unit: number) {
 
 // Farm and woodland animals face +x. Smaller animals are drawn larger than
 // life, keeping their order of size, so the shapes that identify them read
-// from the wallpaper camera. The deer uses eighth-metre cells and the sheep
-// cells two fifths larger.
+// from the wallpaper camera. The sheep uses cells two fifths larger than
+// eighth-metre ones.
 export const sheep: Model = box => {
   const cell = lattice(box, 7 / 80);
   for (const x of [-3.5, 2.5]) for (const z of [-1, 1]) cell(x - 0.5, 0, z - 0.5, x + 0.5, 2, z + 0.5, p.animal.dark);
@@ -82,15 +82,32 @@ export const horse: Model = box => {
   for (const z of [-0.75, 0.25]) cell(7, 21, z, 8, 23, z + 0.5, p.animal.bay);
   cell(-8, 7, -0.5, -7, 12, 0.5, p.animal.hide);
 };
-// A roe deer: long legs, an upright neck, large ears and a pale rump.
+// A red deer stag a little larger than life, keeping its order of size above
+// the sheep. Its body is built on the half-course, a quarter metre, so its
+// blocks stay chunky at the wallpaper camera. Its legs are half a block
+// wide, at the outer edges of the body, so each pair stands apart as the
+// sheep's and cow's do. It has plain fur with no more than a stub of a tail,
+// and branching antlers on eighth-metre cells, like the cow's head.
 export const deer: Model = box => {
-  const cell = lattice(box, 1 / 16);
-  for (const x of [-3.5, 2.5]) for (const z of [-1, 1]) cell(x - 0.5, 0, z - 0.5, x + 0.5, 4, z + 0.5, p.animal.dark);
-  cell(-4, 4, -1.5, 4, 7, 1.5, p.animal.fur);
-  cell(3, 7, -0.5, 4, 9, 0.5, p.animal.fur);
-  cell(3, 9, -0.5, 6, 11, 0.5, p.animal.fur);
-  for (const z of [-1, 1]) cell(3, 11, z - 0.5, 4, 12, z + 0.5, p.animal.dark);
-  cell(-5, 5, -0.5, -4, 7, 0.5, p.animal.pale);
+  const cell = lattice(box, 1 / 8);
+  for (const x of [-2, 1]) for (const z of [-1, 0.5]) cell(x, 0, z, x + 1, 3, z + 0.5, p.animal.dark);
+  cell(-3, 3, -1, 2, 5, 1, p.animal.fur);
+  cell(1, 5, -1, 2, 7, 1, p.animal.fur);
+  cell(1, 7, -1, 3, 8, 1, p.animal.fur);
+  // Each beam rises from the crown of the head and sweeps back and out, with
+  // a brow tine and a middle tine reaching forward and a forked crown.
+  const fine = lattice(box, 1 / 16);
+  for (const side of [-1, 1]) {
+    const tine = (x0: number, y0: number, x1: number, y1: number, z0: number, z1: number) =>
+      side > 0 ? fine(x0, y0, z0, x1, y1, z1, p.animal.dark) : fine(x0, y0, -z1, x1, y1, -z0, p.animal.dark);
+    tine(2, 16, 3, 18, 1, 2);
+    tine(1, 18, 2, 21, 2, 3);
+    tine(0, 21, 1, 23, 3, 4);
+    tine(3, 17, 5, 18, 1, 2);
+    tine(2, 20, 4, 21, 2, 3);
+    tine(1, 23, 2, 25, 3, 4);
+    tine(-1, 23, 0, 25, 3, 4);
+  }
 };
 // A slatted creel about 60 centimetres long with a rope handle, on
 // sixteenth-metre cells.
@@ -163,7 +180,7 @@ export const mill: Model = box => {
 };
 
 export const animals = [
-  { name: "Roe deer", draw: deer },
+  { name: "Red deer", draw: deer },
   { name: "Grazing sheep", draw: sheep },
   { name: "Belted cow", draw: cow },
   { name: "Bay horse", draw: horse },

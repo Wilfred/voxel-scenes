@@ -56,7 +56,6 @@ export const palette = {
   animal: {
     fleece: 0xe4ddd0,
     fur: 0x886f58,
-    pale: 0xb9ab92,
     dark: 0x766048,
     hide: 0x3b3833,
     bay: 0x83573b,
