@@ -139,7 +139,10 @@ wide tiers in whole voxels. Most adult crowns are three to four and a half
 metres across and six to seven metres tall. Taper conifers to a single-voxel
 leader so they read apart from broadleaves in silhouette. Model saplings and
 adults separately, at about half the adult height. Grow trees in stands with
-irregular gaps and room for their crowns, separated by open meadows.
+irregular gaps and room for their crowns, separated by open meadows. Let
+shrubs fill the ground the trees leave, by role: hazel in the woods, bramble
+along their edges and the odd gorse bush out on open ground, sparse enough
+that the meadows stay quiet.
 
 Give larger landscapes a few working buildings on gentle ground beside a route
 that explains their presence.

@@ -3,7 +3,7 @@ import { designsFor, type Designs } from "./designs";
 import { palette } from "./palette";
 import type { Box } from "./voxels";
 
-export type Species = "pine" | "broadleaf" | "palm" | "tropical";
+export type Species = "pine" | "broadleaf" | "palm" | "tropical" | "shrub";
 // Trees share the half-metre construction voxel with buildings. Each tier is
 // width, height and depth in voxels, from the trunk up, centred on a trunk
 // one voxel across. Odd widths keep every crown symmetric about its trunk.
@@ -128,7 +128,7 @@ function bananaLeaves(parts: Part[], y: number, length: number) {
 
 type Builder = (sapling: boolean) => Part[];
 // prettier-ignore
-const freeForms: Record<"palm" | "tropical", (Builder | [Profile, Profile])[]> = {
+const freeForms: Record<"palm" | "tropical" | "shrub", (Builder | [Profile, Profile])[]> = {
   palm: [
     // Coconut palm: a tall, leaning trunk under drooping fronds and nuts.
     sapling => {
@@ -179,7 +179,51 @@ const freeForms: Record<"palm" | "tropical", (Builder | [Profile, Profile])[]> =
       return parts;
     },
   ],
+  // Shrubs grow straight from the ground, without a trunk of their own.
+  shrub: [
+    // Hazel: a full, rounded crown on a few short stems.
+    sapling => {
+      const tiers: Tier[] = sapling ? [[3,1,3],[5,1,5],[3,1,3]] : [[5,1,5],[7,2,7],[5,1,5]];
+      const crown = stack(tiers, false).map(p => ({ ...p, y: p.y + 1, part: p.part === "trunk" ? "leaf" as const : p.part }));
+      const stems: Part[] = [[-1,0],[1,-1],[0,1]].map(([x, z]) => ({ x, y: 0.5, z, width: 1, height: 1, depth: 1, part: "trunk" }));
+      return [...stems, ...crown];
+    },
+    // Gorse: a dark, dense dome of columns, the top of a few in flower.
+    sapling => {
+      const parts: Part[] = [];
+      const reach = sapling ? 1 : 2;
+      const flowers = sapling ? [] : ["-1,1", "1,-1", "2,0", "-2,-1", "0,2", "0,0"];
+      for (let x = -reach; x <= reach; x++)
+        for (let z = -reach; z <= reach; z++) {
+          if (Math.abs(x) === reach && Math.abs(z) === reach) continue;
+          const height = Math.abs(x) < reach && Math.abs(z) < reach ? reach + 1 : reach;
+          const bloom = flowers.includes(x + "," + z);
+          const leaves = bloom ? height - 1 : height;
+          if (leaves > 0) parts.push({ x, y: leaves / 2, z, width: 1, height: leaves, depth: 1, part: "leaf" });
+          if (bloom) parts.push({ x, y: height - 0.5, z, width: 1, height: 1, depth: 1, part: "fruit" });
+        }
+      return parts;
+    },
+    // Bramble: a low, spreading thicket.
+    sapling => {
+      const tiers: Tier[] = sapling ? [[5,1,3],[3,1,1]] : [[7,1,5],[5,1,3]];
+      return stack(tiers, false).map(p => ({ ...p, part: p.part === "trunk" ? "leaf" as const : p.part }));
+    },
+  ],
 };
+
+// Shrub designs, in designNames order.
+const [hazel, gorse, bramble] = [0, 1, 2];
+
+// Shrubs fill the ground the trees leave, by role: hazel in the woods,
+// bramble along their edges, and gorse scattered on open ground. `cover` is
+// the smooth woodland field that standDensity reads, and `chance` a draw
+// from the scene's sequence. Returns the design to plant, if any.
+export function shrubFor(cover: number, chance: number) {
+  if (cover > 0.3) return chance < 0.04 ? hazel : undefined;
+  if (cover > -0.05) return chance < 0.05 ? bramble : undefined;
+  return chance < 0.004 ? gorse : undefined;
+}
 
 // Tropical designs, in designNames order.
 const [seaAlmond, banana, breadfruit] = [0, 1, 2];
@@ -211,7 +255,8 @@ export function treePlanter(box: Box, voxel: number, designs: Designs, seed = 0)
   const adultRoots = new Set<string>();
   const patchSize = 8;
   // Pines, broadleaves and palms take the seed's design unless the caller
-  // names one. Tropical trees fill different roles, so callers always name them.
+  // names one. Tropical trees and shrubs fill different roles, so callers
+  // always name them.
   return (x: number, ground: number, z: number, species: Species, sapling: boolean, design?: number) => {
     // Centre the trunk on a construction voxel so every tier edge lies on the grid.
     const gx = Math.floor(x / voxel);
@@ -235,10 +280,12 @@ export function treePlanter(box: Box, voxel: number, designs: Designs, seed = 0)
         }
       }
     }
-    const foliage = colours[species];
+    const index = design ?? (species === "tropical" || species === "shrub" ? 0 : designs[species]);
+    // Gorse takes the darker pine greens, flecked with the banana's yellow.
+    const foliage =
+      species === "shrub" && index === gorse ? { ...colours.pine, fruit: palette.harvest.banana } : colours[species];
     const twist = Math.imul(gx ^ seed, 73856093) ^ Math.imul(gz, 19349663);
     const turn = (twist ^ (twist >>> 16)) & 3;
-    const index = design ?? (species === "tropical" ? 0 : designs[species]);
     const parts = treeParts(species, index, sapling, crowded).map(p => {
       // Turn the model a whole number of quarter turns about its trunk.
       let { x, z, width, depth } = p;
@@ -294,6 +341,8 @@ const colours: Record<Species, Record<Part["part"], number>> = {
     tip: palette.green.tropicalTip,
     fruit: palette.harvest.banana,
   },
+  // Shrubs share the broadleaves' greens; gorse is darker, below.
+  shrub: { trunk: palette.wood, leaf: palette.green.leaf, tip: palette.green.leafTip, fruit: palette.harvest.banana },
 };
 
 // Stack a profile's tiers from the ground, or draw a free-form model.

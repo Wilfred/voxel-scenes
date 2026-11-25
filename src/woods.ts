@@ -9,7 +9,7 @@ import { terrainTrail } from "./trails";
 import { footbridge, waypost } from "./trail-details";
 import { grassShade, palette } from "./palette";
 import { waterfowl } from "./ducks";
-import { treePlanter } from "./trees";
+import { shrubFor, treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 import * as THREE from "three";
 
@@ -173,6 +173,7 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
   };
   yard.place(deer, west - 8, bridgeZ - 6, 0.7, true, { random: wildlife, habitat: groveEdge });
   const candidates: { x: number; z: number; leafPatch: number }[] = [];
+  const shrubs: { x: number; z: number; shrub: number }[] = [];
   for (let z = -radius; z <= radius; z++) {
     const nearbyGroves = groves.filter(grove => Math.abs(z - grove.z) < grove.radius);
     for (let x = -radius; x <= radius; x++) {
@@ -217,7 +218,16 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
         const distance = Math.hypot(x - grove.x, z - grove.z) / grove.radius;
         if (distance < 1) density += ((1 - distance) ** 2 * (0.95 + moisture)) / (1 + slope);
       }
-      if (random() < density) candidates.push({ x, z, leafPatch });
+      const chance = random();
+      if (chance < density) candidates.push({ x, z, leafPatch });
+      else {
+        // Where no tree grows, the same draw decides on a shrub, by the
+        // woodland cover this density implies. Shrubs go in after the trees.
+        const clamped = Math.min(density, 0.99);
+        const shrub = shrubFor((clamped - 0.05) / 0.9 + 0.08, (chance - clamped) / (1 - clamped));
+        if (shrub !== undefined && (!model || (inside(x - 1, z - 1) && inside(x + 1, z + 1))))
+          shrubs.push({ x, z, shrub });
+      }
     }
   }
   // Work in half-unit cubes for every trunk, branch and leaf. Check actual
@@ -232,6 +242,7 @@ export function buildWoods(seed: number, model: boolean, grid = 1, designs = des
     if (model && (!inside(x - 1.25, z - 1.25) || !inside(x + 1.25, z + 1.25))) continue;
     plantTree(x, elevation(x, z), z, pine ? "pine" : "broadleaf", sapling);
   }
+  for (const { x, z, shrub } of shrubs) plantTree(x, elevation(x, z), z, "shrub", false, shrub);
 
   const deck = footbridge(box, west, east, bridgeZ, elevation);
   const middle = (west + east) / 2;

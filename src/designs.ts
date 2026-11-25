@@ -7,10 +7,12 @@ export const designNames = {
   cottage: ["Stone bothy", "Orchard house", "Net mender’s house", "Crofter’s cottage"],
   palm: ["Coconut palm", "Royal palm", "Fan palm"],
   tropical: ["Sea almond", "Banana plant", "Breadfruit"],
+  shrub: ["Hazel", "Gorse", "Bramble"],
 };
-// Tropical trees each have their own role, such as a banana garden by a
-// house, so scenes plant them by name rather than by seed.
-export type Designs = Record<Exclude<keyof typeof designNames, "tropical">, number>;
+// Tropical trees and shrubs each have their own role, such as a banana
+// garden by a house or bramble along a wood's edge, so scenes plant them by
+// name rather than by seed.
+export type Designs = Record<Exclude<keyof typeof designNames, "tropical" | "shrub">, number>;
 
 // A landscape draws its cottage and tree designs from its seed, so every
 // design appears across the days. A separate stream leaves the terrain alone.

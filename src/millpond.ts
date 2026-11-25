@@ -7,7 +7,7 @@ import { grassShade, palette } from "./palette";
 import { treeVoxel } from "./scale";
 import { terrainField } from "./terrain";
 import { terrainTrail } from "./trails";
-import { standDensity, treePlanter } from "./trees";
+import { shrubFor, standDensity, treePlanter } from "./trees";
 import { appleTree, at, cart, cow, horse, mill, sheep, stall, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
@@ -212,7 +212,14 @@ export function buildMillpond(
       )
         continue;
       const cover = relief(x + 41, z - 67);
-      if (random() < standDensity(cover)) plant(x, h, z, cover > 0.4 ? "pine" : "broadleaf", random() < 0.23);
+      const chance = random(),
+        density = standDensity(cover);
+      if (chance < density) plant(x, h, z, cover > 0.4 ? "pine" : "broadleaf", random() < 0.23);
+      else {
+        // Where no tree grows, the same draw decides on a shrub.
+        const shrub = shrubFor(cover, (chance - density) / (1 - density));
+        if (shrub !== undefined) plant(x, h, z, "shrub", false, shrub);
+      }
     }
   return {
     mesh: buildMesh(),

@@ -12,7 +12,7 @@ import { buildCottage, cottageDoor } from "./cottage";
 import { grassShade, palette } from "./palette";
 import { firewood } from "./trail-details";
 import { terrainTrail } from "./trails";
-import { standDensity, treePlanter } from "./trees";
+import { shrubFor, standDensity, treePlanter } from "./trees";
 import { seededRandom, voxelBatch } from "./voxels";
 
 export function buildHillside(seed: number, model: boolean, grid = 1, designs = designsFor(seed)) {
@@ -283,7 +283,13 @@ export function buildHillside(seed: number, model: boolean, grid = 1, designs = 
         trail.near(x, z)
       )
         continue;
-      if (chance < standDensity(cover)) plantTree(x, h, z, cover > 0.35 ? "pine" : "broadleaf", sapling);
+      const density = standDensity(cover);
+      if (chance < density) plantTree(x, h, z, cover > 0.35 ? "pine" : "broadleaf", sapling);
+      else {
+        // Where no tree grows, the same draw decides on a shrub.
+        const shrub = shrubFor(cover, (chance - density) / (1 - density));
+        if (shrub !== undefined) plantTree(x, h, z, "shrub", false, shrub);
+      }
     }
   }
   function waterGeometry(vertices: number[]) {

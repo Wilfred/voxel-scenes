@@ -11,7 +11,7 @@ import { findSite, weightedSite } from "./sites";
 import { terrainField } from "./terrain";
 import { footbridge, pier } from "./trail-details";
 import { terrainTrail } from "./trails";
-import { standDensity, treePlanter } from "./trees";
+import { shrubFor, standDensity, treePlanter } from "./trees";
 import { appleTree, at, cart, cow, deer, horse, mill, sheep, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
@@ -547,7 +547,14 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
       )
         continue;
       const c = cover(x, z);
-      if (random() < standDensity(c)) plant(x, h, z, c > 0.45 ? "pine" : "broadleaf", random() < 0.23);
+      const chance = random(),
+        density = standDensity(c);
+      if (chance < density) plant(x, h, z, c > 0.45 ? "pine" : "broadleaf", random() < 0.23);
+      else {
+        // Where no tree grows, the same draw decides on a shrub.
+        const shrub = shrubFor(c, (chance - density) / (1 - density));
+        if (shrub !== undefined) plant(x, h, z, "shrub", false, shrub);
+      }
     }
 
   const geometry = (vertices: number[]) => {

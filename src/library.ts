@@ -136,6 +136,7 @@ function library(renderer: THREE.WebGLRenderer) {
   section("broadleaf", "Broadleaf trees · adult and sapling", trees("broadleaf"));
   section("palms", "Palms · adult and sapling", trees("palm"));
   section("tropical", "Tropical trees · adult and sapling", trees("tropical"));
+  section("shrubs", "Shrubs · adult and young", trees("shrub"));
   section(
     "cottages",
     "Cottages",
