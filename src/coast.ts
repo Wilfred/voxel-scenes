@@ -80,10 +80,22 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
     const bank = water(x, z);
     if (bank <= 0) {
       const sea = seaward(x, z);
-      // The sea deepens steadily from the beach. Above the weir the bed stays
-      // above sea level, so the pond hides the sea surface beneath it.
-      if (sea <= 0) return -0.5 - Math.min(4, Math.floor(-sea) / 2);
-      const bed = -0.5 - Math.min(upstream(z) ? 1 : 2.5, Math.floor(-bank * 2) / 2);
+      // Water wears the land in proportion to its force. Surf cuts the beach
+      // into a short step, so the sea is a unit deep off the sand and then
+      // shelves away. The river's current deepens its channel toward the
+      // mouth, where more water flows, and carries on out to sea, scouring a
+      // channel through the bar it would otherwise leave, fading offshore.
+      const current = Math.max(0, riverHalf(z) + 1 - Math.abs(x - riverX(z)));
+      if (sea <= 0) {
+        const shelf = 1 + Math.floor(-sea) / 2;
+        const scour = current > 0 ? (2.5 + 0.3 * current) * Math.exp(sea / (6 * grid)) : 0;
+        return -0.5 - Math.min(4.5, Math.floor(2 * Math.max(shelf, scour)) / 2);
+      }
+      // Above the weir the bed stays above sea level, so the pond hides the
+      // sea surface beneath it.
+      const mouth = THREE.MathUtils.clamp(1 - sea / (12 * grid), 0, 1);
+      const deepest = upstream(z) ? 1 : 2.5 + mouth;
+      const bed = -0.5 - Math.min(deepest, Math.floor(-bank * 2) / 2);
       return surface(x, z) + bed;
     }
     // Hills rise toward the back of the valley.
@@ -103,6 +115,15 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
     return cache[k];
   }
   const dry = (x: number, z: number) => !wet(Math.round(x), Math.round(z));
+  // The sea bed darkens from sand toward silt with depth, in a few steps.
+  const sand = new THREE.Color(palette.ground.sand),
+    silt = new THREE.Color(palette.ground.silt),
+    tint = new THREE.Color();
+  const seabed = (h: number) =>
+    tint
+      .copy(sand)
+      .lerp(silt, Math.round(Math.min(1, -h / 6) * 6) / 6)
+      .getHex();
 
   const { box, terrainLayer, buildMesh } = voxelBatch();
   const ground = terrainLayer(),
@@ -369,7 +390,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
           ? palette.ground.path
           : isWet
             ? seaward(x, z) <= 0
-              ? palette.ground.sand
+              ? seabed(h)
               : palette.ground.riverbed
             : beach
               ? palette.ground.sand
