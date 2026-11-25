@@ -181,9 +181,39 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   const end = { x: homeDoor.x, z: beachZ };
   pier(box, { x: end.x, z: end.z + 0.25 }, 0, 1, elevation);
 
+  // A farmstead stands on a level shelf out on the hillside, well away from
+  // the mill and the cottage, so the farmland spreads across the valley.
+  const settled = [
+    { x: millX, z: millZ },
+    { x: cabinX, z: cabinZ },
+  ];
+  const farm = findSite(-radiusX + 8, radiusX - 8, -radiusZ + 6, radiusZ - 8, 1, (x, z) => {
+    const spread = Math.min(...settled.map(p => Math.hypot(x - p.x, z - p.z)));
+    if (spread < 10 * grid || water(x, z) < 6) return Infinity;
+    const footprint: number[] = [];
+    for (let dz = -2; dz <= 3; dz++)
+      for (let dx = -3; dx <= 3; dx++) {
+        if (wet(x + dx, z + dz) || !inBounds(x + dx, z + dz)) return Infinity;
+        footprint.push(elevation(x + dx, z + dz));
+      }
+    const high = Math.max(...footprint);
+    if (high - Math.min(...footprint) > 1) return Infinity;
+    return (high - Math.min(...footprint)) * 8 + Math.abs(spread - 14 * grid) * 0.3;
+  });
+  const farmDoor = farm && { x: Math.round(farm.x + cottageDoor((designs.cottage + 1) % 4)), z: farm.z + 2 };
+  const farmFootprint = (x: number, z: number) => !!farm && Math.abs(x - farm.x) <= 2.5 && Math.abs(z - farm.z) <= 1.5;
+  if (farm && farmDoor) {
+    const farmFloor = elevation(farmDoor.x, farmDoor.z);
+    buildCottage(
+      (x, y, z, w, h, d, color) => box(farm.x + x, farmFloor + y, farm.z + z, w, h, d, color),
+      (designs.cottage + 1) % 4,
+    );
+    settled.push(farm);
+  }
+
   const trail = terrainTrail(
     elevation,
-    (x, z) => dry(x, z) && inBounds(x, z) && !millYard(x, z) && !cabinFootprint(x, z),
+    (x, z) => dry(x, z) && inBounds(x, z) && !millYard(x, z) && !cabinFootprint(x, z) && !farmFootprint(x, z),
   );
   trail.route([
     [homeDoor.x, homeDoor.z],
@@ -197,6 +227,34 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
     [west, bridgeZ],
     [millDoor.x, millDoor.z],
   ]);
+  // The farm track joins the nearest track on its own side of the river.
+  const side = (x: number, z: number) => Math.sign(x - riverX(z));
+  if (farm && farmDoor) {
+    const join = [...trail.tiles.keys()]
+      .map(key => key.split(",").map(Number))
+      .filter(([x, z]) => side(x, z) === side(farmDoor.x, farmDoor.z))
+      .sort(
+        (a, b) => Math.hypot(a[0] - farmDoor.x, a[1] - farmDoor.z) - Math.hypot(b[0] - farmDoor.x, b[1] - farmDoor.z),
+      )[0];
+    try {
+      if (join)
+        trail.route([
+          [farmDoor.x, farmDoor.z],
+          [join[0], join[1]],
+        ]);
+    } catch {
+      // A farm the terrain cuts off simply keeps no track.
+    }
+  }
+  // A lane climbs from the mill up the valley beside the river into the hills.
+  const lane: [number, number][] = [[millDoor.x, millDoor.z]];
+  for (let z = millZ - 6 * grid; z > -radiusZ + 3; z -= 4 * grid)
+    lane.push([Math.round(riverX(z) - riverHalf(z) - 3 * grid), Math.round(z)]);
+  try {
+    trail.route(lane);
+  } catch {
+    // Where the hills close in, the valley keeps no lane.
+  }
   const onTrail = (x: number, z: number) => trail.tiles.has(x + "," + z);
   const track = [...trail.tiles.keys()].map(key => {
     const [x, z] = key.split(",").map(Number);
@@ -213,15 +271,24 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
     elevation,
     (x, z) => dry(x, z) && inBounds(x, z) && !cabinFootprint(x, z) && Math.hypot(x - cabinX, z - cabinZ) > 4,
   );
+  // The farm keeps a stone storehouse beside its track.
+  const barns = placeOutbuildings(
+    box,
+    farm ? ["store"] : [],
+    farm ? track.filter(p => Math.hypot(p.x - farm.x, p.z - farm.z) < 8) : [],
+    1,
+    elevation,
+    (x, z) => dry(x, z) && inBounds(x, z) && !farmFootprint(x, z) && !!farm && Math.hypot(x - farm.x, z - farm.z) > 4,
+  );
   const level = (x: number, z: number) => trail.tiles.get(x + "," + z) ?? elevation(x, z);
   const free = (x: number, z: number) =>
     dry(x, z) &&
     inBounds(x, z) &&
     !millYard(Math.round(x), Math.round(z)) &&
     !cabinFootprint(x, z) &&
+    !farmFootprint(x, z) &&
     !onTrail(Math.round(x), Math.round(z)) &&
-    !lofts.near(x, z) &&
-    !lofts.paths.has(Math.round(x) + "," + Math.round(z));
+    [lofts, barns].every(b => !b.near(x, z) && !b.paths.has(Math.round(x) + "," + Math.round(z)));
 
   // Fields lie on gentle ground near the tracks: a horse paddock by the
   // cottage, cattle by the mill and sheep above the cottage. Each gate faces
@@ -231,7 +298,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   const fields: { x: number; z: number; size: number }[] = [];
   const inField = (x: number, z: number, margin: number) =>
     fields.some(f => Math.abs(x - f.x) <= f.size + margin && Math.abs(z - f.z) <= f.size + margin);
-  const anchors = () => [{ x: millX, z: millZ }, { x: cabinX, z: cabinZ }, ...fields];
+  const anchors = () => [...settled, ...fields];
   function paddock(near: { x: number; z: number }, reach: number, size: number, stock: Stock, stream: number) {
     const rejected: { x: number; z: number }[] = [];
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -249,7 +316,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
               !free(px, pz) ||
               Math.abs(px) >= radiusX - 1 ||
               Math.abs(pz) >= radiusZ - 1 ||
-              Math.hypot(px - cabinX, pz - cabinZ) < 4 ||
+              settled.some(p => Math.hypot(px - p.x, pz - p.z) < 4) ||
               trail.near(px, pz) ||
               inField(px, pz, 2)
             )
@@ -269,9 +336,10 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
       rejected.push(site);
     }
   }
-  paddock({ x: cabinX - 4, z: cabinZ - 5 }, 8, 3, { draw: horse, count: 2, radius: 0.9 }, 0x7f4a7c15);
+  const steading = farm ?? { x: cabinX, z: cabinZ - 6 };
+  paddock({ x: steading.x - 5, z: steading.z + 4 }, 8, 3, { draw: horse, count: 2, radius: 0.9 }, 0x7f4a7c15);
   paddock({ x: millX - 8, z: millZ + 5 }, 8, 3, { draw: cow, count: 3, radius: 0.8 }, 0x2545f491);
-  paddock({ x: cabinX + 4, z: cabinZ - 9 }, 8, 2, { draw: sheep, count: 3, radius: 0.65 }, 0x1b873593);
+  paddock({ x: steading.x + 6, z: steading.z - 2 }, 10, 2, { draw: sheep, count: 3, radius: 0.65 }, 0x1b873593);
 
   // An orchard of apple trees in rows beside the mill track.
   const orchardCells = (x: number, z: number) =>
@@ -312,7 +380,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   waterfowl(box, pondX, pondZ, phase, millpond, wildlife, Math.ceil(3 * grid), undefined, head);
   const landing = { x: end.x, z: end.z + 1.25 };
   const home = { x: cabinX, z: cabinZ };
-  const buildings = [home, { x: millX, z: millZ }];
+  const buildings = settled;
   const awayFromBuildings = (x: number, z: number, distance: number) =>
     buildings.every(b => Math.hypot(x - b.x, z - b.z) > distance);
   let raft = landing,
@@ -365,11 +433,18 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   // Woods grow in stands on both sides of the valley, thinning toward the
   // river, fields, tracks and beach, with deer at their edges.
   // Sampling the stands by distance from the river balances the two sides.
-  const cover = (x: number, z: number) =>
+  const woodland = (x: number, z: number) =>
     relief(Math.abs(x - riverX(z)) + 41, z - 67) +
     0.25 * Math.min(1, Math.max(0, -z / (15 * grid))) +
-    0.3 * THREE.MathUtils.smoothstep(Math.abs(x - riverX(z)), 6 * grid, 16 * grid) -
-    0.35;
+    0.3 * THREE.MathUtils.smoothstep(Math.abs(x - riverX(z)), 6 * grid, 16 * grid);
+  // Shift the field so about two fifths of the dry land carries woodland
+  // stands on every seed, however high or low its noise runs.
+  const samples: number[] = [];
+  for (let z = -radiusZ; z <= radiusZ; z += 3)
+    for (let x = -radiusX; x <= radiusX; x += 3) if (dry(x, z)) samples.push(woodland(x, z));
+  samples.sort((a, b) => a - b);
+  const threshold = samples[Math.floor(samples.length * 0.6)] ?? 0;
+  const cover = (x: number, z: number) => woodland(x, z) - threshold + 0.25;
   const edge = (x: number, z: number) => 0.05 + 1 / (1 + 8 * Math.abs(cover(x, z) - 0.1));
   yard.place(deer, millX - 6, millZ - 8, 0.45, true, { random: wildlife, habitat: edge });
 
@@ -432,7 +507,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
         Math.abs(z) >= radiusZ - 1 ||
         !free(x, z) ||
         Math.hypot(x - millX, z - millZ) < 5 ||
-        Math.hypot(x - cabinX, z - cabinZ) < 5 ||
+        settled.some(p => Math.hypot(x - p.x, z - p.z) < 5) ||
         inField(x, z, 1.5) ||
         inOrchard(x, z, 1.5) ||
         trail.near(x, z) ||
