@@ -45,6 +45,27 @@ for flat water, with the weather sky filling the gaps. The falling faces of the
 waterfall scatter the reflected sky. Shallow water shows the bed through it.
 Direct sunlight uses shadow maps.
 
+## Updating your wallpaper on macOS
+
+From this checkout on your Mac, install the dependencies and Chromium once:
+
+```sh
+npm ci
+npx playwright-core install chromium --no-shell
+```
+
+Run `npm run wallpaper:mac` whenever you want to apply today's wallpaper.
+The script opens the published generator in headless Chromium, saves its
+2560 × 1440 PNG under `~/Pictures/Voxel Scenes`, and applies it to the connected
+displays in your macOS desktop session. To choose a scene, framing, or weather,
+pass a quoted generator URL:
+
+```sh
+npm run wallpaper:mac -- 'https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=model&weather=overcast'
+```
+
+The script uses the Mac's local calendar date for the seed.
+
 ## Weather studies
 
 The light presets span sunrise, morning sun, clear daylight, evening light
@@ -62,7 +83,7 @@ Change weather in place to keep the camera, animals and buildings fixed.
 
 The current milestone is manual PNG generation on the web, with Linux as the
 first desktop target. CI checks formatting, builds the static site and deploys
-`main` to GitHub Pages. Daily operating-system wallpaper installation, wider
+`main` to GitHub Pages. Scheduled wallpaper updates, wider
 desktop integration and floating-island terrain are future work.
 
 The next visual review is the sky at wallpaper and thumbnail sizes. Compare the
