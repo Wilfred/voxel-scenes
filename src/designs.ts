@@ -2,19 +2,8 @@ import { seededRandom } from "./voxels";
 
 // Each design keeps its number in the asset library and in generated scenes.
 export const designNames = {
-  pine: [
-    "Woodland pine",
-    "Stone pine",
-    "Ridge pine",
-    "Scots pine",
-    "Black spruce",
-    "Shore pine",
-    "Highland fir",
-    "Silver fir",
-    "Cushion pine",
-    "Cedar",
-  ],
-  broadleaf: ["Woodland oak", "Field maple", "Birch", "Hornbeam", "Linden", "Alder", "Elm", "Beech", "Hazel", "Willow"],
+  pine: ["Scots pine", "Black spruce", "Highland fir", "Cedar"],
+  broadleaf: ["Woodland oak", "Birch", "Hornbeam", "Alder"],
   cottage: ["Stone bothy", "Orchard house", "Net mender’s house", "Crofter’s cottage"],
   palm: ["Coconut palm", "Royal palm", "Fan palm"],
   tropical: ["Sea almond", "Banana plant", "Breadfruit"],

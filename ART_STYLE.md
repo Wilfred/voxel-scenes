@@ -133,7 +133,7 @@ familiar chimney smoke.
 
 Give woodland trees a trunk one voxel across, with one to one and a half
 metres of it visible below simple, full crowns, except where a long bare trunk
-identifies the tree, as in a Scots or stone pine. Centre every tier on the
+identifies the tree, as in a Scots pine. Centre every tier on the
 trunk with an odd width, so the crown is symmetric, and round the corners of
 wide tiers in whole voxels. Most adult crowns are three to four and a half
 metres across and six to seven metres tall. Taper conifers to a single-voxel

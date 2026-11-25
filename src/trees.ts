@@ -14,48 +14,24 @@ type Profile = Tier[];
 // prettier-ignore
 const profiles: Record<"pine" | "broadleaf", [Profile, Profile][]> = {
   pine: [
-    // Woodland pine: a tiered cone on a short trunk.
-    [[[1,3,1],[7,3,7],[5,3,5],[3,2,3],[1,2,1]], [[1,1,1],[5,1,5],[3,2,3],[1,2,1]]],
-    // Stone pine: a flat umbrella high on a bare trunk.
-    [[[1,6,1],[5,1,5],[9,2,9],[7,1,7]], [[1,3,1],[5,1,5],[3,1,3]]],
-    // Ridge pine: slender, with alternating whorls of branches.
-    [[[1,2,1],[5,2,5],[3,1,3],[5,2,5],[3,1,3],[3,2,3],[1,2,1]], [[1,1,1],[5,1,5],[3,2,3],[1,2,1]]],
     // Scots pine: a long bare trunk under a high, flattened crown.
     [[[1,5,1],[5,2,5],[7,2,7],[3,1,3]], [[1,3,1],[5,2,5],[3,1,3]]],
     // Black spruce: a narrow spire.
     [[[1,2,1],[5,2,5],[3,3,3],[3,2,3],[1,3,1]], [[1,1,1],[3,2,3],[3,2,3],[1,2,1]]],
-    // Shore pine: low and wind-spread.
-    [[[1,2,1],[7,2,5],[9,2,7],[5,1,3]], [[1,1,1],[5,2,3],[3,1,3]]],
     // Highland fir: a broad, even cone.
     [[[1,2,1],[9,2,9],[7,2,7],[5,2,5],[3,2,3],[1,2,1]], [[1,1,1],[5,2,5],[3,2,3],[1,1,1]]],
-    // Silver fir: a tall, narrower cone.
-    [[[1,2,1],[7,3,7],[5,3,5],[3,3,3],[1,2,1]], [[1,2,1],[5,2,5],[3,3,3],[1,1,1]]],
-    // Cushion pine: a low dome.
-    [[[1,2,1],[7,2,7],[9,2,9],[7,1,7]], [[1,1,1],[5,2,5],[3,1,3]]],
     // Cedar: flat layers spaced up the trunk.
     [[[1,2,1],[9,1,9],[1,1,1],[7,1,7],[1,1,1],[5,1,5],[3,1,3]], [[1,1,1],[5,1,5],[1,1,1],[3,1,3],[1,1,1]]],
   ],
   broadleaf: [
     // Woodland oak: a broad, rounded crown.
     [[[1,3,1],[7,2,7],[9,3,9],[7,2,7],[3,1,3]], [[1,2,1],[5,2,5],[3,1,3]]],
-    // Field maple: a compact round head.
-    [[[1,3,1],[5,2,5],[7,3,7],[5,2,5]], [[1,2,1],[3,1,3],[5,2,5],[3,1,3]]],
     // Birch: a tall pale trunk under a narrow oval crown.
     [[[1,5,1],[3,2,3],[5,4,5],[3,2,3]], [[1,3,1],[3,3,3],[1,1,1]]],
     // Hornbeam: a dense, upright egg on a short trunk.
     [[[1,2,1],[5,2,5],[7,4,7],[5,3,5],[3,1,3]], [[1,1,1],[3,2,3],[5,2,5],[3,1,3]]],
-    // Linden: a tall dome narrowing upward.
-    [[[1,3,1],[9,2,9],[7,3,7],[5,2,5],[3,1,3]], [[1,2,1],[5,2,5],[3,2,3]]],
     // Alder: a narrow cone of leaves.
     [[[1,3,1],[5,3,5],[3,3,3],[1,1,1]], [[1,2,1],[3,2,3],[3,1,3],[1,1,1]]],
-    // Elm: a vase widening to a flat top.
-    [[[1,4,1],[5,1,5],[7,2,7],[9,2,9]], [[1,3,1],[3,1,3],[5,1,5]]],
-    // Beech: a great low dome.
-    [[[1,2,1],[9,3,9],[9,2,9],[5,2,5]], [[1,1,1],[5,2,5],[5,1,5],[3,1,3]]],
-    // Hazel: a low, rounded understorey shrub.
-    [[[1,2,1],[5,1,5],[7,2,7],[5,1,5]], [[1,1,1],[5,2,5],[3,1,3]]],
-    // Willow: a wide crown over a short trunk.
-    [[[1,3,1],[9,3,9],[7,2,7],[3,1,3]], [[1,2,1],[5,2,5],[3,1,3]]],
   ],
 };
 
