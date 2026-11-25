@@ -59,6 +59,7 @@ export const palette = {
     pale: 0xb9ab92,
     dark: 0x766048,
     hide: 0x3b3833,
+    bay: 0x83573b,
     muzzle: 0x8d7f74,
   },
   // A pale hull and a tan sail, light enough to read against the sea.

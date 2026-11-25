@@ -48,6 +48,40 @@ export const cow: Model = box => {
   for (const z of [-1, 1]) cell(8, 11, z * 2 - 0.5, 9, 12, z * 2 + 0.5, p.animal.hide);
   cell(-10, 6, -0.5, -9, 10, 0.5, p.animal.hide);
 };
+// A bay horse a little larger than life on eighth-metre cells, like the cow,
+// in the proportions of a well-made horse: square, as tall at the withers as
+// it is long from shoulder to buttock, with legs as long as the chest is deep
+// and a level back. The neck runs up and forward at about 45 degrees under a
+// dark mane, half as long again as the head, which angles down to a dark
+// muzzle. It has dark lower legs, upright ears and a hanging tail.
+export const horse: Model = box => {
+  const cell = lattice(box, 1 / 16);
+  // Each leg tapers from a bay forearm or thigh to a slim lower leg with a
+  // dark hoof.
+  for (const x of [-6, 4])
+    for (const z of [-2, 1]) {
+      cell(x, 0, z, x + 1, 2, z + 1, p.animal.hide);
+      cell(x, 2, z, x + 1, 5, z + 1, p.animal.bay);
+      cell(x, 5, z, x + 2, 7, z + 1, p.animal.bay);
+    }
+  cell(-7, 7, -2, 6, 13, 2, p.animal.bay);
+  // The neck climbs in even steps, its crest carrying the mane.
+  cell(3, 13, -1, 8, 15, 1, p.animal.bay);
+  cell(5, 15, -1, 9, 17, 1, p.animal.bay);
+  cell(6, 17, -1, 9, 19, 1, p.animal.bay);
+  cell(2, 13, -0.5, 3, 15, 0.5, p.animal.hide);
+  cell(4, 15, -0.5, 5, 17, 0.5, p.animal.hide);
+  cell(5, 17, -0.5, 6, 19, 0.5, p.animal.hide);
+  cell(6, 19, -0.5, 7, 21, 0.5, p.animal.hide);
+  // The head runs down and forward at 45 degrees from the poll to a dark
+  // nose, clear of the neck beneath the jaw.
+  cell(7, 19, -0.75, 10, 21, 0.75, p.animal.bay);
+  cell(9, 17, -0.75, 12, 19, 0.75, p.animal.bay);
+  cell(11, 15, -0.75, 13, 17, 0.75, p.animal.bay);
+  cell(13, 15, -0.75, 14, 17, 0.75, p.animal.hide);
+  for (const z of [-0.75, 0.25]) cell(7, 21, z, 8, 23, z + 0.5, p.animal.bay);
+  cell(-8, 7, -0.5, -7, 12, 0.5, p.animal.hide);
+};
 // A roe deer: long legs, an upright neck, large ears and a pale rump.
 export const deer: Model = box => {
   const cell = lattice(box, 1 / 16);
@@ -132,6 +166,7 @@ export const animals = [
   { name: "Roe deer", draw: deer },
   { name: "Grazing sheep", draw: sheep },
   { name: "Belted cow", draw: cow },
+  { name: "Bay horse", draw: horse },
 ];
 export const village = [
   { name: "Fishing creel", draw: creel },

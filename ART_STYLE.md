@@ -127,7 +127,7 @@ deer. As a starting point, sheep are two fifths larger than life, and
 swimming ducks and gulls about 0.9 metres from tail to bill. Leave out
 animals and props that would still be dots at that scale, such as hens,
 rabbits, crates and hives.
-The deer, cows, boats, cottage and trees stay at their true scale.
+The deer, cows, horses, boats, cottage and trees stay at their true scale.
 
 Use the Stone bothy and Orchard house as cottage references. Keep the roof
 silhouette clear and align projections such as porches and bays to the brick
