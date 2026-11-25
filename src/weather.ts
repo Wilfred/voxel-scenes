@@ -1,7 +1,24 @@
+import type { daylight } from "./day";
 import { palette } from "./palette";
 
+export type WeatherPreset = {
+  position: [number, number, number];
+  sunlight: number;
+  sun: number;
+  ambient: number;
+  sky: number;
+  horizon: number;
+  zenith: number;
+  ripple: number;
+  haze: number;
+  cloudCover: number;
+  cloudShade: number;
+};
+
+type Daylight = (typeof daylight)[number]["key"];
+
 export const weather = {
-  clear: {
+  midday: {
     cloudCover: 0.48,
     cloudShade: 0xb9c9ce,
     position: [-26, 21, 18],
@@ -92,4 +109,22 @@ export const weather = {
     ripple: 1.65,
     haze: 0.0065,
   },
-};
+} satisfies Record<Daylight | "overcast" | "clearing", WeatherPreset>;
+
+export function weatherAt(light: Daylight, condition: string): WeatherPreset {
+  const daylight = weather[light];
+  if (condition !== "overcast" && condition !== "clearing") return daylight;
+
+  const preset = weather[condition];
+  const noon = weather.midday;
+  return {
+    ...preset,
+    position: [
+      preset.position[0] + daylight.position[0] - noon.position[0],
+      preset.position[1] + daylight.position[1] - noon.position[1],
+      preset.position[2] + daylight.position[2] - noon.position[2],
+    ],
+    sun: preset.sun * (daylight.sun / noon.sun),
+    ambient: preset.ambient * (daylight.ambient / noon.ambient),
+  };
+}

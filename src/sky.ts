@@ -1,7 +1,7 @@
 import { cloudShadows } from "./cloud-shadows";
 import * as THREE from "three";
 import { seededRandom } from "./voxels";
-import type { weather } from "./weather";
+import type { WeatherPreset } from "./weather";
 
 const skyShader = `
   uniform vec3 horizon, zenith, glow, sun;
@@ -88,8 +88,8 @@ export function createSky(renderer: THREE.WebGLRenderer) {
     shadows.update(uniforms.sun.value, shadowGrid);
     return true;
   }
-  function update(seed: number, preset: (typeof weather)[keyof typeof weather], horizon: number, grid: number) {
-    const key = [seed, preset.sky, horizon, grid].join(",");
+  function update(seed: number, preset: WeatherPreset, horizon: number, grid: number) {
+    const key = JSON.stringify([seed, preset, horizon, grid]);
     if (key === previous) return;
     previous = key;
     shadowGrid = grid;
@@ -97,7 +97,7 @@ export function createSky(renderer: THREE.WebGLRenderer) {
     uniforms.horizon.value.setHex(horizon);
     uniforms.zenith.value.setHex(preset.zenith);
     uniforms.glow.value.setHex(preset.sunlight);
-    uniforms.sun.value.set(...(preset.position as [number, number, number])).normalize();
+    uniforms.sun.value.set(...preset.position).normalize();
     sun.position.copy(uniforms.sun.value);
     sun.color.setHex(preset.sunlight);
     sun.intensity = 0.38 * preset.sun;

@@ -12,3 +12,18 @@ export function orchardSeason(date: Date) {
   if (month === 11) return "wreath";
   return "harvest";
 }
+
+export const daylight = [
+  { key: "sunrise", label: "Sunrise", before: 8 },
+  { key: "morning", label: "Morning", before: 11 },
+  { key: "midday", label: "Midday", before: 15 },
+  { key: "evening", label: "Evening", before: 18 },
+  { key: "sunset", label: "Sunset", before: 24 },
+] as const;
+
+export function daylightIndex(light: string | null, weather: string | null, hour: number) {
+  const index = daylight.findIndex(stop => (light === "auto" ? hour < stop.before : light === stop.key));
+  if (index >= 0) return index;
+  const legacyIndex = daylight.findIndex(stop => weather === stop.key);
+  return legacyIndex >= 0 ? legacyIndex : daylight.findIndex(stop => stop.key === "midday");
+}

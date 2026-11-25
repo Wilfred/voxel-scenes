@@ -33,7 +33,7 @@ way for a minute while you move around.
 
 The opening seed comes from the local calendar date. Reload to revisit today's
 landscape, or use the New button in the top bar for a random seed. The `scene`,
-`framing`, `weather` and `seed` URL parameters open a particular composition,
+`framing`, `weather`, `light` and `seed` URL parameters open a particular composition,
 for example `?scene=woods&framing=model&weather=overcast&seed=123`. In Orchard millpond, follow
 the headrace past the waterwheel to the duck pond and the cart track to the
 orchard stall. The orchard blossoms in April and May, and a small wreath hangs
@@ -52,25 +52,30 @@ With Google Chrome installed on your Mac, run `npm ci` once from this checkout.
 Run `npm run wallpaper:mac` whenever you want to apply today's wallpaper.
 The script opens the published generator in headless Google Chrome, saves its
 2560 × 1440 PNG under `~/Pictures/Voxel Scenes`, and applies it to the connected
-displays in your macOS desktop session. To choose a scene, framing, or weather,
-pass a quoted generator URL:
+displays in your macOS desktop session. To choose a scene, framing, weather or
+lighting stop, pass a quoted generator URL:
 
 ```sh
 npm run wallpaper:mac -- 'https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=model&weather=overcast'
 ```
 
-The script uses the Mac's local calendar date for the seed.
+The script uses the Mac's local calendar date for the seed and picks lighting
+from the local hour on each run. Sunrise is before 08:00, Morning is 08:00–10:59,
+Midday is 11:00–14:59, Evening is 15:00–17:59, and Sunset is from 18:00. Set
+`light=sunrise`, `morning`, `midday`, `evening` or `sunset` in the URL to pin a stop.
 
 ## Weather studies
 
-The light presets span sunrise, morning sun, clear daylight, evening light
-and sunset. Bright overcast softens shadows. Clearing rain leaves a scattering
+The Lighting slider moves through five stops from Sunrise to Sunset while keeping
+the scene and camera in place. The browser opens at Midday by default. Use
+`light=auto` in a browser URL to pick a stop from the local hour on load.
+Bright overcast softens shadows. Clearing rain leaves a scattering
 of slanted drops over the land and rings on the water. The wallpaper captures
 a still moment, including the rain. Vista skies and water reflections share a
 cloud map. Rectangular models keep their plain backdrop.
 
-Compare the woodland bridge at seed 123 in [sunrise](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=sunrise&seed=123),
-[sunset](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=sunset&seed=123)
+Compare the woodland bridge at seed 123 in [sunrise](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=clear&light=sunrise&seed=123),
+[sunset](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=clear&light=sunset&seed=123)
 and [clearing rain](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=clearing&seed=123).
 Change weather in place to keep the camera, animals and buildings fixed.
 

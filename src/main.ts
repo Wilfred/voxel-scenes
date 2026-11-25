@@ -1,5 +1,5 @@
-import { dailySeed, orchardSeason } from "./day";
-import { weather } from "./weather";
+import { dailySeed, daylight, daylightIndex, orchardSeason } from "./day";
+import { weatherAt } from "./weather";
 import { contactRays } from "./contact-rays";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { lightScene } from "./lighting";
@@ -53,6 +53,8 @@ if (!context) {
   const sun = lightScene(scene);
   const skyLight = scene.children.find(light => light instanceof THREE.HemisphereLight)!;
   const weatherSelect = document.querySelector<HTMLSelectElement>("#weather")!;
+  const lightSlider = document.querySelector<HTMLInputElement>("#light")!;
+  const lightValue = document.querySelector("#light-value")!;
   let clearRays: (() => void) | undefined;
   sun.castShadow = true;
   sun.shadow.normalBias = 0.035;
@@ -168,14 +170,19 @@ if (!context) {
     return vistaDistance * (landscape?.modelHeight ?? 13) * surface.grid.value;
   }
   function applyWeather() {
-    const preset = weather[weatherSelect.value as keyof typeof weather];
+    const { key, label } = daylight[lightSlider.valueAsNumber];
+    lightValue.textContent = label;
+    lightSlider.setAttribute("aria-valuetext", label);
+    const preset = weatherAt(key, weatherSelect.value);
+    const clearMidday = weatherSelect.value === "clear" && key === "midday";
+    const clearing = weatherSelect.value === "clearing";
     const coastal = landscape?.coastal ?? false;
-    const horizon = coastal && weatherSelect.value === "clear" ? palette.light.coastalSky : preset.sky;
+    const horizon = coastal && clearMidday ? palette.light.coastalSky : preset.sky;
     const grid = surface.grid.value;
     const model = camera === modelCamera;
     sky.update(seed, preset, horizon, grid);
     scene.background = model ? new THREE.Color(palette.light.backdrop) : null;
-    rain.drops.visible = weatherSelect.value === "clearing";
+    rain.drops.visible = clearing;
     // Keep the focus crisp and let the haze close in on the far terrain.
     const reach = distance();
     scene.fog = model
@@ -184,14 +191,14 @@ if (!context) {
     sun.color.setHex(preset.sunlight);
     sun.intensity = preset.sun;
     skyLight.intensity = preset.ambient;
-    skyLight.color.setHex(weatherSelect.value === "clear" ? palette.light.skyLight : preset.horizon);
+    skyLight.color.setHex(clearMidday ? palette.light.skyLight : preset.horizon);
     const light = new THREE.Vector3(...preset.position);
     sun.position.copy(light).multiplyScalar(grid).add(target);
     sun.target.position.copy(target);
     sun.target.updateMatrixWorld();
     surface.sun.value.copy(light).normalize();
     surface.ripple.value = preset.ripple;
-    surface.rain.value = weatherSelect.value === "clearing" ? 1 : 0;
+    surface.rain.value = clearing ? 1 : 0;
     fitShadow(light.length() * grid);
     renderer.shadowMap.needsUpdate = true;
   }
@@ -334,7 +341,7 @@ if (!context) {
     pendingGrid = window.setTimeout(update, 150);
   };
   framing.onchange = sceneSelect.onchange = update;
-  weatherSelect.onchange = () => {
+  lightSlider.oninput = weatherSelect.onchange = () => {
     applyWeather();
     preview();
   };
@@ -344,7 +351,8 @@ if (!context) {
   };
   document.querySelector<HTMLButtonElement>("#save")!.onclick = () => {
     if (surface.grid.value !== Number(resolution.value) * 2) update();
-    const variant = `-${framing.value}-${resolution.value}x-${weatherSelect.value}`;
+    const light = daylight[lightSlider.valueAsNumber].key;
+    const variant = `-${framing.value}-${resolution.value}x-${weatherSelect.value}-${light}`;
     const zoomSuffix = zoomIndex === defaultZoom ? "" : `-zoom${parseInt(zoomValue.value, 10)}`;
     const filename = `${sceneSelect.value}-${seed}${variant}${zoomSuffix}.png`;
     renderer.setSize(2560, 1440, false);
@@ -362,7 +370,6 @@ if (!context) {
     }, "image/png");
     preview();
   };
-  // Reproduce a shared composition from ?scene=, &framing=, &weather= and &seed=.
   for (const [select, key] of [
     [sceneSelect, "scene"],
     [framing, "framing"],
@@ -371,6 +378,8 @@ if (!context) {
     const value = params.get(key);
     if (value && [...select.options].some(option => option.value === value)) select.value = value;
   }
+  lightSlider.max = String(daylight.length - 1);
+  lightSlider.valueAsNumber = daylightIndex(params.get("light"), params.get("weather"), today.getHours());
   if (params.get("scene") === "mountains") sceneSelect.value = "hillside";
   const requestedSeed = Number(params.get("seed") ?? NaN);
   if (Number.isInteger(requestedSeed) && requestedSeed >= 0) seed = requestedSeed >>> 0;

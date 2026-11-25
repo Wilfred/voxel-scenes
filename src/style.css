@@ -62,10 +62,19 @@ select {
   color: white;
   margin-left: auto;
 }
-#resolution {
+#resolution,
+#light {
   width: 7rem;
   vertical-align: middle;
   accent-color: #294e40;
+}
+.lighting-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+#light-value {
+  min-width: 4em;
 }
 #grid-value {
   display: inline-block;

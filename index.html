@@ -34,15 +34,15 @@
           <label
             >Weather
             <select id="weather">
-              <option value="clear">Clear daylight</option>
-              <option value="sunrise">Sunrise</option>
-              <option value="morning">Morning sun</option>
-              <option value="evening">Evening light</option>
-              <option value="sunset">Sunset</option>
+              <option value="clear">Clear</option>
               <option value="overcast">Bright overcast</option>
               <option value="clearing">Clearing rain</option>
             </select></label
           >
+          <label class="lighting-control">
+            Lighting <input id="light" type="range" min="0" step="1" />
+            <span id="light-value" aria-hidden="true"></span>
+          </label>
           <button id="generate">New island</button>
         </div>
       </header>
