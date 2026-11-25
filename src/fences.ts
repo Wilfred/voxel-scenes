@@ -1,7 +1,8 @@
 import { palette } from "./palette";
 import { constructionVoxel as timber } from "./scale";
 import type { Elevation } from "./sites";
-import type { Box } from "./voxels";
+import { villageYard } from "./village";
+import { seededRandom, type Box } from "./voxels";
 
 // Each post is shared by the bays that meet there. Step the rails at a post
 // when neighbouring bays sit on different terrain courses.
@@ -69,4 +70,36 @@ export function fencedField(
     fence.bay(x + a, z + b, x + c, z + d, i === gate);
   });
   fence.finish();
+}
+
+export type Stock = { draw: (box: Box) => void; count: number; radius: number };
+
+// Fence a field and graze its stock in it, but only where at least one
+// animal fits, so no fence encloses an empty field. A dry run places the
+// animals first; the drawing run replays the same seeded stream, so they
+// stand in the same places. Returns whether the field was built.
+export function stockedField(
+  box: Box,
+  elevation: Elevation,
+  centre: { x: number; z: number },
+  half: number,
+  track: { x: number; z: number }[],
+  stock: Stock,
+  seed: number,
+) {
+  const inside = (x: number, z: number) => Math.abs(x - centre.x) < half - 0.1 && Math.abs(z - centre.z) < half - 0.1;
+  function graze(target: Box) {
+    const herd = villageYard(target, elevation, inside);
+    const random = seededRandom(seed);
+    let placed = 0;
+    for (let i = 0; i < stock.count; i++) {
+      const dx = (i - (stock.count - 1) / 2) * 1.5;
+      if (herd.place(stock.draw, centre.x + dx, centre.z + (i % 2), stock.radius, random() < 0.5, { random })) placed++;
+    }
+    return placed;
+  }
+  if (graze(() => {}) === 0) return false;
+  fencedField(box, elevation, centre, half, track);
+  graze(box);
+  return true;
 }

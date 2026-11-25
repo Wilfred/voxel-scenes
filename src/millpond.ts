@@ -1,5 +1,5 @@
 import { findSite } from "./sites";
-import { fencedField } from "./fences";
+import { stockedField, type Stock } from "./fences";
 import type { orchardSeason } from "./day";
 import { designsFor } from "./designs";
 import { waterfowl } from "./ducks";
@@ -8,7 +8,7 @@ import { treeVoxel } from "./scale";
 import { terrainField } from "./terrain";
 import { terrainTrail } from "./trails";
 import { standDensity, treePlanter } from "./trees";
-import { appleTree, at, cart, cow, mill, sheep, stall, villageYard } from "./village";
+import { appleTree, at, cart, cow, horse, mill, sheep, stall, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
 import * as THREE from "three";
@@ -82,9 +82,12 @@ export function buildMillpond(
   );
   yard.place(cart, doorX - 1, wheelZ + 3, 1.2, true);
   yard.place(stall, orchardX, orchardZ + 2, 1.1);
-  // Reserve grazing fields beside the cart track: a small one for sheep and
-  // a larger one for cattle. Each gate occupies the bay nearest the track,
-  // and the whole enclosure must fit on dry, nearly level ground.
+  // Reserve grazing fields beside the cart track: a paddock for horses by
+  // the mill, a small one for sheep and a larger one for cattle. Each gate
+  // occupies the bay nearest the track, the whole enclosure must fit on dry,
+  // nearly level ground, and the farmland gathers near the mill and the other
+  // fields. A field is only fenced where its animals fit; otherwise the next
+  // best site is tried.
   const fields: { x: number; z: number; half: number }[] = [];
   const inField = (x: number, z: number, margin: number) =>
     fields.some(f => Math.abs(x - f.x) <= f.half + margin && Math.abs(z - f.z) <= f.half + margin);
@@ -93,60 +96,70 @@ export function buildMillpond(
     return { x, z };
   });
   const level = (px: number, pz: number) => elevation(Math.round(px), Math.round(pz));
+  const anchors = () => [{ x: millX, z: wheelZ }, ...fields];
   function field(
     search: { left: number; right: number; back: number; front: number },
     half: number,
     target: { x: number; z: number },
+    stock: Stock,
+    stream: number,
   ) {
-    const site = findSite(search.left, search.right, search.back, search.front, 1, (x, z) => {
-      let low = Infinity,
-        high = -Infinity;
-      for (let dz = -half; dz <= half; dz++)
-        for (let dx = -half; dx <= half; dx++) {
-          const px = x + dx,
-            pz = z + dz,
-            h = elevation(px, pz);
-          if (
-            h <= 0 ||
-            Math.abs(px) >= radiusX ||
-            Math.abs(pz) >= radiusZ ||
-            millFootprint(px, pz) ||
-            trail.tiles.has(px + "," + pz) ||
-            yard.near(px, pz, 0.75) ||
-            inField(px, pz, 1)
-          )
-            return Infinity;
-          low = Math.min(low, h);
-          high = Math.max(high, h);
-        }
-      return high - low <= 0.5 ? 8 * (high - low) + Math.hypot(x - target.x, z - target.z) : Infinity;
-    });
-    if (!site) return;
-    fencedField(box, level, site, half, track);
-    fields.push({ ...site, half });
-    const herd = villageYard(
-      box,
-      level,
-      (px, pz) => Math.abs(px - site.x) < half - 0.1 && Math.abs(pz - site.z) < half - 0.1,
-    );
-    return { ...site, herd };
+    const rejected: { x: number; z: number }[] = [];
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const site = findSite(search.left, search.right, search.back, search.front, 1, (x, z) => {
+        if (rejected.some(r => Math.hypot(x - r.x, z - r.z) < 2)) return Infinity;
+        let low = Infinity,
+          high = -Infinity;
+        for (let dz = -half; dz <= half; dz++)
+          for (let dx = -half; dx <= half; dx++) {
+            const px = x + dx,
+              pz = z + dz,
+              h = elevation(px, pz);
+            if (
+              h <= 0 ||
+              Math.abs(px) >= radiusX ||
+              Math.abs(pz) >= radiusZ ||
+              millFootprint(px, pz) ||
+              trail.tiles.has(px + "," + pz) ||
+              yard.near(px, pz, 0.75) ||
+              inField(px, pz, 1)
+            )
+              return Infinity;
+            low = Math.min(low, h);
+            high = Math.max(high, h);
+          }
+        const nearest = Math.min(...anchors().map(p => Math.hypot(x - p.x, z - p.z)));
+        return high - low <= 0.5 ? 8 * (high - low) + Math.hypot(x - target.x, z - target.z) + 0.3 * nearest : Infinity;
+      });
+      if (!site) return;
+      if (stockedField(box, level, site, half, track, stock, seed ^ stream)) {
+        fields.push({ ...site, half });
+        return site;
+      }
+      rejected.push(site);
+    }
   }
-  const flock = field({ left: orchardX - 8, right: orchardX + 8, back: orchardZ + 2, front: orchardZ + 9 }, 2, {
-    x: orchardX - 3,
-    z: orchardZ + 4,
-  });
-  if (flock)
-    for (const dx of [-1, 1]) flock.herd.place(sheep, flock.x + dx, flock.z, 0.65, dx > 0, { random: wildlife });
-  // Cattle draw from their own stream so the rest of the farm stays in place.
-  const cattle = field({ left: orchardX - 10, right: radiusX - 4, back: wheelZ - 4, front: radiusZ - 4 }, 3, {
-    x: doorX + 2,
-    z: wheelZ + 9,
-  });
-  if (cattle) {
-    const herd = seededRandom(seed ^ 0x2545f491);
-    for (const dx of [-1.5, 0, 1.5])
-      cattle.herd.place(cow, cattle.x + dx, cattle.z + dx / 1.5, 0.8, herd() < 0.5, { random: herd });
-  }
+  field(
+    { left: -radiusX + 4, right: radiusX - 4, back: -radiusZ + 4, front: radiusZ - 4 },
+    3,
+    { x: doorX - 2, z: wheelZ + 6 },
+    { draw: horse, count: 2, radius: 0.9 },
+    0x7f4a7c15,
+  );
+  field(
+    { left: orchardX - 8, right: orchardX + 8, back: orchardZ + 2, front: orchardZ + 9 },
+    2,
+    { x: orchardX - 3, z: orchardZ + 4 },
+    { draw: sheep, count: 2, radius: 0.65 },
+    0x1b873593,
+  );
+  field(
+    { left: orchardX - 10, right: radiusX - 4, back: wheelZ - 4, front: radiusZ - 4 },
+    3,
+    { x: doorX + 2, z: wheelZ + 9 },
+    { draw: cow, count: 3, radius: 0.8 },
+    0x2545f491,
+  );
 
   const orchard = new Set<string>();
   for (let row = 0; row < Math.min(6, 2 + Math.floor(grid)); row++)
@@ -156,7 +169,7 @@ export function buildMillpond(
       if (
         Math.abs(x) + 2 >= radiusX ||
         Math.abs(z) + 2 >= radiusZ ||
-        inField(x, z, 1.5) ||
+        inField(x, z, 2.5) ||
         trail.near(x, z) ||
         yard.near(x, z, 1.2) ||
         elevation(x, z) < 0

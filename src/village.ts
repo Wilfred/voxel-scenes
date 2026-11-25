@@ -213,9 +213,10 @@ export function villageYard(box: Box, elevation: Elevation, free: (x: number, z:
       : findSite(x - 3, x + 3, z - 3, z + 3, 1, (cx, cz) =>
           eligible(cx, cz) ? Math.hypot(cx - tx, cz - tz) : Infinity,
         );
-    if (!site) return;
+    if (!site) return false;
     draw(at(box, site.x, elevation(site.x, site.z), site.z, turn));
     occupied.push({ ...site, radius });
+    return true;
   }
   return { place, near };
 }

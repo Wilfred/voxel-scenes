@@ -3,7 +3,7 @@ import { dinghyOffshore, mooredBoat } from "./boats";
 import { buildCottage, cottageDoor } from "./cottage";
 import { designsFor } from "./designs";
 import { gullsInFlight, waterfowl } from "./ducks";
-import { fencedField } from "./fences";
+import { stockedField, type Stock } from "./fences";
 import { placeOutbuildings } from "./outbuildings";
 import { grassShade, palette } from "./palette";
 import { treeVoxel } from "./scale";
@@ -12,7 +12,7 @@ import { terrainField } from "./terrain";
 import { footbridge, pier } from "./trail-details";
 import { terrainTrail } from "./trails";
 import { standDensity, treePlanter } from "./trees";
-import { appleTree, at, cart, cow, deer, mill, sheep, villageYard } from "./village";
+import { appleTree, at, cart, cow, deer, horse, mill, sheep, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
 
@@ -202,42 +202,55 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
     !lofts.near(x, z) &&
     !lofts.paths.has(Math.round(x) + "," + Math.round(z));
 
-  // Fields lie on gentle ground near the tracks: cattle by the mill and
-  // sheep above the cottage. Each gate faces the nearest track.
+  // Fields lie on gentle ground near the tracks: a horse paddock by the
+  // cottage, cattle by the mill and sheep above the cottage. Each gate faces
+  // the nearest track, and the farmland gathers near the buildings and the
+  // other fields. A field is only fenced where its animals fit; otherwise the
+  // next best site is tried.
   const fields: { x: number; z: number; size: number }[] = [];
   const inField = (x: number, z: number, margin: number) =>
     fields.some(f => Math.abs(x - f.x) <= f.size + margin && Math.abs(z - f.z) <= f.size + margin);
-  function paddock(near: { x: number; z: number }, reach: number, size: number) {
-    const site = findSite(near.x - reach, near.x + reach, near.z - reach, near.z + reach, 1, (x, z) => {
-      let low = Infinity,
-        high = -Infinity;
-      for (let dz = -size; dz <= size; dz++)
-        for (let dx = -size; dx <= size; dx++) {
-          const px = x + dx,
-            pz = z + dz,
-            h = elevation(px, pz);
-          if (
-            water(px, pz) < 2 ||
-            !free(px, pz) ||
-            Math.abs(px) >= radiusX - 1 ||
-            Math.abs(pz) >= radiusZ - 1 ||
-            Math.hypot(px - cabinX, pz - cabinZ) < 4 ||
-            trail.near(px, pz) ||
-            inField(px, pz, 2)
-          )
-            return Infinity;
-          low = Math.min(low, h);
-          high = Math.max(high, h);
-        }
-      return high - low <= 1 ? 6 * (high - low) + Math.hypot(x - near.x, z - near.z) * 0.3 : Infinity;
-    });
-    if (!site) return;
-    fields.push({ ...site, size });
-    fencedField(box, (px, pz) => elevation(Math.round(px), Math.round(pz)), site, size, track);
-    return { ...site, size };
+  const anchors = () => [{ x: millX, z: millZ }, { x: cabinX, z: cabinZ }, ...fields];
+  function paddock(near: { x: number; z: number }, reach: number, size: number, stock: Stock, stream: number) {
+    const rejected: { x: number; z: number }[] = [];
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const site = findSite(near.x - reach, near.x + reach, near.z - reach, near.z + reach, 1, (x, z) => {
+        if (rejected.some(r => Math.hypot(x - r.x, z - r.z) < 2)) return Infinity;
+        let low = Infinity,
+          high = -Infinity;
+        for (let dz = -size; dz <= size; dz++)
+          for (let dx = -size; dx <= size; dx++) {
+            const px = x + dx,
+              pz = z + dz,
+              h = elevation(px, pz);
+            if (
+              water(px, pz) < 2 ||
+              !free(px, pz) ||
+              Math.abs(px) >= radiusX - 1 ||
+              Math.abs(pz) >= radiusZ - 1 ||
+              Math.hypot(px - cabinX, pz - cabinZ) < 4 ||
+              trail.near(px, pz) ||
+              inField(px, pz, 2)
+            )
+              return Infinity;
+            low = Math.min(low, h);
+            high = Math.max(high, h);
+          }
+        const nearest = Math.min(...anchors().map(p => Math.hypot(x - p.x, z - p.z)));
+        return high - low <= 1 ? 6 * (high - low) + Math.hypot(x - near.x, z - near.z) * 0.3 + 0.2 * nearest : Infinity;
+      });
+      if (!site) return;
+      const level = (px: number, pz: number) => elevation(Math.round(px), Math.round(pz));
+      if (stockedField(box, level, site, size, track, stock, seed ^ stream)) {
+        fields.push({ ...site, size });
+        return site;
+      }
+      rejected.push(site);
+    }
   }
-  const cattle = paddock({ x: millX - 8, z: millZ + 5 }, 8, 3);
-  const flock = paddock({ x: cabinX + 4, z: cabinZ - 9 }, 8, 2);
+  paddock({ x: cabinX - 4, z: cabinZ - 5 }, 8, 3, { draw: horse, count: 2, radius: 0.9 }, 0x7f4a7c15);
+  paddock({ x: millX - 8, z: millZ + 5 }, 8, 3, { draw: cow, count: 3, radius: 0.8 }, 0x2545f491);
+  paddock({ x: cabinX + 4, z: cabinZ - 9 }, 8, 2, { draw: sheep, count: 3, radius: 0.65 }, 0x1b873593);
 
   // An orchard of apple trees in rows beside the mill track.
   const orchardCells = (x: number, z: number) =>
@@ -264,19 +277,6 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   );
   // The mill yard keeps a handcart by the door.
   yard.place(cart, millDoor.x - 1, millDoor.z + 2, 1.2, true);
-  for (const [field, draw, count, radius] of [
-    [cattle, cow, 3, 1.2],
-    [flock, sheep, 3, 0.65],
-  ] as const) {
-    if (!field) continue;
-    const herd = villageYard(
-      box,
-      (px, pz) => elevation(Math.round(px), Math.round(pz)),
-      (px, pz) => Math.abs(px - field.x) < field.size - 0.2 && Math.abs(pz - field.z) < field.size - 0.2,
-    );
-    for (let i = 0; i < count; i++)
-      herd.place(draw, field.x + (i - 1) * 1.5, field.z + (i % 2), radius, wildlife() < 0.5, { random: wildlife });
-  }
 
   // Water life: ducks on the millpond, a rowing boat moored at the landing,
   // gulls along a far stretch of beach and over the fields, and a dinghy

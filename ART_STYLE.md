@@ -88,8 +88,10 @@ while leaving room for variation. Keep flocks loose and give pairs enough space
 for their silhouettes to separate.
 
 Let fences explain land use. At the mill, the paddock gate faces the cart
-track. On steep paths a short guardrail marks the drop. A kitchen-garden fence
-is another direction to explore when a cottage has a cultivated patch to enclose.
+track. Fence a field only where its animals stand in it, and gather fields near
+the buildings and each other, with horses kept close to the house or mill. On
+steep paths a short guardrail marks the drop. A kitchen-garden fence is another
+direction to explore when a cottage has a cultivated patch to enclose.
 
 ## Weather and seasons
 
