@@ -4,9 +4,19 @@ import { weightedSite, findSite, type Elevation } from "./sites";
 import type { Box } from "./voxels";
 
 type Model = (box: Box) => void;
-export function at(box: Box, x: number, y: number, z: number, turn = false): Box {
-  return (a, b, c, w, h, d, color, yaw = 0) =>
-    box(x + (turn ? c : a), y + b, z + (turn ? -a : c), w, h, d, color, yaw + (turn ? Math.PI / 2 : 0));
+// Place a model at a point, turned by `turn` quarter turns (or one for true).
+// Each quarter turn takes the model's +x facing to -z.
+export function at(box: Box, x: number, y: number, z: number, turn: boolean | number = false): Box {
+  const quarter = turn === true ? 1 : turn === false ? 0 : ((turn % 4) + 4) % 4;
+  return (a, b, c, w, h, d, color, yaw = 0) => {
+    const [px, pz] = [
+      [a, c],
+      [c, -a],
+      [-a, -c],
+      [-c, a],
+    ][quarter];
+    box(x + px, y + b, z + pz, w, h, d, color, yaw + (quarter * Math.PI) / 2);
+  };
 }
 
 // Lay out a small model on its own lattice of `unit`-sized cells, giving the
@@ -203,7 +213,7 @@ export function villageYard(box: Box, elevation: Elevation, free: (x: number, z:
     tx: number,
     tz: number,
     radius: number,
-    turn = false,
+    turn: boolean | number = false,
     wildlife?: { random: () => number; habitat?: Elevation },
   ) {
     function eligible(x: number, z: number) {

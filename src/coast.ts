@@ -7,7 +7,7 @@ import { stockedField, type Stock } from "./fences";
 import { placeOutbuildings } from "./outbuildings";
 import { grassShade, palette } from "./palette";
 import { treeVoxel } from "./scale";
-import { findSite } from "./sites";
+import { findSite, weightedSite } from "./sites";
 import { terrainField } from "./terrain";
 import { footbridge, pier } from "./trail-details";
 import { terrainTrail } from "./trails";
@@ -15,6 +15,10 @@ import { standDensity, treePlanter } from "./trees";
 import { appleTree, at, cart, cow, deer, horse, mill, sheep, villageYard } from "./village";
 import { seededRandom, voxelBatch } from "./voxels";
 import { riverDepthMap } from "./water";
+
+// A vista centres on the mill and fits the land within this many grid cells
+// of it to the frame.
+export const coastVistaRadius = 13;
 
 // A whole valley in one diorama: a river leaves the wooded hills through a
 // millpond, turns a watermill, drops over a weir to the tidal reach, passes
@@ -115,6 +119,11 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
     return cache[k];
   }
   const dry = (x: number, z: number) => !wet(Math.round(x), Math.round(z));
+  // A vista frames the land around the mill. There the farm, the fields and
+  // the dinghy stay wholly inside the frame, rather than cut by its edge; a
+  // rectangular model shows the whole landscape.
+  const inView = (x: number, z: number, margin: number) =>
+    model || Math.hypot(x - millX, z - millZ) <= coastVistaRadius * grid - margin;
   // The sea bed darkens from sand toward silt with depth, in a few steps.
   const sand = new THREE.Color(palette.ground.sand),
     silt = new THREE.Color(palette.ground.silt),
@@ -189,7 +198,8 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   ];
   const farm = findSite(-radiusX + 8, radiusX - 8, -radiusZ + 6, radiusZ - 8, 1, (x, z) => {
     const spread = Math.min(...settled.map(p => Math.hypot(x - p.x, z - p.z)));
-    if (spread < 10 * grid || water(x, z) < 6) return Infinity;
+    const apart = model ? 10 * grid : 6 * grid;
+    if (spread < apart || water(x, z) < 6 || !inView(x, z, 6)) return Infinity;
     const footprint: number[] = [];
     for (let dz = -2; dz <= 3; dz++)
       for (let dx = -3; dx <= 3; dx++) {
@@ -198,7 +208,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
       }
     const high = Math.max(...footprint);
     if (high - Math.min(...footprint) > 1) return Infinity;
-    return (high - Math.min(...footprint)) * 8 + Math.abs(spread - 14 * grid) * 0.3;
+    return (high - Math.min(...footprint)) * 8 + Math.abs(spread - apart - 4 * grid) * 0.3;
   });
   const farmDoor = farm && { x: Math.round(farm.x + cottageDoor((designs.cottage + 1) % 4)), z: farm.z + 2 };
   const farmFootprint = (x: number, z: number) => !!farm && Math.abs(x - farm.x) <= 2.5 && Math.abs(z - farm.z) <= 1.5;
@@ -313,6 +323,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
               h = elevation(px, pz);
             if (
               water(px, pz) < 2 ||
+              !inView(px, pz, 1) ||
               !free(px, pz) ||
               Math.abs(px) >= radiusX - 1 ||
               Math.abs(pz) >= radiusZ - 1 ||
@@ -412,7 +423,7 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
       ...(moored ? [{ ...moored, radius: 4 }] : []),
     ],
     () => [0, 1],
-    () => 1,
+    (x, z) => (inView(x, z, 3) ? 1 : 0),
     3 * grid,
   );
   // Gulls fly over the land, preferring ground far from the buildings and
@@ -445,8 +456,28 @@ export function buildCoast(seed: number, model: boolean, grid = 1, designs = des
   samples.sort((a, b) => a - b);
   const threshold = samples[Math.floor(samples.length * 0.6)] ?? 0;
   const cover = (x: number, z: number) => woodland(x, z) - threshold + 0.25;
-  const edge = (x: number, z: number) => 0.05 + 1 / (1 + 8 * Math.abs(cover(x, z) - 0.1));
-  yard.place(deer, millX - 6, millZ - 8, 0.7, true, { random: wildlife, habitat: edge });
+  // The deer keeps to the woods, away from the tracks, where the trees open
+  // round it into a small clearing.
+  const level3 = (x: number, z: number) =>
+    [-1, 0, 1].every(dx => [-1, 0, 1].every(dz => elevation(x + dx, z + dz) === elevation(x, z)));
+  const thicket = (x: number, z: number) =>
+    cover(x, z) > 0.35 &&
+    inView(x, z, 2) &&
+    free(x, z) &&
+    level3(x, z) &&
+    track.every(p => Math.abs(p.x - x) + Math.abs(p.z - z) > 4)
+      ? 1
+      : 0;
+  const haunt = weightedSite(-radiusX + 4, radiusX - 4, -radiusZ + 4, radiusZ - 4, 1, thicket, wildlife);
+  if (haunt) {
+    // It faces out of the trees, down the slope of the woodland cover, as
+    // if watching the open ground. Quarter turns face +x, -z, -x and +z.
+    const outX = cover(haunt.x - 2, haunt.z) - cover(haunt.x + 2, haunt.z),
+      outZ = cover(haunt.x, haunt.z - 2) - cover(haunt.x, haunt.z + 2);
+    const facings = [outX, -outZ, -outX, outZ];
+    const turn = facings.indexOf(Math.max(...facings));
+    yard.place(deer, haunt.x, haunt.z, 0.7, turn, { random: wildlife, habitat: thicket });
+  }
 
   // The millpond's surface and the face of the weir sit over the water
   // cells above it; the sea surface serves the tidal river and the sea.

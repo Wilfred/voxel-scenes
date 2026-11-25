@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { buildCoast } from "./coast";
+import { buildCoast, coastVistaRadius } from "./coast";
 import { buildHillside } from "./hillside";
 import { buildIsland } from "./island";
 import type { IslandKind } from "./islands";
@@ -169,7 +169,7 @@ export const scenes: Record<string, Scene> = {
         thirds: false,
         // Come close enough for the valley to fill the frame, with the pond,
         // mill, bridge and cottage in view.
-        focusRadius: 13,
+        focusRadius: coastVistaRadius,
       };
     },
   },
