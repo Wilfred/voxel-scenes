@@ -8,7 +8,7 @@ const defaultUrl = "https://www.wilfred.me.uk/voxel-scenes/";
 
 async function downloadWallpaper(url: URL, directory: string) {
   const browser = await chromium.launch({
-    channel: "chromium",
+    channel: "chrome",
     args: ["--enable-unsafe-swiftshader"],
   });
   try {
