@@ -86,18 +86,35 @@ export const boats = [
 // below the waterline.
 const draught = -0.0625;
 
-// Moor a rowing boat alongside a landing, parallel to its deck, on the
-// first side with open water for the whole hull.
+// Moor a rowing boat by its bow, as a painter at the bow would hold it.
+// It ties first to the head of the landing, with the hull lying straight
+// out to sea clear of the shore, and otherwise to either side of the deck,
+// lying out across the water. It takes the first berth with open water under
+// the whole hull and a margin round it. `landing` is the middle of the deck
+// and `along` its direction, out from the shore.
 export function mooredBoat(box: Box, landing: { x: number; z: number }, along: [number, number], depth: Elevation) {
   const [dx, dz] = along;
-  for (const side of [1, -1]) {
-    const x = landing.x - dz * side * 1.05,
-      z = landing.z + dx * side * 1.05;
-    const clear = [-0.9, 0, 0.9].every(t =>
-      [-0.4, 0.4].every(s => depth(x + dx * t - dz * s, z + dz * t + dx * s) > 0.3),
+  // The deck reaches 0.75 either side of its middle and 0.5 to each side.
+  // The bow reaches 0.75 ahead of the hull's centre, with a hand's breadth
+  // between it and the timber.
+  const bow = 0.75 + 0.05;
+  const berths = [
+    { x: landing.x + dx * (0.75 + bow), z: landing.z + dz * (0.75 + bow), outX: dx, outZ: dz },
+    ...[1, -1].map(side => ({
+      x: landing.x + dx * 0.5 - dz * side * (0.5 + bow),
+      z: landing.z + dz * 0.5 + dx * side * (0.5 + bow),
+      outX: -dz * side,
+      outZ: dx * side,
+    })),
+  ];
+  for (const { x, z, outX, outZ } of berths) {
+    const clear = [-1.1, -0.55, 0, 0.55, 0.9].every(t =>
+      [-0.65, 0, 0.65].every(s => depth(x + outX * t - outZ * s, z + outZ * t + outX * s) > 0.3),
     );
     if (!clear) continue;
-    rowingBoat(box, x, draught, z, Math.atan2(-dz, dx));
+    // The bow lies along +x before the boat turns, and here points back at
+    // the deck.
+    rowingBoat(box, x, draught, z, Math.atan2(outZ, -outX));
     return { x, z };
   }
 }

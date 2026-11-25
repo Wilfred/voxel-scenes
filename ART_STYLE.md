@@ -81,8 +81,8 @@ quiet shore, all facing into the wind that carries the chimney smoke, and fly
 over land, where they show white against the trees. Ducks swim out on open
 water, clear of the bank, and deer graze where woodland opens out. Sheep and
 cattle graze in fields beside a track. Moor a
-rowing boat beside a pier, since a lone boat elsewhere looks adrift, and sail a
-dinghy out to sea, clear of the landing. Spread these details across the scene
+rowing boat by its bow to a pier, since a lone boat elsewhere looks adrift, and
+sail a dinghy out to sea, clear of the landing. Spread these details across the scene
 rather than gathering them by the cottage. Make suitable sites more likely
 while leaving room for variation. Keep flocks loose and give pairs enough space
 for their silhouettes to separate.
