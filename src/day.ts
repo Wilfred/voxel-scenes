@@ -21,9 +21,7 @@ export const daylight = [
   { key: "sunset", label: "Sunset", before: 24 },
 ] as const;
 
-export function daylightIndex(light: string | null, weather: string | null, hour: number) {
+export function daylightIndex(light: string | null, hour: number) {
   const index = daylight.findIndex(stop => (light === "auto" ? hour < stop.before : light === stop.key));
-  if (index >= 0) return index;
-  const legacyIndex = daylight.findIndex(stop => weather === stop.key);
-  return legacyIndex >= 0 ? legacyIndex : daylight.findIndex(stop => stop.key === "midday");
+  return index >= 0 ? index : daylight.findIndex(stop => stop.key === "midday");
 }

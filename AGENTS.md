@@ -25,12 +25,12 @@ file describes how to work on them.
 - Use one localhost preview for discussion. Reuse the running server for this
   checkout. To start it on the usual port, run
   `npm run dev -- --port 5173 --strictPort`. Share a URL with the scene,
-  framing, weather and seed, such as
-  `http://localhost:5173/?scene=woods&framing=vista&weather=clear&seed=123`,
+  framing, light and seed, such as
+  `http://localhost:5173/?scene=woods&framing=vista&light=midday&seed=123`,
   so the user sees the same composition.
 - Run `npm run format` before committing; CI rejects unformatted files.
 - Run `npm run build` for code changes and `npm run check` for generator
-  changes. Use an explicit seed and weather when checking a saved PNG. The check builds every scene across a sweep of seeds and fails on
+  changes. Use an explicit seed and lighting stop when checking a saved PNG. The check builds every scene across a sweep of seeds and fails on
   generation errors and routes that climb more than one terrain layer per
   tread. `npm run check -- --hash` fingerprints each landscape, so a refactor
   can show it changes nothing.
@@ -79,9 +79,9 @@ like places in the same game.
   footprints first, then use `weightedSite` in `src/sites.ts` for habitat
   preferences. Use the nearest valid site when a fixed prop needs to serve a
   particular door, path or landing.
-- Keep weather independent of landscape generation. Set the sun, cloud colours
+- Keep lighting independent of landscape generation. Set the sun, cloud colours
   and water response together. Compare the same scene URL in Vista and
-  Rectangular model, rotate the camera, and check the PNG includes the weather.
+  Rectangular model, rotate the camera, and check the lighting in the saved PNG.
 - When extending a scene, use the seed-selected models in `src/designs.ts` and
   expose reusable models in the asset library. Follow the shared lattice and
   the small-animal scale exceptions in ART_STYLE.md.

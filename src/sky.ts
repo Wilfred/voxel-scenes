@@ -1,7 +1,7 @@
 import { cloudShadows } from "./cloud-shadows";
 import * as THREE from "three";
 import { seededRandom } from "./voxels";
-import type { WeatherPreset } from "./weather";
+import type { LightingPreset } from "./lighting";
 
 const skyShader = `
   uniform vec3 horizon, zenith, glow, sun;
@@ -88,7 +88,7 @@ export function createSky(renderer: THREE.WebGLRenderer) {
     shadows.update(uniforms.sun.value, shadowGrid);
     return true;
   }
-  function update(seed: number, preset: WeatherPreset, horizon: number, grid: number) {
+  function update(seed: number, preset: LightingPreset, horizon: number, grid: number) {
     const key = JSON.stringify([seed, preset, horizon, grid]);
     if (key === previous) return;
     previous = key;

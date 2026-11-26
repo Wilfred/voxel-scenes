@@ -3,7 +3,6 @@ import { mkdir, mkdtemp, rename, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 import { chromium } from "playwright-core";
-import { daylight } from "../src/day.ts";
 
 const defaultUrl = "https://www.wilfred.me.uk/voxel-scenes/";
 
@@ -46,10 +45,7 @@ async function main() {
   if (process.platform !== "darwin") throw new Error("Run this script on macOS.");
   const url = new URL(process.argv[2] ?? defaultUrl);
   url.searchParams.delete("seed");
-  const weather = url.searchParams.get("weather");
-  if (!url.searchParams.has("light") && !daylight.some(stop => stop.key === weather)) {
-    url.searchParams.set("light", "auto");
-  }
+  if (!url.searchParams.has("light")) url.searchParams.set("light", "auto");
   const directory = join(homedir(), "Pictures", "Voxel Scenes");
   await mkdir(directory, { recursive: true });
   const path = await downloadWallpaper(url, directory);

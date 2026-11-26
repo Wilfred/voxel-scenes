@@ -33,7 +33,6 @@ export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (mat
     sun: { value: new THREE.Vector3() },
     eye: { value: new THREE.Vector3() },
     ripple: { value: 1 },
-    rain: { value: 0 },
     grid: { value: 1 },
     coastal: { value: false },
     drift: { value: 0 },
@@ -61,7 +60,6 @@ export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (mat
       Object.assign(shader.uniforms, {
         skyMap: { value: skyMap },
         ripple: surface.ripple,
-        rain: surface.rain,
         glintTint: { value: new THREE.Color(palette.light.sunGlint) },
         seabed: surface.depth,
         depthExtent: surface.depthExtent,
@@ -110,7 +108,7 @@ export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (mat
       uniform sampler2D seabed;
       uniform vec3 glintTint;
       uniform vec3 deepWater, sunlight, viewDirection;
-      uniform float waveDrift, wavePhase, gridScale, ripple, rain, depthExtent;
+      uniform float waveDrift, wavePhase, gridScale, ripple, depthExtent;
       float hashWave(vec2 cell) {
         vec3 q = fract(vec3(cell.xyx) * 0.1031);
         q += dot(q, q.yzx + 33.33);
@@ -161,14 +159,6 @@ export function createWater(skyMap: THREE.CubeTexture, receiveCloudShadows: (mat
         float overlap = 0.65 * cos(phase) + 0.35 * cos(swell);
         crest = strength * resolved * smoothstep(0.48, 0.97, overlap);
         tilt += strength * resolved * (0.026 * wind * sin(phase) + 0.017 * (wind - 0.43 * across) * sin(swell));
-      }
-      if (rain > 0.0) {
-        vec2 rainCell = p * 0.65;
-        float age = hashWave(floor(rainCell) + wavePhase);
-        vec2 offset = fract(rainCell) - 0.5;
-        float ring = length(offset) - 0.34 * age;
-        tilt += 0.035 * normalize(offset + 0.00001) * sin(ring * 95.0) *
-          exp(-ring * ring * 620.0) * (1.0 - age);
       }
       // Perspective views see the surface along a different ray at every point.
       vec3 eye = isOrthographic ? viewDirection : normalize(cameraPosition - waterPoint);

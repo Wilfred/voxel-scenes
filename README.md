@@ -33,15 +33,15 @@ way for a minute while you move around.
 
 The opening seed comes from the local calendar date. Reload to revisit today's
 landscape, or use the New button in the top bar for a random seed. The `scene`,
-`framing`, `weather`, `light` and `seed` URL parameters open a particular composition,
-for example `?scene=woods&framing=model&weather=overcast&seed=123`. In Orchard millpond, follow
+`framing`, `light` and `seed` URL parameters open a particular composition,
+for example `?scene=woods&framing=model&light=morning&seed=123`. In Orchard millpond, follow
 the headrace past the waterwheel to the duck pond and the cart track to the
 orchard stall. The orchard blossoms in April and May, and a small wreath hangs
-on the mill door in December. Weather changes the lighting and water while preserving the view.
+on the mill door in December.
 
 Four short voxel rays estimate contact shade around opaque surfaces. Larger
 landscapes use coarser tracing cells. Three.js Reflector captures the landscape
-for flat water, with the weather sky filling the gaps. The falling faces of the
+for flat water, with the sky filling the gaps. The falling faces of the
 waterfall scatter the reflected sky. Shallow water shows the bed through it.
 Direct sunlight uses shadow maps.
 
@@ -52,11 +52,11 @@ With Google Chrome installed on your Mac, run `npm ci` once from this checkout.
 Run `npm run wallpaper:mac` whenever you want to apply today's wallpaper.
 The script opens the published generator in headless Google Chrome, saves its
 2560 × 1440 PNG under `~/Pictures/Voxel Scenes`, and applies it to the connected
-displays in your macOS desktop session. To choose a scene, framing, weather or
+displays in your macOS desktop session. To choose a scene, framing or
 lighting stop, pass a quoted generator URL:
 
 ```sh
-npm run wallpaper:mac -- 'https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=model&weather=overcast'
+npm run wallpaper:mac -- 'https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=model&light=auto'
 ```
 
 The script uses the Mac's local calendar date for the seed and picks lighting
@@ -64,20 +64,16 @@ from the local hour on each run. Sunrise is before 08:00, Morning is 08:00–10:
 Midday is 11:00–14:59, Evening is 15:00–17:59, and Sunset is from 18:00. Set
 `light=sunrise`, `morning`, `midday`, `evening` or `sunset` in the URL to pin a stop.
 
-## Weather studies
+## Lighting
 
 The Lighting slider moves through five stops from Sunrise to Sunset while keeping
 the scene and camera in place. The browser opens at Midday by default. Use
 `light=auto` in a browser URL to pick a stop from the local hour on load.
-Bright overcast softens shadows. Clearing rain leaves a scattering
-of slanted drops over the land and rings on the water. The wallpaper captures
-a still moment, including the rain. Vista skies and water reflections share a
-cloud map. Rectangular models keep their plain backdrop.
+Vista skies and water reflections share a cloud map. Rectangular models keep
+their plain backdrop.
 
-Compare the woodland bridge at seed 123 in [sunrise](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=clear&light=sunrise&seed=123),
-[sunset](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=clear&light=sunset&seed=123)
-and [clearing rain](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&weather=clearing&seed=123).
-Change weather in place to keep the camera, animals and buildings fixed.
+Compare the woodland bridge at seed 123 at [sunrise](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&light=sunrise&seed=123)
+and [sunset](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&light=sunset&seed=123).
 
 ## Picking up the project
 
@@ -87,7 +83,7 @@ first desktop target. CI checks formatting, builds the static site and deploys
 desktop integration and floating-island terrain are future work.
 
 In the next visual review at wallpaper size, compare the height and spacing
-of cloud banks, the visibility of rain over dark trees, and how much sky the
+of cloud banks and how much sky the
 vista leaves above its focal building. The current study
 uses stepped banks. Two alternatives worth comparing on that same seed are a
 few taller broken cumulus clusters and long thin evening clouds with warm lit

@@ -54,14 +54,14 @@ the sky distinct values so their broad shapes read clearly across the wallpaper.
   cottage garden.
 - Use one wood colour for living trunks and built timber. Let the warm roof
   tile be the main accent in a green landscape.
-- In sunny weather, let direct sun outweigh sky light about two to one so cast
-  shadows read crisply. Overcast light can be soft. Align cast shadows with
+- Around midday, let direct sun outweigh sky light about two to one so cast
+  shadows read crisply. Align cast shadows with
   the depicted sun.
 - Give skies and water natural depth. A sky grades from the haze colour at
   the horizon to a deeper zenith. Shallow water shows the bed through actual
   transparency, and calm water reflects the nearby banks. Keep ripples broad
   and calm at wallpaper scale.
-- Keep silhouettes clear through changes in weather.
+- Keep silhouettes clear from sunrise to sunset.
 
 ## Signs of life
 
@@ -87,18 +87,16 @@ the buildings and each other, with horses kept close to the house or mill. On
 steep paths a short guardrail marks the drop. A kitchen-garden fence is another
 direction to explore when a cottage has a cultivated patch to enclose.
 
-## Weather and seasons
+## Daylight and seasons
 
-Give the daily views a range of weather and light. Mist can soften the
-farthest ridge while leaving the near slopes crisp. Sun after rain can
-pick out a stream winding through dark pines.
+Give the daily views a range of light. Haze can soften the farthest ridge
+while leaving the near slopes crisp.
 
 The current sky study uses distant banks with flat bases, stepped outlines
 and a cooler underside. Leave gaps above the horizon and between banks.
 Use the same sun direction for lit faces, cast shadows and water highlights.
 Sunrise can pick out a cool ridge against a
-peach horizon; late light should catch the opposite faces. Make clearing rain
-visible against the landscape while giving the cottage room to read.
+peach horizon. Late light should catch the opposite faces.
 
 At particular times of year, let the season influence the whole landscape.
 The orchard already blossoms in spring and the mill wears a December wreath.
