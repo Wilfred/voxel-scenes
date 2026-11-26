@@ -1,4 +1,4 @@
-# Voxel Scenes
+![voxel scenes logo](logo.png)
 
 Generate a cosy voxel landscape in the browser and save it as a desktop wallpaper.
 Choose Crescent bay, Woodland stream, Hillside falls or Orchard millpond.
@@ -74,18 +74,3 @@ their plain backdrop.
 
 Compare the woodland bridge at seed 123 at [sunrise](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&light=sunrise&seed=123)
 and [sunset](https://www.wilfred.me.uk/voxel-scenes/?scene=woods&framing=vista&light=sunset&seed=123).
-
-## Picking up the project
-
-The current milestone is manual PNG generation on the web, with Linux as the
-first desktop target. CI checks formatting, builds the static site and deploys
-`main` to GitHub Pages. Scheduled wallpaper updates, wider
-desktop integration and floating-island terrain are future work.
-
-In the next visual review at wallpaper size, compare the height and spacing
-of cloud banks and how much sky the
-vista leaves above its focal building. The current study
-uses stepped banks. Two alternatives worth comparing on that same seed are a
-few taller broken cumulus clusters and long thin evening clouds with warm lit
-edges. The art direction and development workflow live in [ART_STYLE.md](ART_STYLE.md)
-and [AGENTS.md](AGENTS.md).
