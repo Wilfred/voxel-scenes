@@ -10,8 +10,9 @@ Choose Crescent bay, Woodland stream, Hillside falls or Orchard millpond.
 With Node.js 22.12 or newer installed, run `npm ci` and `npm run dev -- --port 5173 --strictPort`,
 then open the local URL printed by Vite. Choose a scene and generate a landscape.
 Vista framing looks across the land in perspective toward a hazy horizon.
-Rectangular model framing shows the whole place as a miniature block. Either
-saves a 2560 × 1440 PNG.
+Rectangular model framing shows the whole place as a miniature block. Save PNG
+exports at the size chosen beside it, which defaults to this screen's resolution
+and always offers 2560 × 1600. The preview takes the same shape.
 
 Run `npm run build` to type-check the TypeScript and create the static site
 in `dist/`. Run `npm run preview` to serve that build locally. Run
@@ -20,7 +21,7 @@ that each builds and that its paths climb at most one terrain layer per step.
 
 Grid resolution controls how many terrain cells fit across the wallpaper.
 The range is 0.75× to 5× in quarter steps. At 5×, five times as many cells fit
-across the wallpaper. The export remains 2560 × 1440.
+across the wallpaper. The export size stays the same.
 Each landscape draws from four cottages, four pines, four broadleaves and three
 palms using its seed, so
 every design appears across the days. The asset library shows them all, each
@@ -33,8 +34,8 @@ way for a minute while you move around.
 
 The opening seed comes from the local calendar date. Reload to revisit today's
 landscape, or use the New button in the top bar for a random seed. The `scene`,
-`framing`, `light` and `seed` URL parameters open a particular composition,
-for example `?scene=woods&framing=model&light=morning&seed=123`. In Orchard millpond, follow
+`framing`, `light`, `seed` and `size` URL parameters open a particular composition,
+for example `?scene=woods&framing=model&light=morning&seed=123&size=2560x1600`. In Orchard millpond, follow
 the headrace past the waterwheel to the duck pond and the cart track to the
 orchard stall. The orchard blossoms in April and May, and a small wreath hangs
 on the mill door in December.
@@ -50,8 +51,8 @@ Direct sunlight uses shadow maps.
 With Google Chrome installed on your Mac, run `npm ci` once from this checkout.
 
 Run `npm run wallpaper:mac` whenever you want to apply today's wallpaper.
-The script opens the published generator in headless Google Chrome, saves its
-2560 × 1440 PNG under `~/Pictures/Voxel Scenes`, and applies it to the connected
+The script opens the published generator in headless Google Chrome, saves a
+2560 × 1600 PNG under `~/Pictures/Voxel Scenes`, and applies it to the connected
 displays in your macOS desktop session. To choose a scene, framing or
 lighting stop, pass a quoted generator URL:
 
