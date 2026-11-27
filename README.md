@@ -51,8 +51,8 @@ Direct sunlight uses shadow maps.
 With Google Chrome installed on your Mac, run `npm ci` once from this checkout.
 
 Run `npm run wallpaper:mac` whenever you want to apply today's wallpaper.
-The script opens the published generator in headless Google Chrome, saves its
-2560 × 1440 PNG under `~/Pictures/Voxel Scenes`, and applies it to the connected
+The script opens the published generator in headless Google Chrome, saves a
+2560 × 1600 PNG under `~/Pictures/Voxel Scenes`, and applies it to the connected
 displays in your macOS desktop session. To choose a scene, framing or
 lighting stop, pass a quoted generator URL:
 

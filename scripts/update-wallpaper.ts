@@ -46,7 +46,7 @@ async function main() {
   const url = new URL(process.argv[2] ?? defaultUrl);
   url.searchParams.delete("seed");
   if (!url.searchParams.has("light")) url.searchParams.set("light", "auto");
-  if (!url.searchParams.has("size")) url.searchParams.set("size", "2560x1440");
+  if (!url.searchParams.has("size")) url.searchParams.set("size", "2560x1600");
   const directory = join(homedir(), "Pictures", "Voxel Scenes");
   await mkdir(directory, { recursive: true });
   const path = await downloadWallpaper(url, directory);
