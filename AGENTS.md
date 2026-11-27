@@ -11,7 +11,7 @@ memory updates.
 
 Voxel Scenes is a TypeScript and Three.js website for generating scenic voxel
 wallpapers. The current workflow is to generate a landscape in the browser,
-review it at full browser width, and save a 2560 × 1440 PNG. A Linux laptop is
+review it at full browser width, and save a PNG at the chosen size. A Linux laptop is
 the first target. Keep that browser workflow portable to Windows and macOS.
 Daily automatic wallpaper changes are a longer-term goal.
 

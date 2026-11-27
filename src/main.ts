@@ -41,6 +41,33 @@ if (!context) {
   // uses perspective so the land can recede into haze.
   const modelCamera = new THREE.OrthographicCamera();
   const vistaCamera = new THREE.PerspectiveCamera(vistaFov, 16 / 9);
+  // The preview takes the shape of the chosen PNG size, which defaults to
+  // this screen's resolution in device pixels.
+  const sizeSelect = document.querySelector<HTMLSelectElement>("#size")!;
+  const screenSize = [screen.width, screen.height].map(side => Math.round(side * devicePixelRatio));
+  const sizes = [screenSize, [2560, 1600], [2560, 1440], [1920, 1080], [3840, 2160]];
+  for (const [width, height] of sizes) {
+    const value = `${width}x${height}`;
+    if ([...sizeSelect.options].some(option => option.value === value)) continue;
+    const label =
+      `${width} × ${height}` + (width === screenSize[0] && height === screenSize[1] ? " (this screen)" : "");
+    sizeSelect.add(new Option(label, value));
+  }
+  const requestedSize = params.get("size");
+  if (requestedSize && /^\d+x\d+$/.test(requestedSize)) {
+    if (![...sizeSelect.options].some(option => option.value === requestedSize)) {
+      sizeSelect.add(new Option(requestedSize.replace("x", " × "), requestedSize));
+    }
+    sizeSelect.value = requestedSize;
+  }
+  function exportSize() {
+    const [width, height] = sizeSelect.value.split("x").map(Number);
+    return { width, height };
+  }
+  function aspect() {
+    const { width, height } = exportSize();
+    return width / height;
+  }
   let camera: THREE.OrthographicCamera | THREE.PerspectiveCamera = vistaCamera;
   const sky = createSky(renderer);
   const { sea, surface, createSurface, renderReflections } = createWater(sky.texture, sky.receiveCloudShadows);
@@ -97,7 +124,7 @@ if (!context) {
     const zoom = zoomLevels[zoomIndex];
     camera.zoom = zoom * fit.zoom;
     // Move the image vertically while keeping the viewing direction.
-    camera.setViewOffset(16 / 9, 1, 0, (-fit.centerY * camera.zoom) / 2, 16 / 9, 1);
+    camera.setViewOffset(aspect(), 1, 0, (-fit.centerY * camera.zoom) / 2, aspect(), 1);
     zoomValue.value = Math.round(zoom * 100) + "%";
     zoomIn.disabled = zoomIndex === zoomLevels.length - 1;
     zoomOut.disabled = zoomIndex === 0;
@@ -159,7 +186,7 @@ if (!context) {
   }
   function preview() {
     const width = Math.max(1, Math.round(canvas.clientWidth * Math.min(devicePixelRatio, 2)));
-    renderer.setSize(width, Math.round((width * 9) / 16), false);
+    renderer.setSize(width, Math.round(width / aspect()), false);
     render();
   }
   function distance() {
@@ -273,8 +300,8 @@ if (!context) {
       Object.assign(modelCamera, {
         top,
         bottom: -top,
-        right: (top * 16) / 9,
-        left: (-top * 16) / 9,
+        right: top * aspect(),
+        left: -top * aspect(),
         near: 0.1,
         far: 350 * grid,
       });
@@ -289,9 +316,10 @@ if (!context) {
         // Set the focus on a third, facing into the larger part of the frame.
         const right = new THREE.Vector3(Math.cos(azimuth), 0, -Math.sin(azimuth));
         const facing = new THREE.Vector3(Math.sin(facade), 0, Math.cos(facade)).dot(right);
-        const halfWidth = (distance * Math.tan(THREE.MathUtils.degToRad(vistaFov / 2)) * 16) / 9;
+        const halfWidth = distance * Math.tan(THREE.MathUtils.degToRad(vistaFov / 2)) * aspect();
         target.addScaledVector(right, ((facing < 0 ? -1 : 1) * halfWidth) / 3);
       }
+      vistaCamera.aspect = aspect();
       vistaCamera.near = 0.5;
       vistaCamera.far = distance * 8;
     }
@@ -332,6 +360,10 @@ if (!context) {
     pendingGrid = window.setTimeout(update, 150);
   };
   framing.onchange = sceneSelect.onchange = update;
+  sizeSelect.onchange = () => {
+    canvas.style.setProperty("--aspect", String(aspect()));
+    update();
+  };
   lightSlider.oninput = () => {
     applyLighting();
     preview();
@@ -345,8 +377,9 @@ if (!context) {
     const light = daylight[lightSlider.valueAsNumber].key;
     const variant = `-${framing.value}-${resolution.value}x-${light}`;
     const zoomSuffix = zoomIndex === defaultZoom ? "" : `-zoom${parseInt(zoomValue.value, 10)}`;
-    const filename = `${sceneSelect.value}-${seed}${variant}${zoomSuffix}.png`;
-    renderer.setSize(2560, 1440, false);
+    const filename = `${sceneSelect.value}-${seed}${variant}${zoomSuffix}-${sizeSelect.value}.png`;
+    const { width, height } = exportSize();
+    renderer.setSize(width, height, false);
     render();
     canvas.toBlob(blob => {
       if (!blob) {
@@ -368,6 +401,7 @@ if (!context) {
     const value = params.get(key);
     if (value && [...select.options].some(option => option.value === value)) select.value = value;
   }
+  canvas.style.setProperty("--aspect", String(aspect()));
   lightSlider.max = String(daylight.length - 1);
   lightSlider.valueAsNumber = daylightIndex(params.get("light"), today.getHours());
   const requestedSeed = Number(params.get("seed") ?? NaN);
