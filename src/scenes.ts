@@ -36,8 +36,6 @@ export type Landscape = {
   focus: THREE.Vector3;
   // The direction the focus faces, as an azimuth from +z.
   facade: number;
-  // Restrict orbiting to the front and both front corners of the building.
-  frontOnly: boolean;
   // Model framing: the point to aim at and the frame half-height per grid unit,
   // which also sets the vista's distance. The opening view then fits the place.
   modelTarget: THREE.Vector3;
@@ -74,7 +72,6 @@ function islandScene(name: string, description: string, kind: IslandKind): Scene
         deepWater: palette.water.sea,
         focus: model ? new THREE.Vector3() : new THREE.Vector3(0, 1, 0),
         facade: island.facadeAngle,
-        frontOnly: true,
         modelTarget: new THREE.Vector3(0, -3, 0),
         modelHeight: 14,
         modelRise: 27,
@@ -112,7 +109,6 @@ export const scenes: Record<string, Scene> = {
         deepWater: palette.water.river,
         focus: woods.bridge.clone(),
         facade: 0,
-        frontOnly: false,
         modelTarget: new THREE.Vector3(woods.bounds.x, 2, woods.bounds.z),
         modelHeight: 19,
         thirds: true,
@@ -134,7 +130,6 @@ export const scenes: Record<string, Scene> = {
         deepWater: palette.water.river,
         focus: pond.focus,
         facade: 0,
-        frontOnly: true,
         modelTarget: new THREE.Vector3(0, 1, 0),
         modelHeight: 13,
         thirds: true,
@@ -163,7 +158,6 @@ export const scenes: Record<string, Scene> = {
         focus: coast.focus,
         chimney: coast.chimney,
         facade: 0,
-        frontOnly: true,
         modelTarget: new THREE.Vector3(0, 1, 0),
         modelHeight: 19,
         thirds: false,
@@ -191,7 +185,6 @@ export const scenes: Record<string, Scene> = {
         deepWater: palette.water.river,
         focus: hillside.focus,
         facade: 0,
-        frontOnly: true,
         modelTarget: new THREE.Vector3(-1, 3, -2),
         modelHeight: 13,
         thirds: true,
