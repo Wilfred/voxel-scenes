@@ -285,9 +285,6 @@ if (!context) {
     orbit.object = camera;
 
     const facade = landscape.facade;
-    // Orbit the front and both front corners while keeping the door joined to its path.
-    orbit.minAzimuthAngle = landscape.frontOnly ? facade - Math.PI * 0.38 : -Infinity;
-    orbit.maxAzimuthAngle = landscape.frontOnly ? facade + Math.PI * 0.38 : Infinity;
     const offset = new THREE.Vector3(16, landscape.modelRise ?? 30, 40).applyAxisAngle(
       new THREE.Vector3(0, 1, 0),
       facade,
